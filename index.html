@@ -388,24 +388,121 @@ const products = [
   { id: 6, name: 'Body Silk Lotion',         cat: 'სხეულის მოვლა', price: 28,   tag: '',          mockup: 'lotion',   bg: ['#FAE8FF', '#FCE7F3'], accent: '#A21CAF' },
 ];
 
+// ════════════════════════════════════════════════════════════════════════════
+// API CONFIG + JSONP UTILITY
+// ════════════════════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycby0BJOvqZZz4eK5zHyep36R3vcPvweNk8ob-sOcCEokNoGto9m1BrfBxNlBcBB81pJ5/exec';
+
+function api(params) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[callbackName];
+      script.remove();
+      reject(new Error('Request timed out'));
+    }, 15000);
+    window[callbackName] = (data) => {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      script.remove();
+      resolve(data);
+    };
+    const queryParams = new URLSearchParams({ ...params, callback: callbackName });
+    script.src = API_URL + '?' + queryParams.toString();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      script.remove();
+      reject(new Error('Network error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+// Extract PID from URL: /?pid=153205 or /?pid=153205&edit=1
+function getUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    pid: params.get('pid'),
+    edit: params.get('edit') === '1',
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+
 function App() {
-  const [view, setView] = useState('login');
-  const [repCode, setRepCode] = useState('');
+  const urlParams = getUrlParams();
+  const [view, setView] = useState(urlParams.pid ? 'loading' : 'login');
+  const [repCode, setRepCode] = useState(urlParams.pid || '');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [loadError, setLoadError] = useState('');
   const [rep, setRep] = useState({
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
     instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '',
   });
+
+  // Load rep data from API on mount if PID is in URL
+  useEffect(() => {
+    if (!urlParams.pid) return;
+
+    api({ action: 'get_rep', pid: urlParams.pid })
+      .then(data => {
+        if (data.ok && data.rep) {
+          // Map API response to UI state
+          setRep({
+            name: data.rep.name || '',
+            bio: data.rep.bio || '',
+            photo: data.rep.photo_url || null,
+            phone: data.rep.phone || '',
+            whatsapp: data.rep.whatsapp || '',
+            instagram: data.rep.instagram || '',
+            facebook: data.rep.facebook || '',
+            tiktok: data.rep.tiktok || '',
+            youtube: data.rep.youtube || '',
+            telegram: data.rep.telegram || '',
+            city: data.rep.city || '',
+          });
+          // Decide view: edit mode → dashboard, otherwise → public
+          setView(urlParams.edit ? 'dashboard' : 'public');
+          // Log visit if not in edit mode
+          if (!urlParams.edit) {
+            api({ action: 'log_visit', pid: urlParams.pid }).catch(() => {});
+          }
+        } else {
+          setLoadError(data.error || 'წარმომადგენელი ვერ მოიძებნა');
+          setView('login');
+        }
+      })
+      .catch(err => {
+        setLoadError('კავშირის შეცდომა: ' + err.message);
+        setView('login');
+      });
+  }, []);
+
   const openProduct = (p) => { setSelectedProduct(p); setView('product'); window.scrollTo(0, 0); };
   const backToPublic = () => { setSelectedProduct(null); setView('public'); window.scrollTo(0, 0); };
 
   return (
     <div style={{ background: theme.cream, minHeight: '100vh' }}>
       <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />
-      {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} />}
+      {view === 'loading' && <LoadingScreen />}
+      {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} />}
       {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} />}
       {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} />}
       {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} />}
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.cream }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 60, height: 60, border: `4px solid ${theme.blush}`, borderTop: `4px solid ${theme.wine}`, borderRadius: '50%', margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
+        <p style={{ color: theme.ink, fontSize: 14, letterSpacing: '0.2em', textTransform: 'uppercase' }}>ვტვირთავ...</p>
+      </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
@@ -430,21 +527,31 @@ function ViewSwitcher({ view, setView, hasRep }) {
   );
 }
 
-function Login({ onLogin }) {
+function Login({ onLogin, initialError }) {
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [step, setStep] = useState(1);
-  const [err, setErr] = useState('');
+  const [err, setErr] = useState(initialError || '');
+  const [loading, setLoading] = useState(false);
 
   const extractCode = (input) => {
     const m = input.match(/(\d{6})\s*$/);
     return m ? m[1] : (input.length === 6 && /^\d+$/.test(input) ? input : null);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const c = extractCode(code.trim());
     if (!c) { setErr('გთხოვთ შეიყვანოთ 6-ნიშნა კოდი ან სრული ლინკი'); return; }
-    setCode(c); setErr(''); setStep(2);
+
+    setLoading(true);
+    setErr('');
+    try {
+      // Redirect to URL with PID + edit mode → triggers auto-load in App
+      window.location.href = `?pid=${c}&edit=1`;
+    } catch (e) {
+      setErr('კავშირის შეცდომა: ' + e.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -485,10 +592,10 @@ function Login({ onLogin }) {
               <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
                 მაგ: <span className="font-mono" style={{ color: theme.wine }}>153205</span> — შენი farmasi.ge რეგისტრაციის ლინკის ბოლო 6 ციფრი
               </p>
-              <button onClick={handleNext}
-                className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+              <button onClick={handleNext} disabled={loading}
+                className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50"
                 style={{ background: theme.ink, color: theme.cream }}>
-                გაგრძელება <Ic name="arrow-right" className="w-4 h-4" />
+                {loading ? 'ვამოწმებ...' : <>გაგრძელება <Ic name="arrow-right" className="w-4 h-4" /></>}
               </button>
             </>
           ) : (
@@ -527,8 +634,11 @@ function Login({ onLogin }) {
 
 function Dashboard({ rep, setRep, repCode, onPreview }) {
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const fileRef = useRef(null);
-  const shareUrl = `farmasi-rep.ge/r/${repCode}`;
+  const shareUrl = `${window.location.host}/?pid=${repCode}`;
   const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
   const onPhoto = (e) => {
     const f = e.target.files?.[0];
@@ -541,6 +651,43 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
     navigator.clipboard?.writeText('https://' + shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setSaveError('');
+    try {
+      const result = await api({
+        action: 'save_rep',
+        pid: repCode,
+        name: rep.name,
+        bio: rep.bio,
+        city: rep.city,
+        phone: rep.phone,
+        whatsapp: rep.whatsapp,
+        instagram: rep.instagram,
+        facebook: rep.facebook,
+        tiktok: rep.tiktok,
+        youtube: rep.youtube,
+        telegram: rep.telegram,
+        // photo_url left out for now — base64 too large for JSONP, will handle separately
+      });
+      if (result.ok) {
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 3000);
+      } else {
+        setSaveError(result.error || 'შენახვის შეცდომა');
+      }
+    } catch (e) {
+      setSaveError('კავშირის შეცდომა: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    await saveProfile();
+    onPreview();
   };
   return (
     <div className="min-h-screen pb-20" style={{ background: theme.cream }}>
@@ -625,11 +772,36 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
             <Input icon="telegram"  iconType="social" label="Telegram"  value={rep.telegram}  onChange={upd('telegram')}  placeholder="@yourhandle" />
           </div>
         </Card>
-        <button onClick={onPreview}
-          className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-display text-lg transition hover:scale-[1.01]"
-          style={{ background: theme.ink, color: theme.cream }}>
-          ნახე ლენდინგი მომხმარებლის თვალით <Ic name="arrow-right" className="w-4 h-4" />
-        </button>
+
+        {/* Save error message */}
+        {saveError && (
+          <div className="px-4 py-3 rounded-xl text-sm" style={{ background: theme.rose + '22', color: theme.wine, border: `1px solid ${theme.rose}55` }}>
+            ⚠️ {saveError}
+          </div>
+        )}
+
+        {/* Save + Preview action row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onClick={saveProfile} disabled={saving}
+            className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
+            style={{ background: theme.wine, color: theme.cream }}>
+            {saving ? 'ვინახავ...' : <><Ic name="save" className="w-4 h-4" /> შენახვა</>}
+          </button>
+          <button onClick={handlePreview} disabled={saving}
+            className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
+            style={{ background: theme.ink, color: theme.cream }}>
+            <Ic name="eye" className="w-4 h-4" /> ნახე ლენდინგი
+          </button>
+        </div>
+
+        {/* Saved toast */}
+        {savedToast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full flex items-center gap-2 z-50 anim-fadeup"
+            style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.5)' }}>
+            <Ic name="check-circle" className="w-4 h-4" />
+            <span className="text-sm font-medium">შენახულია</span>
+          </div>
+        )}
       </main>
     </div>
   );
