@@ -949,6 +949,7 @@ function Input({ label, value, onChange, placeholder, icon, iconType, small, gre
 
 function PublicPage({ rep, repCode, onProduct }) {
   const [chatOpen, setChatOpen] = useState(false);
+  const [photoZoom, setPhotoZoom] = useState(false);
   const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
   const goCatalog = () => window.open(CATALOG_URL, '_blank');
@@ -980,12 +981,19 @@ function PublicPage({ rep, repCode, onProduct }) {
             <div className="relative">
               <div className="absolute -inset-2 rounded-full"
                 style={{ background: `conic-gradient(${theme.gold}, ${theme.rose}, ${theme.wine}, ${theme.gold})`, opacity: 0.4, filter: 'blur(8px)' }} />
-              <div className="relative w-36 h-36 rounded-full overflow-hidden"
-                style={{ border: `3px solid ${theme.ivory}`, boxShadow: '0 20px 50px -10px rgba(122,30,44,0.3)' }}>
+              <div onClick={() => rep.photo && setPhotoZoom(true)}
+                className="relative w-36 h-36 rounded-full overflow-hidden transition hover:scale-105"
+                style={{ border: `3px solid ${theme.ivory}`, boxShadow: '0 20px 50px -10px rgba(122,30,44,0.3)', cursor: rep.photo ? 'zoom-in' : 'default' }}>
                 {rep.photo
                   ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
                   : <div className="w-full h-full flex items-center justify-center text-4xl"
                        style={{ background: theme.mist, color: theme.gold }}>{rep.name.charAt(0) || '?'}</div>}
+                {rep.photo && (
+                  <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center"
+                    style={{ background: theme.cream, border: `2px solid ${theme.gold}` }}>
+                    <Ic name="zoom-in" className="w-3.5 h-3.5" style={{ color: theme.wine }} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1404,6 +1412,29 @@ function PublicPage({ rep, repCode, onProduct }) {
       )}
 
       {chatOpen && <ChatModal rep={rep} onClose={() => setChatOpen(false)} />}
+
+      {/* Photo Zoom Lightbox */}
+      {photoZoom && rep.photo && (
+        <div onClick={() => setPhotoZoom(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fadeup"
+          style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)' }}>
+          <button onClick={() => setPhotoZoom(false)}
+            className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110"
+            style={{ background: theme.cream, color: theme.ink }}>
+            <Ic name="x" className="w-5 h-5" />
+          </button>
+          <div className="relative max-w-3xl max-h-[85vh] w-full" onClick={(e) => e.stopPropagation()}>
+            <img src={rep.photo} alt={rep.name}
+              className="w-full h-full object-contain rounded-2xl"
+              style={{ maxHeight: '85vh', boxShadow: '0 30px 80px -20px rgba(0,0,0,0.5)' }} />
+            <div className="absolute bottom-0 left-0 right-0 p-5 rounded-b-2xl text-center"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
+              <p className="font-display text-2xl" style={{ color: theme.cream }}>{rep.name}</p>
+              {rep.city && <p className="text-sm opacity-80" style={{ color: theme.cream }}>{rep.city}</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
