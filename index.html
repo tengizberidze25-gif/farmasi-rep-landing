@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FARMASI · წარმომადგენლის Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;500;600;700;800;900&family=FiraGO:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body { font-family: 'FiraGO', 'Noto Serif Georgian', system-ui, sans-serif; margin: 0; background: #FFFFFF; }
+  .font-display { font-family: 'Noto Serif Georgian', 'Cormorant Garamond', Georgia, serif; font-weight: 600; letter-spacing: -0.015em; }
+  .font-display-lat { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
+  .grain { position: relative; }
+  .grain::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .anim-fadeup { animation: fadeUp 0.6s ease-out both; }
+  .anim-float { animation: float 4s ease-in-out infinite; }
+  .icn { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; }
+  .product-card:hover .product-mockup { transform: scale(1.06) rotate(-2deg); }
+  .product-mockup { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useState, useRef, useEffect } = React;
+
+function Ic({ name, className = '', style = {} }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) {
+      ref.current.innerHTML = '';
+      const key = name.split('-').map(s => s[0].toUpperCase() + s.slice(1)).join('');
+      const icon = window.lucide[key] || window.lucide[name];
+      if (icon) {
+        const svg = window.lucide.createElement(icon);
+        if (svg) ref.current.appendChild(svg);
+      }
+    }
+  }, [name]);
+  return <span ref={ref} className={className} style={{ display: 'inline-flex', ...style }} />;
+}
+
+// ── Social network brand icons (proper logos, no CDN dependency) ──
+const SocialPaths = {
+  instagram: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z',
+  facebook:  'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
+  tiktok:    'M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.07A6.33 6.33 0 005.8 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1.84-.1z',
+  youtube:   'M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z',
+  telegram:  'M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212-.07-.062-.174-.041-.249-.024-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z',
+  whatsapp:  'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.464 3.488',
+};
+
+function SocialIcon({ name, className = '', style = {} }) {
+  const path = SocialPaths[name];
+  if (!path) return null;
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}
+      style={{ display: 'block', ...style }}>
+      <path d={path} />
+    </svg>
+  );
+}
+
+const theme = {
+  cream: '#FFFFFF',     // pure white main background
+  ivory: '#FAFAFA',     // very subtle off-white for cards
+  wine:  '#E50571',     // FARMASI signature hot pink — main brand
+  rose:  '#F472B6',     // soft pink
+  blush: '#FCE7F3',     // pale pink
+  gold:  '#BE185D',     // deep berry-pink for tracked uppercase labels
+  ink:   '#0F0F0F',     // near-black text
+  mist:  '#F4F4F5',     // very light gray
+};
+
+const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
+
+const Mockups = {
+  serum: ({ accent = '#7A1E2C' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="bottle1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.9"/>
+          <stop offset="0.5" stopColor={accent} stopOpacity="0.85"/>
+          <stop offset="1" stopColor={accent} stopOpacity="1"/>
+        </linearGradient>
+        <linearGradient id="cap1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#2a1a14"/><stop offset="1" stopColor="#0a0604"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="55" ry="6" fill="#000" opacity="0.15"/>
+      <rect x="80" y="20" width="40" height="8" rx="2" fill="url(#cap1)"/>
+      <rect x="84" y="28" width="32" height="34" rx="3" fill="url(#cap1)"/>
+      <rect x="88" y="62" width="24" height="8" fill="#1a0e0a"/>
+      <path d="M 70 70 L 130 70 L 135 90 L 135 210 Q 135 220 125 220 L 75 220 Q 65 220 65 210 L 65 90 Z" fill="url(#bottle1)"/>
+      <rect x="75" y="120" width="50" height="70" fill="#fff" opacity="0.95" rx="2"/>
+      <text x="100" y="145" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="11" fontStyle="italic" fill={accent} fontWeight="600">FARMASI</text>
+      <line x1="82" y1="152" x2="118" y2="152" stroke={accent} strokeWidth="0.5" opacity="0.4"/>
+      <text x="100" y="168" textAnchor="middle" fontFamily="serif" fontSize="6" fill="#231712" letterSpacing="1">SERUM</text>
+      <text x="100" y="180" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.7">30 ml</text>
+      <path d="M 75 80 L 75 200 Q 75 210 80 210 L 82 210 Q 78 210 78 200 L 78 90 Q 78 80 82 80 Z" fill="#fff" opacity="0.4"/>
+    </svg>
+  ),
+  lipstick: ({ accent = '#C9536B' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="lipBody" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#1a0e0a"/><stop offset="0.5" stopColor="#3a2218"/><stop offset="1" stopColor="#0a0604"/>
+        </linearGradient>
+        <linearGradient id="lipColor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={accent}/><stop offset="1" stopColor="#7A1E2C"/>
+        </linearGradient>
+        <linearGradient id="goldRing" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#d4a960"/><stop offset="0.5" stopColor="#f5e0a8"/><stop offset="1" stopColor="#a87a3a"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="35" ry="5" fill="#000" opacity="0.15"/>
+      <rect x="80" y="120" width="40" height="100" rx="2" fill="url(#lipBody)"/>
+      <rect x="78" y="116" width="44" height="8" fill="url(#goldRing)"/>
+      <rect x="78" y="124" width="44" height="2" fill="#a87a3a" opacity="0.5"/>
+      <rect x="82" y="60" width="36" height="58" rx="1" fill="url(#lipBody)"/>
+      <path d="M 88 60 L 88 30 Q 88 20 95 18 L 105 22 Q 112 28 112 40 L 112 60 Z" fill="url(#lipColor)"/>
+      <path d="M 88 60 L 88 35 Q 88 28 92 28 L 92 60 Z" fill="#fff" opacity="0.2"/>
+      <rect x="83" y="63" width="2" height="50" fill="#fff" opacity="0.3"/>
+      <rect x="83" y="125" width="2" height="90" fill="#fff" opacity="0.2"/>
+      <text x="100" y="170" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="9" fontStyle="italic" fill="#d4a960" fontWeight="500">FARMASI</text>
+      <line x1="86" y1="178" x2="114" y2="178" stroke="#d4a960" strokeWidth="0.3" opacity="0.6"/>
+      <text x="100" y="195" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#d4a960" letterSpacing="2">MATTE</text>
+    </svg>
+  ),
+  perfume: ({ accent = '#B8924E' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="perfBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.95"/>
+          <stop offset="0.4" stopColor="#fff5e0" stopOpacity="0.9"/>
+          <stop offset="1" stopColor={accent} stopOpacity="0.8"/>
+        </linearGradient>
+        <linearGradient id="perfCap" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a2a14"/><stop offset="1" stopColor="#1a0e04"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="55" ry="6" fill="#000" opacity="0.15"/>
+      <rect x="92" y="20" width="16" height="6" fill="url(#perfCap)"/>
+      <rect x="78" y="26" width="44" height="20" rx="1" fill="url(#perfCap)"/>
+      <rect x="78" y="44" width="44" height="3" fill="#0a0604"/>
+      <rect x="86" y="47" width="28" height="12" fill="url(#perfBody)" opacity="0.7"/>
+      <rect x="55" y="59" width="90" height="155" rx="6" fill="url(#perfBody)"/>
+      <rect x="60" y="65" width="6" height="140" rx="3" fill="#fff" opacity="0.6"/>
+      <rect x="135" y="80" width="3" height="100" rx="1.5" fill="#fff" opacity="0.4"/>
+      <text x="100" y="125" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="18" fontStyle="italic" fill={accent} fontWeight="500">Tantalize</text>
+      <line x1="75" y1="135" x2="125" y2="135" stroke={accent} strokeWidth="0.4"/>
+      <text x="100" y="148" textAnchor="middle" fontFamily="serif" fontSize="5" fill="#231712" letterSpacing="3" opacity="0.7">EAU DE PARFUM</text>
+      <text x="100" y="180" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="7" fontStyle="italic" fill="#231712" opacity="0.5">FARMASI</text>
+      <text x="100" y="200" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.5">50 ml ⋅ 1.7 fl.oz</text>
+    </svg>
+  ),
+  cream: ({ accent = '#E8C9C0' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="jarBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.95"/><stop offset="1" stopColor={accent}/>
+        </linearGradient>
+        <linearGradient id="jarLid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#d4a960"/><stop offset="0.5" stopColor="#f5e0a8"/><stop offset="1" stopColor="#a87a3a"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="65" ry="7" fill="#000" opacity="0.15"/>
+      <ellipse cx="100" cy="60" rx="65" ry="10" fill="url(#jarLid)"/>
+      <rect x="35" y="60" width="130" height="22" fill="url(#jarLid)"/>
+      <ellipse cx="100" cy="82" rx="65" ry="6" fill="#a87a3a" opacity="0.4"/>
+      <path d="M 38 82 L 162 82 L 158 215 Q 158 222 150 222 L 50 222 Q 42 222 42 215 Z" fill="url(#jarBody)"/>
+      <ellipse cx="100" cy="82" rx="62" ry="5" fill="#fff" opacity="0.6"/>
+      <rect x="55" y="120" width="90" height="65" fill="#fff" opacity="0.85" rx="2"/>
+      <text x="100" y="142" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="12" fontStyle="italic" fill="#7A1E2C" fontWeight="500">FARMASI</text>
+      <line x1="70" y1="150" x2="130" y2="150" stroke="#7A1E2C" strokeWidth="0.3" opacity="0.5"/>
+      <text x="100" y="163" textAnchor="middle" fontFamily="serif" fontSize="6" fill="#231712" letterSpacing="2">ROYAL JELLY</text>
+      <text x="100" y="174" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.7">NIGHT CREAM</text>
+      <text x="100" y="183" textAnchor="middle" fontFamily="serif" fontSize="3.5" fill="#231712" opacity="0.5">50 ml</text>
+      <path d="M 48 90 L 48 210 Q 48 215 52 215 L 54 215 Q 50 215 50 210 L 50 95 Q 50 90 54 90 Z" fill="#fff" opacity="0.5"/>
+    </svg>
+  ),
+  palette: ({ accent = '#C9536B' }) => (
+    <svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="palBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1a0e0a"/><stop offset="0.5" stopColor="#3a2218"/><stop offset="1" stopColor="#0a0604"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="120" cy="185" rx="80" ry="6" fill="#000" opacity="0.18"/>
+      <rect x="30" y="50" width="180" height="130" rx="6" fill="url(#palBody)"/>
+      <rect x="30" y="50" width="180" height="3" fill="#d4a960"/>
+      <rect x="30" y="177" width="180" height="3" fill="#a87a3a"/>
+      <rect x="40" y="58" width="160" height="50" fill="#2a1610" rx="2"/>
+      <text x="120" y="80" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="14" fontStyle="italic" fill="#d4a960" fontWeight="500">FARMASI</text>
+      <text x="120" y="95" textAnchor="middle" fontFamily="serif" fontSize="5" fill="#d4a960" letterSpacing="3" opacity="0.8">BLUSH PALETTE</text>
+      {[
+        { x: 50, c: '#fce7f3' }, { x: 90, c: '#f9a8d4' }, { x: 130, c: '#ec4899' }, { x: 170, c: '#be185d' },
+        { x: 50, c: '#fbcfe8', y: 145 }, { x: 90, c: '#f472b6', y: 145 }, { x: 130, c: '#db2777', y: 145 }, { x: 170, c: '#9d174d', y: 145 },
+      ].map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x + 15} cy={(p.y || 130) + 5} r="14" fill="#0a0604"/>
+          <circle cx={p.x + 15} cy={(p.y || 130) + 5} r="12" fill={p.c}/>
+          <ellipse cx={p.x + 12} cy={(p.y || 130) + 2} rx="4" ry="2" fill="#fff" opacity="0.3"/>
+        </g>
+      ))}
+    </svg>
+  ),
+  lotion: ({ accent = '#EFE5D8' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="lotBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.95"/><stop offset="1" stopColor={accent}/>
+        </linearGradient>
+        <linearGradient id="lotPump" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a2a14"/><stop offset="1" stopColor="#1a0e04"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="55" ry="6" fill="#000" opacity="0.15"/>
+      <rect x="78" y="14" width="20" height="8" rx="1" fill="url(#lotPump)"/>
+      <rect x="92" y="22" width="22" height="14" rx="2" fill="url(#lotPump)"/>
+      <rect x="86" y="36" width="28" height="14" rx="1" fill="url(#lotPump)"/>
+      <rect x="60" y="50" width="80" height="170" rx="4" fill="url(#lotBody)"/>
+      <rect x="65" y="60" width="4" height="150" rx="2" fill="#fff" opacity="0.7"/>
+      <rect x="132" y="80" width="2" height="120" rx="1" fill="#fff" opacity="0.4"/>
+      <rect x="68" y="115" width="64" height="80" fill="#fff" opacity="0.4" rx="1"/>
+      <text x="100" y="135" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="11" fontStyle="italic" fill="#7A1E2C" fontWeight="500">FARMASI</text>
+      <line x1="78" y1="142" x2="122" y2="142" stroke="#7A1E2C" strokeWidth="0.3" opacity="0.5"/>
+      <text x="100" y="158" textAnchor="middle" fontFamily="serif" fontSize="6" fill="#231712" letterSpacing="2">BODY SILK</text>
+      <text x="100" y="170" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.7">LOTION</text>
+      <text x="100" y="185" textAnchor="middle" fontFamily="serif" fontSize="3.5" fill="#231712" opacity="0.5">250 ml</text>
+    </svg>
+  ),
+};
+
+const products = [
+  {
+    id: 909,
+    name: 'Dr. C. Tuna ნივრის შამპუნი',
+    fullName: 'Vitalizing Hair Care · Garlic & Capixyl™',
+    cat: 'თმის მოვლა · 500 მლ',
+    headline: 'ფუფუნება ყოველ ღერში',
+    subheadline: 'არ არის უბრალოდ თმის მოვლა — ეს არის Dr. C. Tuna-ს ლაბორატორიებში შექმნილი რიტუალი, რომელიც თქვენს თმას ბუნებრივ დიდებულებას უბრუნებს.',
+    price: 19.99, tag: 'ბესტსელერი',
+    image: 'vitalizing-shampoo.png',
+    heroImage: 'vitalizing-before-after-hero.png',
+    description: 'ნივრის ექსტრაქტისა და ინოვაციური Capixyl™ კომპლექსის სინერგია უზრუნველყოფს თმის შეუდარებელ სიმკვრივესა და სიჯანსაღეს — სასიამოვნო, ნაზი არომატით.',
+    bg: ['#FCE7F3', '#FFFFFF'], accent: '#E50571',
+    sku: '1000667',
+    rating: 4.8,
+    reviewCount: 247,
+    benefits: [
+      { ic: 'shield-check', t: 'თმის ცვენის შეჩერება', d: 'ნივრის ექსტრაქტი აძლიერებს ფოლიკულებს და საგრძნობლად ამცირებს ცვენას' },
+      { ic: 'trending-up',  t: 'ზრდის სტიმულირება',     d: 'CAPIXYL™ კომპლექსი — ცვენის წინააღმდეგ ბრძოლის ოქროს სტანდარტი' },
+      { ic: 'sparkles',     t: 'ფუფუნება ყოველ ღერში',  d: 'B5 ვიტამინი თმას ხდის აბრეშუმისებრს, დამყოლს და გამომხატველს' },
+      { ic: 'wind',         t: 'უსიამოვნო სუნის გარეშე', d: 'ნივრის ძალა — მხოლოდ სარგებელი და ბზინვარება' },
+    ],
+    problems: {
+      headline: 'ნაცნობი გრძნობაა?',
+      subtitle: 'თუ ერთს მაინც ცნობ — Vitalizing შენთვისაა',
+      items: [
+        { ic: 'frown',     t: 'სარკეში თმის ცვენას ვხედავ',     d: 'ყოველი დაბანის შემდეგ თმის ღერები სავარცხელზე და სამოსზე რჩება' },
+        { ic: 'cloud',     t: 'თმა სიცოცხლე დაკარგა',           d: 'უსიცოცხლო, გაცვეთილი, ბრწყინვალების გარეშე — სტრესი და დროა მიზეზი' },
+        { ic: 'alert-circle', t: 'ფესვები სუსტდება',            d: 'მოცულობა იკლებს, თხელი ღერები აღარ აქვს ის სიმკვრივე, რაც ადრე' },
+        { ic: 'heart-crack', t: 'თავდაჯერებულობა მცირდება',     d: 'ვცდილობ თმა დავფარო, თავი არასასიამოვნოდ ვიგრძნო ფოტოებზე' },
+      ],
+    },
+    ingredients: [
+      { name: 'ნივრის ექსტრაქტი', desc: 'ბუნებრივი ანტიბაქტერიული, ამაგრებს თმის ფოლიკულებს' },
+      { name: 'CAPIXYL™ კომპლექსი', desc: 'ხელს უშლის თმის ცვენას, ასტიმულირებს ზრდას' },
+      { name: 'B5 ვიტამინი', desc: 'კვებავს თავის კანს, ანიჭებს ბრწყინვალებას' },
+      { name: 'პროტეინები', desc: 'აღადგენს დაზიანებულ თმის სტრუქტურას' },
+    ],
+    howItWorks: [
+      { step: 1, ic: 'sun',     title: 'გამოღვიძება', desc: 'ასტიმულირებს მიკროცირკულაციას თავის კანზე' },
+      { step: 2, ic: 'shield',  title: 'გამაგრება',   desc: 'ამაგრებს თმის ღერს ფესვიდან ბოლოებამდე' },
+      { step: 3, ic: 'umbrella', title: 'დაცვა',      desc: 'ქმნის დამცავ ბარიერს გარემო ფაქტორების წინააღმდეგ' },
+    ],
+    howToUse: [
+      { step: 1, title: 'დაასველე', desc: 'სველ თმას წაუსვი მცირე რაოდენობა' },
+      { step: 2, title: 'მასაჟი', desc: 'მსუბუქი მასაჟით განანაწილე თავის კანზე' },
+      { step: 3, title: 'ჩამოიბანე', desc: 'ჩამოიბანე უხვი წყლით, საჭიროებისას გაიმეორე' },
+    ],
+    suitableFor: ['თმის ცვენისთვის', 'ცხიმიანი თმისთვის', 'ქერტლიანი თავის კანისთვის', 'ყველა ტიპის თმისთვის'],
+    features: [
+      { ic: 'leaf',         t: 'არ შეიცავს პარაბენებს' },
+      { ic: 'shield-check', t: 'დერმატოლოგიურად დადასტურებული' },
+      { ic: 'heart',        t: 'არ იტესტება ცხოველებზე' },
+      { ic: 'sparkles',     t: 'უპარაბენო ფორმულა' },
+    ],
+    fullIngredients: 'Aqua, Sodium Laureth Sulfate, Cocamidopropyl Betaine, Sodium Chloride, Allium Sativum (Garlic) Bulb Extract, Acetyl Tetrapeptide-3, Trifolium Pratense (Clover) Flower Extract, Panthenol, Hydrolyzed Wheat Protein, Niacinamide, Biotin, Glycerin, Citric Acid, Parfum, Phenoxyethanol, Sodium Benzoate.',
+    reviews: [
+      { name: 'ანი, 28', stars: 5, text: 'წლებია თმის ცვენას ვებრძვი. Dr. C. Tuna-ს შამპუნმა შედეგი 2 კვირაში მაჩვენა. თმა ბევრად უფრო სქელი და ცოცხალი ჩანს!', date: '2 კვირის წინ' },
+      { name: 'მარიამ, 34', stars: 5, text: 'სუნი ნელ-ნელა იხდის თავს, ეფექტი კი თვალნათლივ ჩანს. ყოველთვის ვიყიდი.', date: '1 თვის წინ' },
+      { name: 'თამარ, 41', stars: 4, text: 'კარგი პროდუქტია, თავის კანი აღარ მექავება. ერთადერთი — ცოტა ბევრი ჩამობანა მჭირდება.', date: '3 კვირის წინ' },
+    ],
+    faqs: [
+      { q: 'რამდენ ხანში ჩანს შედეგი?', a: 'რეგულარული გამოყენების შემთხვევაში 2-4 კვირაში შეამჩნევთ თმის ცვენის შესამჩნევ შემცირებას, ხოლო სრული ეფექტი — 8 კვირაში.' },
+      { q: 'შემიძლია ყოველდღე გამოვიყენო?', a: 'დიახ, შამპუნი მსუბუქი ფორმულისაა და ყოველდღიური გამოყენებისთვისაა განკუთვნილი.' },
+      { q: 'შეღებილ თმაზე ვარგა?', a: 'დიახ, შესაფერისია ყველა ტიპის თმისთვის, შეღებილის ჩათვლით. ფერი არ ზიანდება.' },
+      { q: 'ნიორის სუნი რჩება?', a: 'არა, ფორმულა შემუშავებულია ისე, რომ მაქსიმალურად შემცირებულია ნივრის უსიამოვნო სუნი — დარჩება მხოლოდ ნაზი არომატი.' },
+    ],
+    beforeAfter: [
+      {
+        image: 'before-after-women.png',
+        title: '8 კვირის შემდეგ',
+        subtitle: 'ანი ბერიძე, 28',
+        note: 'შამპუნი + თმის ნიღაბი, კვირაში 3-ჯერ',
+        result: 'თმის სიხშირის +40%'
+      },
+      {
+        image: 'before-after-men.png',
+        title: '12 კვირის შემდეგ',
+        subtitle: 'გიორგი მ., 35',
+        note: 'შამპუნი + ზეთი + ნიღაბი, რეგულარული რიტუალი',
+        result: 'ცვენის შემცირება -85%'
+      },
+    ],
+    videos: [
+      {
+        src: 'video-shampoo-benefits.mp4',
+        title: 'პროდუქტის უპირატესობები',
+        subtitle: 'რა ხდის Vitalizing-ს უნიკალურს',
+        poster: 'before-after-women.png',
+      },
+      {
+        src: 'video-hair-routine.mp4',
+        title: 'სრული თმის რიტუალი',
+        subtitle: 'შამპუნი + ნიღაბი + ზეთი — როგორ მუშაობს ერთად',
+        poster: 'before-after-men.png',
+      },
+    ],
+    ritual: {
+      headline: 'თქვენი რიტუალი იწყება აქ',
+      subtitle: 'სამი პროდუქტი — ერთი მიზანი. შამპუნი, ნიღაბი, ზეთი — Dr. C. Tuna Vitalizing-ის სრული კოლექცია მაქსიმალური შედეგისთვის.',
+      bundleImage: 'vitalizing-bundle-products.png',
+      bundlePrice: 54.99,
+      savings: 9.98,
+      tagline: 'მიეცით თქვენს თმას უფლება, გამოიყურებოდეს ისე, როგორც თქვენ იმსახურებთ.',
+      items: [
+        {
+          step: 1, name: 'აღმდგენი შამპუნი', subtitle: 'ძალის დაბრუნება', price: 19.99,
+          image: 'vitalizing-shampoo.png',
+          quote: 'გახსოვთ ის გრძნობა, როცა თქვენი თმა სიცოცხლით სავსე და მორჩილი იყო?',
+          desc: 'ნივრისა და კაპიქსილის ექსტრაქტით — მეტია ვიდრე უბრალო ჰიგიენა. ეს არის თქვენი თმის ყოველდღიური გამამხნევებელი თერაპია, ნაბიჯი იმ სიმტკიცისკენ, რომელიც დროთა განმავლობაში დაიკარგა. იგრძენით, როგორ ივსება თითოეული ღერი ენერგიით.',
+          benefit: 'ბუნებრივი ბზინვარება, რომელიც თქვენს ღიმილს ასე უხდება',
+          volume: '500 მლ',
+          accent: '#E50571'
+        },
+        {
+          step: 2, name: 'ინტენსიური ნიღაბი', subtitle: 'სინაზე და მზრუნველობა', price: 17.99,
+          image: 'vitalizing-mask.png',
+          quote: 'მიეცით თავს უფლება — რამდენიმე წუთით სრულ სიმშვიდეში ჩაიძიროთ.',
+          desc: 'ვიტამინ B5-ით თქვენს თმას ისეთივე სინაზით ეხვევა, როგორც ყველაზე თბილი ჩახუტება. ღრმად კვებავს და აცოცხლებს დაზიანებულ სტრუქტურას, აქრობს დაღლილობის კვალს, ტოვებს მხოლოდ აბრეშუმისებრ სიმსუბუქეს.',
+          benefit: 'მომენტი, როცა საკუთარ თავზე ზრუნვა ხელშესახები ხდება',
+          volume: '200 მლ',
+          accent: '#A21CAF'
+        },
+        {
+          step: 3, name: 'გამაძლიერებელი ზეთი', subtitle: 'ჯადოსნური ტრანსფორმაცია', price: 16.99,
+          image: 'vitalizing-oil.png',
+          quote: 'თმის ყოველი ღერი თქვენი ისტორიის ნაწილია.',
+          desc: 'როცა ის სუსტდება, თითქოს თქვენი თავდაჯერებულობაც იკლებს. კონცენტრირებული ფორმულა — იმედის წვეთები ფესვებისთვის. სიღრმისეულად მოქმედებს, რათა დააბრუნოს დაკარგული მოცულობა და სიმკვრივე.',
+          benefit: 'ახალი ენერგია, რომლითაც სარკეში თავდაჯერებულად შეხედავთ',
+          volume: '50 მლ',
+          accent: '#BE185D'
+        },
+      ],
+    },
+  },
+  { id: 2, name: 'Matte Velvet Lipstick',    cat: 'მაკიაჟი',        price: 35,   tag: 'ახალი',     mockup: 'lipstick', bg: ['#FBCFE8', '#FCE7F3'], accent: '#DB2777' },
+  { id: 3, name: 'Tantalize Eau de Parfum',  cat: 'სუნამო',         price: 79,   tag: 'ფავორიტი',  mockup: 'perfume',  bg: ['#F5D0FE', '#FCE7F3'], accent: '#A21CAF' },
+  { id: 4, name: 'Hyaluronic Glow Serum',    cat: 'სახის მოვლა',   price: 65,   tag: 'ვირუსული',  mockup: 'serum',    bg: ['#FECDD3', '#FCE7F3'], accent: '#E11D48' },
+  { id: 5, name: 'Velvet Blush Palette',     cat: 'მაკიაჟი',        price: 42,   tag: '',          mockup: 'palette',  bg: ['#FBCFE8', '#FCE7F3'], accent: '#BE185D' },
+  { id: 6, name: 'Body Silk Lotion',         cat: 'სხეულის მოვლა', price: 28,   tag: '',          mockup: 'lotion',   bg: ['#FAE8FF', '#FCE7F3'], accent: '#A21CAF' },
+];
+
+function App() {
+  const [view, setView] = useState('login');
+  const [repCode, setRepCode] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [rep, setRep] = useState({
+    name: '', bio: '', photo: null, phone: '', whatsapp: '',
+    instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '',
+  });
+  const openProduct = (p) => { setSelectedProduct(p); setView('product'); window.scrollTo(0, 0); };
+  const backToPublic = () => { setSelectedProduct(null); setView('public'); window.scrollTo(0, 0); };
+
+  return (
+    <div style={{ background: theme.cream, minHeight: '100vh' }}>
+      <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />
+      {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} />}
+      {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} />}
+      {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} />}
+      {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} />}
+    </div>
+  );
+}
+
+function ViewSwitcher({ view, setView, hasRep }) {
+  const items = [
+    { k: 'login', l: 'შესვლა' },
+    { k: 'dashboard', l: 'პანელი', disabled: !hasRep },
+    { k: 'public', l: 'საჯარო ფეიჯი', disabled: !hasRep },
+  ];
+  return (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 rounded-full backdrop-blur-md text-xs"
+      style={{ background: 'rgba(35,23,18,0.85)', border: `1px solid ${theme.gold}33` }}>
+      {items.map(it => (
+        <button key={it.k} disabled={it.disabled} onClick={() => !it.disabled && setView(it.k)}
+          className="px-3 py-1.5 rounded-full transition-all disabled:opacity-30"
+          style={{ background: view === it.k ? theme.cream : 'transparent', color: view === it.k ? theme.ink : theme.cream }}>
+          {it.l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Login({ onLogin }) {
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [step, setStep] = useState(1);
+  const [err, setErr] = useState('');
+
+  const extractCode = (input) => {
+    const m = input.match(/(\d{6})\s*$/);
+    return m ? m[1] : (input.length === 6 && /^\d+$/.test(input) ? input : null);
+  };
+
+  const handleNext = () => {
+    const c = extractCode(code.trim());
+    if (!c) { setErr('გთხოვთ შეიყვანოთ 6-ნიშნა კოდი ან სრული ლინკი'); return; }
+    setCode(c); setErr(''); setStep(2);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-5 py-20 grain relative" style={{ background: theme.cream }}>
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-25 blur-3xl"
+        style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
+      <div className="relative w-full max-w-md anim-fadeup">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6"
+            style={{ background: `${theme.wine}11`, border: `1px solid ${theme.wine}22` }}>
+            <Ic name="sparkles" className="w-3.5 h-3.5" style={{ color: theme.wine }} />
+            <span className="text-xs tracking-widest uppercase" style={{ color: theme.wine }}>FARMASI Georgia</span>
+          </div>
+          <h1 className="font-display text-5xl mb-2" style={{ color: theme.ink }}>წარმომადგენლის</h1>
+          <p className="font-display-lat text-3xl" style={{ color: theme.wine }}>portfolio</p>
+        </div>
+        <div className="rounded-2xl p-8 backdrop-blur-sm shadow-2xl"
+          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+          {step === 1 ? (
+            <>
+              <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                <span>ნაბიჯი 01 / 02</span>
+                <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+              </div>
+              <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>შენი რეფერალური ლინკი</h2>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>ლინკი ან 6-ნიშნა კოდი</label>
+              <div className="relative">
+                <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(''); }}
+                  placeholder="https://farmasi.ge/ka/signup153205"
+                  className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
+                  style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleNext()} />
+                <Ic name="lock" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2" style={{ color: theme.gold }} />
+              </div>
+              {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
+              <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
+                მაგ: <span className="font-mono" style={{ color: theme.wine }}>153205</span> — შენი farmasi.ge რეგისტრაციის ლინკის ბოლო 6 ციფრი
+              </p>
+              <button onClick={handleNext}
+                className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                style={{ background: theme.ink, color: theme.cream }}>
+                გაგრძელება <Ic name="arrow-right" className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                <span>ნაბიჯი 02 / 02</span>
+                <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+              </div>
+              <h2 className="font-display text-2xl mb-2 mt-3" style={{ color: theme.ink }}>შენი სახელი</h2>
+              <p className="text-sm mb-6" style={{ color: theme.ink + '99' }}>
+                კოდი დადასტურდა: <span className="font-mono" style={{ color: theme.wine }}>{code}</span>
+              </p>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>სახელი და გვარი</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                placeholder="მაგ: ნინო ცინცაძე"
+                className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
+                style={{ background: theme.cream, border: `1.5px solid ${theme.gold}44`, color: theme.ink }}
+                onKeyDown={(e) => e.key === 'Enter' && name && onLogin(code, name)} />
+              <button disabled={!name.trim()} onClick={() => onLogin(code, name.trim())}
+                className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 disabled:opacity-40 hover:scale-[1.01]"
+                style={{ background: theme.wine, color: theme.cream }}>
+                პანელში შესვლა <Ic name="arrow-right" className="w-4 h-4" />
+              </button>
+              <button onClick={() => setStep(1)} className="w-full mt-3 text-xs tracking-widest uppercase py-2"
+                style={{ color: theme.ink + '88' }}>← უკან</button>
+            </>
+          )}
+        </div>
+        <p className="text-center text-xs mt-6" style={{ color: theme.ink + '77' }}>
+          © FARMASI Georgia · Tantalize Cosmetics ოფიციალური წარმომადგენელი
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ rep, setRep, repCode, onPreview }) {
+  const [copied, setCopied] = useState(false);
+  const fileRef = useRef(null);
+  const shareUrl = `farmasi-rep.ge/r/${repCode}`;
+  const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
+  const onPhoto = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => setRep(r => ({ ...r, photo: reader.result }));
+    reader.readAsDataURL(f);
+  };
+  const copyUrl = () => {
+    navigator.clipboard?.writeText('https://' + shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="min-h-screen pb-20" style={{ background: theme.cream }}>
+      <header className="px-5 pt-20 pb-6" style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}22` }}>
+        <div className="max-w-3xl mx-auto">
+          <span className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+            <span className="font-mono" style={{ color: theme.wine }}>#{repCode}</span> · წარმომადგენლის პანელი
+          </span>
+          <h1 className="font-display text-3xl mb-1 mt-2" style={{ color: theme.ink }}>
+            გამარჯობა, {rep.name.split(' ')[0]} 🌹
+          </h1>
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>
+            შეავსე პროფილი — ეს გვერდი ნახავს ყველა, ვინც შენ ლინკზე გადავა
+          </p>
+        </div>
+      </header>
+      <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
+        <Card>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>შენი ლენდინგ ფეიჯი</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>გააზიარე და მიიღე გაყიდვა</p>
+            </div>
+            <button onClick={onPreview} className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition"
+              style={{ background: theme.ink, color: theme.cream }}>
+              <Ic name="eye" className="w-3 h-3" /> ნახე
+            </button>
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-xl"
+            style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
+            <span className="text-sm flex-1 truncate font-mono" style={{ color: theme.wine }}>{shareUrl}</span>
+            <button onClick={copyUrl}
+              className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
+              style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
+              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დააკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+            </button>
+          </div>
+        </Card>
+        <Card>
+          <SectionLabel n="01" t="ფოტო და სახელი" />
+          <div className="flex items-center gap-4">
+            <button onClick={() => fileRef.current?.click()}
+              className="relative w-24 h-24 rounded-full overflow-hidden flex-shrink-0 transition hover:scale-105"
+              style={{ background: theme.mist, border: `2px solid ${theme.gold}66` }}>
+              {rep.photo
+                ? <img src={rep.photo} alt="" className="w-full h-full object-cover" />
+                : <Ic name="camera" className="w-7 h-7 absolute inset-0 m-auto" style={{ color: theme.gold }} />}
+              <div className="absolute bottom-0 left-0 right-0 py-1 text-[10px] tracking-widest uppercase"
+                style={{ background: theme.ink + 'CC', color: theme.cream }}>
+                {rep.photo ? 'შეცვლა' : 'ატვირთე'}
+              </div>
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" onChange={onPhoto} hidden />
+            <div className="flex-1 space-y-2">
+              <Input label="სახელი" value={rep.name} onChange={upd('name')} placeholder="ნინო ცინცაძე" />
+              <Input label="ქალაქი" value={rep.city} onChange={upd('city')} placeholder="თბილისი" small />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>მოკლე ბიო</label>
+            <textarea value={rep.bio} onChange={upd('bio')} rows={3} maxLength={200}
+              placeholder="რას გთავაზობ? რატომ შენ?"
+              className="w-full px-3 py-2.5 rounded-xl outline-none text-sm resize-none"
+              style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+            <p className="text-[10px] mt-1 text-right" style={{ color: theme.ink + '66' }}>{rep.bio.length}/200</p>
+          </div>
+        </Card>
+        <Card>
+          <SectionLabel n="02" t="პირდაპირი კონტაქტი" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input icon="phone" label="ტელეფონი" value={rep.phone} onChange={upd('phone')} placeholder="+995 555 123456" />
+            <Input icon="message-circle" label="WhatsApp" value={rep.whatsapp} onChange={upd('whatsapp')} placeholder="+995 555 123456" green />
+          </div>
+        </Card>
+        <Card>
+          <SectionLabel n="03" t="სოციალური ქსელები" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input icon="instagram" iconType="social" label="Instagram" value={rep.instagram} onChange={upd('instagram')} placeholder="@yourhandle" />
+            <Input icon="facebook"  iconType="social" label="Facebook"  value={rep.facebook}  onChange={upd('facebook')}  placeholder="facebook.com/..." />
+            <Input icon="tiktok"    iconType="social" label="TikTok"    value={rep.tiktok}    onChange={upd('tiktok')}    placeholder="@yourhandle" />
+            <Input icon="youtube"   iconType="social" label="YouTube"   value={rep.youtube}   onChange={upd('youtube')}   placeholder="youtube.com/..." />
+            <Input icon="telegram"  iconType="social" label="Telegram"  value={rep.telegram}  onChange={upd('telegram')}  placeholder="@yourhandle" />
+          </div>
+        </Card>
+        <button onClick={onPreview}
+          className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-display text-lg transition hover:scale-[1.01]"
+          style={{ background: theme.ink, color: theme.cream }}>
+          ნახე ლენდინგი მომხმარებლის თვალით <Ic name="arrow-right" className="w-4 h-4" />
+        </button>
+      </main>
+    </div>
+  );
+}
+
+function Card({ children }) {
+  return <section className="rounded-2xl p-5 sm:p-6 anim-fadeup"
+    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>{children}</section>;
+}
+
+function SectionLabel({ n, t }) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <span className="font-mono text-xs" style={{ color: theme.gold }}>{n}</span>
+      <span className="font-display text-base" style={{ color: theme.ink }}>{t}</span>
+      <div className="flex-1 h-px" style={{ background: `${theme.gold}22` }} />
+    </div>
+  );
+}
+
+function Input({ label, value, onChange, placeholder, icon, iconType, small, green }) {
+  const IconComp = iconType === 'social' ? SocialIcon : Ic;
+  return (
+    <div>
+      <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{label}</label>
+      <div className="relative">
+        {icon && <IconComp name={icon} className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+          style={{ color: green ? '#25D366' : theme.gold }} />}
+        <input type="text" value={value} onChange={onChange} placeholder={placeholder}
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 ${small ? 'py-2' : 'py-2.5'} rounded-xl outline-none text-sm`}
+          style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+      </div>
+    </div>
+  );
+}
+
+function PublicPage({ rep, repCode, onProduct }) {
+  const [chatOpen, setChatOpen] = useState(false);
+  const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
+  const goShop = () => window.open(referralUrl, '_blank');
+  const goCatalog = () => window.open(CATALOG_URL, '_blank');
+
+  const socials = [
+    rep.instagram && { icon: 'instagram', label: 'Instagram', href: rep.instagram.startsWith('http') ? rep.instagram : `https://instagram.com/${rep.instagram.replace('@','')}` },
+    rep.facebook  && { icon: 'facebook',  label: 'Facebook',  href: rep.facebook.startsWith('http') ? rep.facebook : `https://facebook.com/${rep.facebook}` },
+    rep.tiktok    && { icon: 'tiktok',    label: 'TikTok',    href: rep.tiktok.startsWith('http') ? rep.tiktok : `https://tiktok.com/${rep.tiktok.startsWith('@') ? rep.tiktok : '@'+rep.tiktok}` },
+    rep.youtube   && { icon: 'youtube',   label: 'YouTube',   href: rep.youtube.startsWith('http') ? rep.youtube : `https://youtube.com/${rep.youtube}` },
+    rep.telegram  && { icon: 'telegram',  label: 'Telegram',  href: rep.telegram.startsWith('http') ? rep.telegram : `https://t.me/${rep.telegram.replace('@','')}` },
+  ].filter(Boolean);
+
+  return (
+    <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+      <section className="relative overflow-hidden pt-24 pb-16 px-5"
+        style={{ background: `linear-gradient(180deg, ${theme.ivory} 0%, ${theme.cream} 100%)` }}>
+        <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+        <div className="absolute top-40 -left-20 w-80 h-80 rounded-full opacity-25 blur-3xl"
+          style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
+        <div className="relative max-w-3xl mx-auto">
+          <div className="text-center mb-6 anim-fadeup">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5 text-[10px] tracking-widest uppercase"
+              style={{ background: theme.wine + '11', color: theme.wine, border: `1px solid ${theme.wine}22` }}>
+              <Ic name="sparkles" className="w-3 h-3" /> FARMASI ოფიციალური წარმომადგენელი
+            </div>
+          </div>
+          <div className="flex justify-center mb-6 anim-fadeup">
+            <div className="relative">
+              <div className="absolute -inset-2 rounded-full"
+                style={{ background: `conic-gradient(${theme.gold}, ${theme.rose}, ${theme.wine}, ${theme.gold})`, opacity: 0.4, filter: 'blur(8px)' }} />
+              <div className="relative w-36 h-36 rounded-full overflow-hidden"
+                style={{ border: `3px solid ${theme.ivory}`, boxShadow: '0 20px 50px -10px rgba(122,30,44,0.3)' }}>
+                {rep.photo
+                  ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-4xl"
+                       style={{ background: theme.mist, color: theme.gold }}>{rep.name.charAt(0) || '?'}</div>}
+              </div>
+            </div>
+          </div>
+          <h1 className="text-center font-display text-4xl sm:text-5xl mb-2 anim-fadeup" style={{ color: theme.ink }}>
+            {rep.name || 'შენი სახელი'}
+          </h1>
+          {rep.city && (
+            <p className="text-center text-sm flex items-center justify-center gap-1 mb-4" style={{ color: theme.ink + '99' }}>
+              <Ic name="map-pin" className="w-3 h-3" /> {rep.city}
+            </p>
+          )}
+          {rep.bio && (
+            <p className="text-center max-w-md mx-auto text-base leading-relaxed mb-8 font-display-lat"
+              style={{ color: theme.ink + 'CC' }}>"{rep.bio}"</p>
+          )}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
+            <button onClick={goShop}
+              className="flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+              style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
+              <Ic name="shopping-bag" className="w-4 h-4" /> შეიძინე ახლა
+            </button>
+            {rep.whatsapp && (
+              <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`} target="_blank" rel="noreferrer"
+                className="py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                style={{ background: theme.ivory, color: theme.ink, border: `1.5px solid ${theme.gold}66` }}>
+                <SocialIcon name="whatsapp" className="w-4 h-4" style={{ color: '#25D366' }} /> WhatsApp
+              </a>
+            )}
+          </div>
+          {socials.length > 0 && (
+            <div className="flex justify-center gap-2 mt-6 flex-wrap">
+              {socials.map((s, i) => (
+                <a key={i} href={s.href} target="_blank" rel="noreferrer"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}44`, color: theme.wine }} title={s.label}>
+                  <SocialIcon name={s.icon} className="w-4 h-4" />
+                </a>
+              ))}
+              {rep.phone && (
+                <a href={`tel:${rep.phone}`}
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}44`, color: theme.wine }} title="დარეკე">
+                  <Ic name="phone" className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══ CONNECT — easy contact section ═══ */}
+      {(rep.whatsapp || rep.phone || socials.length > 0) && (
+        <section className="px-5 py-12 relative overflow-hidden"
+          style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.ivory})` }}>
+          <div className="absolute -top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
+            style={{ background: theme.rose }} />
+
+          <div className="relative max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>დამიკავშირდი</p>
+              <h2 className="font-display text-3xl sm:text-4xl mb-2" style={{ color: theme.ink }}>
+                გაქვს <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>კითხვა?</span>
+              </h2>
+              <p className="text-sm" style={{ color: theme.ink + 'AA' }}>
+                აირჩიე შენთვის ყველაზე მოსახერხებელი გზა
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              {rep.whatsapp && (
+                <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`}
+                  target="_blank" rel="noreferrer"
+                  className="p-5 rounded-2xl flex items-center gap-4 transition hover:scale-[1.02] hover:shadow-lg"
+                  style={{ background: '#25D366', color: '#fff' }}>
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,0.2)' }}>
+                    <SocialIcon name="whatsapp" className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-[10px] tracking-widest uppercase opacity-80">სწრაფი მესიჯი</p>
+                    <p className="font-display text-lg leading-tight">WhatsApp</p>
+                    <p className="text-xs opacity-80 truncate">{rep.whatsapp}</p>
+                  </div>
+                  <Ic name="arrow-right" className="w-5 h-5 opacity-60 flex-shrink-0" />
+                </a>
+              )}
+
+              {rep.phone && (
+                <a href={`tel:${rep.phone}`}
+                  className="p-5 rounded-2xl flex items-center gap-4 transition hover:scale-[1.02] hover:shadow-lg"
+                  style={{ background: theme.ink, color: theme.cream }}>
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    <Ic name="phone" className="w-6 h-6" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-[10px] tracking-widest uppercase opacity-70">დარეკე</p>
+                    <p className="font-display text-lg leading-tight">ტელეფონი</p>
+                    <p className="text-xs opacity-70 truncate">{rep.phone}</p>
+                  </div>
+                  <Ic name="arrow-right" className="w-5 h-5 opacity-50 flex-shrink-0" />
+                </a>
+              )}
+            </div>
+
+            {socials.length > 0 && (
+              <>
+                <div className="flex items-center gap-3 my-6">
+                  <div className="flex-1 h-px" style={{ background: `${theme.ink}22` }} />
+                  <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '77' }}>
+                    ან მომყევი
+                  </p>
+                  <div className="flex-1 h-px" style={{ background: `${theme.ink}22` }} />
+                </div>
+
+                <div className="grid gap-3"
+                  style={{ gridTemplateColumns: `repeat(${Math.min(socials.length, 5)}, minmax(0, 1fr))` }}>
+                  {socials.map((s, i) => (
+                    <a key={i} href={s.href} target="_blank" rel="noreferrer"
+                      className="p-4 rounded-2xl flex flex-col items-center gap-2 transition hover:scale-105 hover:shadow-md"
+                      style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                        style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.cream})` }}>
+                        <SocialIcon name={s.icon} className="w-5 h-5" style={{ color: theme.wine }} />
+                      </div>
+                      <span className="text-[10px] tracking-wide uppercase" style={{ color: theme.ink }}>{s.label}</span>
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      )}
+
+      <section className="px-5 py-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>კოლექცია · 2025</p>
+              <h2 className="font-display text-4xl sm:text-5xl leading-tight" style={{ color: theme.ink }}>
+                ჩემი<br/>
+                <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>favourites</span>
+              </h2>
+            </div>
+            <button onClick={goCatalog} className="text-xs flex items-center gap-1 hover:gap-2 transition-all pb-2"
+              style={{ color: theme.wine }}>
+              მთლიანი კატალოგი <Ic name="chevron-right" className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <ProductCard p={products[0]} onClick={() => onProduct(products[0])} featured />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            {products.slice(1, 3).map(p => <ProductCard key={p.id} p={p} onClick={() => onProduct(p)} />)}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {products.slice(3).map(p => <ProductCard key={p.id} p={p} onClick={() => onProduct(p)} />)}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
+            <button onClick={goCatalog}
+              className="py-4 rounded-2xl flex items-center justify-center gap-2 text-sm tracking-wider uppercase transition hover:scale-[1.01]"
+              style={{ background: 'transparent', color: theme.wine, border: `1.5px solid ${theme.wine}` }}>
+              სრული კატალოგი <Ic name="external-link" className="w-4 h-4" />
+            </button>
+            <button onClick={goShop}
+              className="py-4 rounded-2xl flex items-center justify-center gap-2 text-sm tracking-wider uppercase transition hover:scale-[1.01]"
+              style={{ background: theme.wine, color: theme.cream }}>
+              <Ic name="shopping-bag" className="w-4 h-4" /> შეიძინე
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ ABOUT FARMASI — brand intro with video and stats ═══ */}
+      <section className="px-5 py-16" style={{ background: theme.ivory }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center mb-12">
+            {/* Video */}
+            <BrandVideo videoId="NlRhIeKCwDk" thumbnail="https://i.ytimg.com/vi/NlRhIeKCwDk/maxresdefault.jpg" />
+
+            {/* Story */}
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-3" style={{ color: theme.gold }}>FARMASI-ს ისტორია</p>
+              <h2 className="font-display text-3xl sm:text-4xl leading-tight mb-5" style={{ color: theme.ink }}>
+                <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>1950</span> წლიდან —
+                სილამაზე და ხარისხი
+              </h2>
+              <p className="text-base leading-relaxed mb-4" style={{ color: theme.ink + 'CC' }}>
+                ფარმასის ისტორია 1950 წელს იღებს სათავეს, როცა ექიმმა <span style={{ color: theme.wine }}>ჟევდერ ტუნამ</span> დაიწყო კოსმეტიკური პროდუქციის წარმოება.
+              </p>
+              <p className="text-base leading-relaxed mb-6" style={{ color: theme.ink + 'CC' }}>
+                ჩვენი მთავარი ქარხანა მდებარეობს თურქეთში, 360 000 კმ²-ის ფართობზე — ყოველდღე იქმნება 2000-ზე მეტი დასახელების პროდუქტი.
+              </p>
+              <button onClick={() => window.open('https://www.youtube.com/@farmasigeorgiaofficial7034', '_blank')}
+                className="text-xs tracking-widest uppercase flex items-center gap-2 hover:gap-3 transition-all"
+                style={{ color: theme.wine }}>
+                მეტი ვიდეო <Ic name="arrow-right" className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          {/* Stats bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8" style={{ borderTop: `1px solid ${theme.gold}33` }}>
+            {[
+              { n: '1950', l: 'დაარსების წელი' },
+              { n: '125+', l: 'ქვეყანა მსოფლიოში' },
+              { n: '4M+', l: 'წარმომადგენელი' },
+              { n: '2000+', l: 'პროდუქტი ყოველდღე' },
+            ].map((s, i) => (
+              <div key={i} className="text-center">
+                <p className="font-display text-3xl sm:text-4xl mb-1" style={{ color: theme.wine }}>{s.n}</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>{s.l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ BRAND VALUES — 4 pillars ═══ */}
+      <section className="px-5 py-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>რა გამოგვარჩევს</p>
+            <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+              FARMASI-ს <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ღირებულებები</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { ic: 'leaf',         t: 'ვეგანური',           d: '100% ნატურალური ინგრედიენტები' },
+              { ic: 'heart',        t: 'არ ვტესტავთ ცხოველებზე', d: 'Cruelty-free 1950 წლიდან' },
+              { ic: 'shield-check', t: 'დერმატოლოგიური',     d: 'მტკიცედ შემოწმებული ყველა კანის ტიპზე' },
+              { ic: 'sparkles',     t: 'პრემიუმ ხარისხი',     d: 'საკუთარი R&D ლაბორატორიები' },
+            ].map((v, i) => (
+              <div key={i} className="text-center p-6 rounded-3xl transition hover:scale-[1.02] hover:shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${theme.blush}66, ${theme.ivory})`,
+                         border: `1px solid ${theme.gold}22` }}>
+                <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                  style={{ background: theme.cream, boxShadow: `0 8px 24px -8px ${theme.wine}33` }}>
+                  <Ic name={v.ic} className="w-6 h-6" style={{ color: theme.wine }} />
+                </div>
+                <p className="font-display text-lg mb-2" style={{ color: theme.ink }}>{v.t}</p>
+                <p className="text-xs leading-relaxed" style={{ color: theme.ink + '99' }}>{v.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ GALLERY — masonry grid ═══ */}
+      <section className="px-5 py-16" style={{ background: theme.ivory }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>გალერეა</p>
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                შთაგონების <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>წყარო</span>
+              </h2>
+            </div>
+            {rep.instagram && (
+              <a href={rep.instagram.startsWith('http') ? rep.instagram : `https://instagram.com/${rep.instagram.replace('@','')}`}
+                target="_blank" rel="noreferrer"
+                className="text-xs flex items-center gap-2 hover:gap-3 transition-all pb-2"
+                style={{ color: theme.wine }}>
+                <SocialIcon name="instagram" className="w-3.5 h-3.5" /> Instagram-ზე მომყევი
+              </a>
+            )}
+          </div>
+
+          <div className="grid grid-cols-4 grid-flow-row-dense gap-3" style={{ gridAutoRows: 'minmax(180px, auto)' }}>
+            {[
+              { id: 909, span: 'col-span-2 row-span-2', label: 'Vitalizing', cat: 'თმის მოვლა' },
+              { id: 565, span: 'col-span-1 row-span-1', label: 'FarmaColor', cat: 'ვეგანური' },
+              { id: 1297, span: 'col-span-1 row-span-1', label: 'AQUA Patches', cat: 'თვალის მოვლა' },
+              { id: 872, span: 'col-span-2 row-span-1', label: 'Beauty Shot', cat: 'NUTRIPLUS' },
+              { id: 50, span: 'col-span-1 row-span-1', label: 'Spray', cat: 'მოვლა' },
+              { id: 1260, span: 'col-span-1 row-span-1', label: 'Shake', cat: 'NUTRIPLUS' },
+            ].map((g, i) => (
+              <a key={i}
+                href={`https://farmasi.ge/ka/product/view/${g.id}`} target="_blank" rel="noreferrer"
+                className={`relative rounded-2xl overflow-hidden group cursor-pointer ${g.span}`}
+                style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.cream})` }}>
+                <img src={`https://farmasi.ge/public/images/product_fb/${g.id}.png`}
+                  alt={g.label}
+                  className="w-full h-full object-contain p-4 transition group-hover:scale-110"
+                  style={{ filter: 'drop-shadow(0 10px 20px rgba(35,23,18,0.15))' }}
+                  onError={(e) => { e.target.style.display = 'none'; }} />
+                <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition"
+                  style={{ background: `linear-gradient(to top, ${theme.ink}DD, transparent 50%)` }}>
+                  <p className="text-[9px] tracking-widest uppercase mb-0.5" style={{ color: theme.gold }}>{g.cat}</p>
+                  <p className="font-display text-base" style={{ color: theme.cream }}>{g.label}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ TESTIMONIALS — customer stories ═══ */}
+      <section className="px-5 py-16">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>ისტორიები</p>
+            <h2 className="font-display text-3xl sm:text-4xl mb-2" style={{ color: theme.ink }}>
+              რას ამბობენ <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>კლიენტები</span>
+            </h2>
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <div className="flex">
+                {[1,2,3,4,5].map(i => (
+                  <Ic key={i} name="star" className="w-5 h-5"
+                    style={{ color: theme.gold, fill: theme.gold }} />
+                ))}
+              </div>
+              <span className="text-sm font-display" style={{ color: theme.ink }}>4.9 / 5</span>
+              <span className="text-xs" style={{ color: theme.ink + '77' }}>500+ შეფასებიდან</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {[
+              { name: 'ანი ბერიძე', role: '28 წლის · თბილისი', text: 'წლები ვებრძოდი თმის ცვენას. Vitalizing შამპუნმა შედეგი 2 კვირაში მაჩვენა — თმა ცოცხალი და სქელი ჩანს. ეს ჩემი ყოველდღიური რიტუალია!', stars: 5, gradient: ['#FCE7F3', '#F472B6'] },
+              { name: 'მარიამ ცხადაია', role: '34 წლის · ბათუმი', text: 'Royal Jelly კრემზე გადავედი — კანი ისე გამოიცვალა, რომ მე-15 წლის შვილი მეუბნება "დედა, ცოცხლად ხარ!". ფასიც ხელმისაწვდომია.', stars: 5, gradient: ['#F5D0FE', '#A21CAF'] },
+              { name: 'თამარ მახარაშვილი', role: '41 წლის · ქუთაისი', text: 'Tantalize სუნამოს ერთი ფლაკონი მაქვს უკვე 2 წელია. სტაბილური, ქალური. კომპლიმენტებს ვიღებ ყოველდღე.', stars: 5, gradient: ['#FECDD3', '#E11D48'] },
+            ].map((t, i) => (
+              <div key={i} className="p-6 rounded-3xl flex flex-col"
+                style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`,
+                         boxShadow: '0 4px 20px -8px rgba(35,23,18,0.08)' }}>
+                <div className="flex mb-4">
+                  {[1,2,3,4,5].map(s => (
+                    <Ic key={s} name="star" className="w-3.5 h-3.5"
+                      style={{ color: s <= t.stars ? theme.gold : theme.ink + '22',
+                               fill: s <= t.stars ? theme.gold : 'none' }} />
+                  ))}
+                </div>
+                <p className="text-sm leading-relaxed mb-5 flex-1 font-display-lat italic" style={{ color: theme.ink + 'DD' }}>
+                  "{t.text}"
+                </p>
+                <div className="flex items-center gap-3 pt-4" style={{ borderTop: `1px solid ${theme.gold}22` }}>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-display flex-shrink-0"
+                    style={{ background: `linear-gradient(135deg, ${t.gradient[0]}, ${t.gradient[1]})`, color: theme.cream }}>
+                    {t.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-display text-sm" style={{ color: theme.ink }}>{t.name}</p>
+                    <p className="text-[10px] tracking-wide uppercase" style={{ color: theme.ink + '77' }}>{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-16" style={{ background: theme.ivory }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>რატომ მე</p>
+            <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+              ვცნობ პროდუქტს <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>პირადად</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { ic: 'heart',       t: 'პერსონალური რჩევა',  d: 'შენი კანის და სტილისთვის შერჩეული პროდუქტები' },
+              { ic: 'badge-check', t: 'ოფიციალური ფასები',  d: 'ზუსტად იგივე ფასები რაც farmasi.ge-ზე' },
+              { ic: 'sparkles',    t: 'სწრაფი მხარდაჭერა',  d: 'ვუპასუხებ შეკითხვებს WhatsApp-ით' },
+            ].map((b, i) => (
+              <div key={i} className="text-center p-6 rounded-2xl"
+                style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                <div className="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center"
+                  style={{ background: theme.wine + '11' }}>
+                  <Ic name={b.ic} className="w-5 h-5" style={{ color: theme.wine }} />
+                </div>
+                <p className="font-display text-base mb-1" style={{ color: theme.ink }}>{b.t}</p>
+                <p className="text-xs leading-relaxed" style={{ color: theme.ink + '99' }}>{b.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="px-5 py-12 text-center" style={{ background: theme.ink, color: theme.cream }}>
+        <p className="font-display text-2xl mb-1">{rep.name}</p>
+        <p className="text-xs tracking-widest uppercase opacity-60 mb-6">FARMASI · Tantalize Cosmetics</p>
+        <div className="flex justify-center gap-2 mb-6">
+          {socials.map((s, i) => (
+            <a key={i} href={s.href} target="_blank" rel="noreferrer"
+              className="w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110"
+              style={{ background: theme.cream + '11', color: theme.cream }}>
+              <SocialIcon name={s.icon} className="w-4 h-4" />
+            </a>
+          ))}
+        </div>
+        <p className="text-xs opacity-50">© FARMASI Georgia ოფიციალური წარმომადგენელი</p>
+        <p className="font-mono text-[10px] opacity-40 mt-1">ID #{repCode}</p>
+      </footer>
+
+      <button onClick={() => setChatOpen(true)}
+        className="fixed bottom-5 left-5 z-40 w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110"
+        style={{ background: theme.ink, color: theme.cream, boxShadow: `0 10px 30px -8px rgba(0,0,0,0.4)` }}
+        title="მესიჯი">
+        <Ic name="message-square" className="w-5 h-5" />
+      </button>
+
+      {rep.whatsapp && (
+        <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`}
+          target="_blank" rel="noreferrer"
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
+          style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.6)' }}>
+          <SocialIcon name="whatsapp" className="w-5 h-5" />
+          <span className="text-sm font-medium hidden sm:inline">WhatsApp</span>
+        </a>
+      )}
+
+      {chatOpen && <ChatModal rep={rep} onClose={() => setChatOpen(false)} />}
+    </div>
+  );
+}
+
+function ProductCard({ p, onClick, featured }) {
+  const Mockup = p.mockup ? Mockups[p.mockup] : null;
+  const hasImage = !!p.image;
+  return (
+    <button onClick={onClick}
+      className={`product-card text-left rounded-2xl overflow-hidden transition hover:shadow-2xl group block w-full ${featured ? 'sm:flex' : ''}`}
+      style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`, boxShadow: '0 4px 20px -8px rgba(35,23,18,0.1)' }}>
+      <div className={`relative flex items-center justify-center overflow-hidden ${featured ? 'sm:w-3/5 aspect-[4/3] sm:aspect-auto' : 'aspect-square'}`}
+        style={{ background: `linear-gradient(135deg, ${p.bg[0]}, ${p.bg[1]})` }}>
+        <div className="absolute top-4 right-4 w-20 h-20 rounded-full opacity-30 blur-2xl" style={{ background: p.accent }} />
+        <div className="absolute bottom-6 left-6 w-32 h-32 rounded-full opacity-20 blur-3xl" style={{ background: p.accent }} />
+        {hasImage ? (
+          <div className={`product-mockup relative z-10 ${featured ? 'w-3/5 sm:w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float p-4`}>
+            <img src={p.image} alt={p.name}
+              className="max-w-full max-h-full object-contain"
+              style={{ filter: 'drop-shadow(0 20px 30px rgba(35,23,18,0.25))' }}
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+        ) : Mockup ? (
+          <div className={`product-mockup relative z-10 ${featured ? 'w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float`}>
+            <Mockup accent={p.accent} />
+          </div>
+        ) : null}
+        {p.tag && (
+          <span className="absolute top-3 left-3 text-[9px] tracking-[0.15em] uppercase px-2.5 py-1 rounded-full backdrop-blur-md"
+            style={{ background: theme.ink + 'EE', color: theme.cream }}>{p.tag}</span>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+          style={{ background: theme.ink + 'AA' }}>
+          <span className="text-xs tracking-[0.2em] uppercase flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ background: theme.cream, color: theme.ink }}>
+            <Ic name="shopping-bag" className="w-3.5 h-3.5" /> შეიძინე
+          </span>
+        </div>
+      </div>
+      <div className={`p-4 ${featured ? 'sm:w-2/5 sm:flex sm:flex-col sm:justify-center sm:p-8' : ''}`}>
+        <p className="text-[10px] tracking-[0.15em] uppercase mb-1" style={{ color: theme.gold }}>{p.cat}</p>
+        <p className={`font-display leading-tight ${featured ? 'text-2xl mb-3' : 'text-base mb-1'}`} style={{ color: theme.ink }}>
+          {p.name}
+        </p>
+        {featured && (
+          <p className="text-sm leading-relaxed mb-4" style={{ color: theme.ink + '99' }}>
+            {p.description || 'შერჩეული ჩემს მიერ პირადად — ულუფა აუცილებელი მოვლისთვის'}
+          </p>
+        )}
+        <div className="flex items-center justify-between">
+          <p className={`font-display ${featured ? 'text-3xl' : 'text-base'}`} style={{ color: theme.wine }}>
+            {p.price} ₾
+          </p>
+          {featured && (
+            <span className="text-xs tracking-widest uppercase flex items-center gap-1" style={{ color: theme.wine }}>
+              შეიძინე <Ic name="arrow-right" className="w-3 h-3" />
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//   PRODUCT PAGE — individual product landing
+// ═══════════════════════════════════════════════════════════
+function ProductPage({ rep, repCode, product, onBack, onProduct }) {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [qty, setQty] = useState(1);
+  const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
+  const goShop = () => window.open(referralUrl, '_blank');
+  const productUrl = `farmasi-rep.ge/r/${repCode}/p/${product.id}`;
+  const Mockup = product.mockup ? Mockups[product.mockup] : null;
+
+  const features = product.features || [
+    { ic: 'leaf',         t: 'არ იტესტება ცხოველებზე' },
+    { ic: 'sparkles',     t: 'მდგრადი ფორმულა' },
+    { ic: 'shield-check', t: 'დერმატოლოგიურად დადასტურებული' },
+    { ic: 'heart',        t: 'ნატურალური ინგრედიენტები' },
+  ];
+
+  const otherProducts = products.filter(p => p.id !== product.id).slice(0, 3);
+
+  const shareWA = () => {
+    const text = `${product.name} — ${product.price} ₾\nფასდაკავშირდი ${rep.name}-ს FARMASI ლენდინგზე`;
+    const url = `https://wa.me/${(rep.whatsapp || '').replace(/[^\d]/g,'')}?text=${encodeURIComponent(text)}`;
+    if (rep.whatsapp) window.open(url, '_blank');
+  };
+
+  return (
+    <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+      {/* Sticky top bar */}
+      <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center justify-between"
+        style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: theme.ink }}>
+          <Ic name="arrow-left" className="w-4 h-4" /> უკან
+        </button>
+        <span className="font-mono text-[10px]" style={{ color: theme.gold }}>#{product.id}</span>
+        <button onClick={shareWA} className="flex items-center gap-1 text-xs" style={{ color: theme.wine }}>
+          <Ic name="share-2" className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* HERO — large product showcase */}
+      <section className="relative overflow-hidden pt-8 pb-12 px-5"
+        style={{ background: `linear-gradient(180deg, ${product.bg[0]}66 0%, ${theme.cream} 100%)` }}>
+        <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl"
+          style={{ background: product.accent }} />
+        <div className="absolute top-40 -left-20 w-80 h-80 rounded-full opacity-20 blur-3xl"
+          style={{ background: product.accent }} />
+
+        <div className="relative max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          {/* Product visual */}
+          <div className="relative aspect-square rounded-3xl overflow-hidden flex items-center justify-center anim-fadeup"
+            style={{ background: `linear-gradient(135deg, ${product.bg[0]}, ${product.bg[1]})`,
+                     boxShadow: `0 30px 80px -20px ${product.accent}55` }}>
+            <div className="absolute top-8 right-8 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: product.accent }} />
+            <div className="absolute bottom-12 left-12 w-56 h-56 rounded-full opacity-20 blur-3xl" style={{ background: product.accent }} />
+            {product.tag && (
+              <span className="absolute top-5 left-5 z-10 text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md"
+                style={{ background: theme.ink + 'EE', color: theme.cream }}>{product.tag}</span>
+            )}
+            {product.heroImage ? (
+              <img src={product.heroImage} alt={product.name}
+                className="relative z-10 w-full h-full object-cover" />
+            ) : product.image ? (
+              <div className="relative z-10 w-3/4 h-3/4 flex items-center justify-center anim-float p-6">
+                <img src={product.image} alt={product.name}
+                  className="max-w-full max-h-full object-contain"
+                  style={{ filter: 'drop-shadow(0 30px 40px rgba(35,23,18,0.3))' }} />
+              </div>
+            ) : Mockup ? (
+              <div className="relative z-10 w-3/4 h-3/4 flex items-center justify-center anim-float">
+                <Mockup accent={product.accent} />
+              </div>
+            ) : null}
+          </div>
+
+          {/* Product info */}
+          <div className="anim-fadeup">
+            <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: theme.gold }}>{product.cat}</p>
+            <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl leading-tight mb-2" style={{ color: theme.ink }}>
+              {product.headline || product.name}
+            </h1>
+            {product.subheadline ? (
+              <p className="text-base leading-relaxed mt-3 mb-2 font-display-lat" style={{ color: theme.ink + 'BB' }}>
+                {product.subheadline}
+              </p>
+            ) : product.fullName && product.fullName !== product.name ? (
+              <p className="text-sm font-display-lat mb-2" style={{ color: theme.ink + '88' }}>{product.fullName}</p>
+            ) : null}
+
+            {/* Rating + SKU */}
+            <div className="flex items-center gap-3 mb-5 flex-wrap">
+              {product.rating && (
+                <div className="flex items-center gap-1.5">
+                  <div className="flex">
+                    {[1,2,3,4,5].map(i => (
+                      <Ic key={i} name="star" className="w-3.5 h-3.5"
+                        style={{ color: i <= Math.round(product.rating) ? theme.gold : theme.ink + '22',
+                                 fill: i <= Math.round(product.rating) ? theme.gold : 'none' }} />
+                    ))}
+                  </div>
+                  <span className="text-xs font-mono" style={{ color: theme.ink }}>{product.rating}</span>
+                  {product.reviewCount && <span className="text-xs" style={{ color: theme.ink + '77' }}>({product.reviewCount} შეფასება)</span>}
+                </div>
+              )}
+              {product.sku && (
+                <>
+                  <span className="text-xs" style={{ color: theme.ink + '33' }}>·</span>
+                  <span className="text-xs font-mono" style={{ color: theme.ink + '77' }}>კოდი: {product.sku}</span>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-baseline gap-3 mb-6">
+              <p className="font-display text-5xl" style={{ color: theme.wine }}>{product.price} ₾</p>
+              <span className="text-xs tracking-widest uppercase" style={{ color: theme.ink + '77' }}>
+                ოფიციალური ფასი
+              </span>
+            </div>
+
+            {product.description && (
+              <p className="text-base leading-relaxed mb-6" style={{ color: theme.ink + 'CC' }}>
+                {product.description}
+              </p>
+            )}
+
+            {/* Quantity */}
+            <div className="flex items-center gap-4 mb-6">
+              <span className="text-xs tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>რაოდენობა</span>
+              <div className="flex items-center rounded-full overflow-hidden" style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+                <button onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="w-9 h-9 flex items-center justify-center" style={{ color: theme.ink }}>
+                  <Ic name="minus" className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-10 text-center font-mono" style={{ color: theme.ink }}>{qty}</span>
+                <button onClick={() => setQty(qty + 1)}
+                  className="w-9 h-9 flex items-center justify-center" style={{ color: theme.ink }}>
+                  <Ic name="plus" className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <span className="text-sm" style={{ color: theme.ink + '99' }}>
+                = <span className="font-display text-base" style={{ color: theme.wine }}>{(product.price * qty).toFixed(2)} ₾</span>
+              </span>
+            </div>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <button onClick={goShop}
+                className="flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
+                <Ic name="shopping-bag" className="w-4 h-4" /> შეიძინე ახლა
+              </button>
+              {rep.whatsapp && (
+                <button onClick={shareWA}
+                  className="py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                  style={{ background: theme.ivory, color: theme.ink, border: `1.5px solid ${theme.gold}66` }}>
+                  <SocialIcon name="whatsapp" className="w-4 h-4" style={{ color: '#25D366' }} /> ვკითხო
+                </button>
+              )}
+            </div>
+
+            {/* Trust line */}
+            <div className="flex items-center gap-4 text-xs flex-wrap" style={{ color: theme.ink + '88' }}>
+              <span className="flex items-center gap-1.5">
+                <Ic name="badge-check" className="w-3.5 h-3.5" style={{ color: theme.gold }} /> ოფიციალური FARMASI
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Ic name="truck" className="w-3.5 h-3.5" style={{ color: theme.gold }} /> სწრაფი მიწოდება
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PROBLEMS — empathic mirror, "is this you?" hook */}
+      {product.problems && (
+        <section className="px-5 py-16 relative overflow-hidden"
+          style={{ background: `linear-gradient(180deg, ${theme.ivory} 0%, ${theme.cream} 100%)` }}>
+          <div className="absolute top-1/3 -left-20 w-72 h-72 rounded-full opacity-20 blur-3xl"
+            style={{ background: theme.rose }} />
+          <div className="absolute bottom-1/3 -right-20 w-80 h-80 rounded-full opacity-15 blur-3xl"
+            style={{ background: theme.gold }} />
+
+          <div className="relative max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>თქვენი ისტორია</p>
+              <h2 className="font-display text-3xl sm:text-5xl mb-3 leading-tight" style={{ color: theme.ink }}>
+                {product.problems.headline}
+              </h2>
+              <p className="text-base font-display-lat italic" style={{ color: theme.ink + 'AA' }}>
+                {product.problems.subtitle}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {product.problems.items.map((p, i) => (
+                <div key={i} className="flex gap-4 p-6 rounded-3xl transition hover:scale-[1.01]"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`,
+                           boxShadow: '0 4px 16px -4px rgba(35,23,18,0.05)' }}>
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: theme.wine + '11' }}>
+                    <Ic name={p.ic} className="w-5 h-5" style={{ color: theme.wine }} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-display text-lg mb-1.5" style={{ color: theme.ink }}>{p.t}</p>
+                    <p className="text-sm leading-relaxed font-display-lat italic" style={{ color: theme.ink + '99' }}>
+                      "{p.d}"
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-10">
+              <p className="font-display text-2xl sm:text-3xl leading-tight max-w-xl mx-auto" style={{ color: theme.ink }}>
+                ეს გრძნობა <span className="font-display-lat italic" style={{ color: theme.wine }}>დასრულდება</span> — დავიწყოთ ერთად.
+              </p>
+              <button onClick={goShop}
+                className="mt-6 py-4 px-8 rounded-2xl inline-flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
+                <Ic name="arrow-down" className="w-4 h-4" /> ნახე გადაწყვეტა
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FEATURES strip */}
+      <section className="px-5 py-10" style={{ background: theme.ivory }}>
+        <div className="max-w-5xl mx-auto">
+          <p className="text-xs tracking-widest uppercase mb-6 text-center" style={{ color: theme.gold }}>მახასიათებლები</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {features.map((f, i) => (
+              <div key={i} className="text-center p-4 rounded-2xl"
+                style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
+                  style={{ background: theme.wine + '11' }}>
+                  <Ic name={f.ic} className="w-4 h-4" style={{ color: theme.wine }} />
+                </div>
+                <p className="text-xs leading-tight" style={{ color: theme.ink }}>{f.t}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* BENEFITS — why choose this product */}
+      {product.benefits && (
+        <section className="px-5 py-16">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>რატომ ეს პროდუქტი</p>
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                ოთხი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>მთავარი</span> უპირატესობა
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {product.benefits.map((b, i) => (
+                <div key={i} className="flex gap-4 p-6 rounded-2xl transition hover:shadow-lg"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
+                    style={{ background: `linear-gradient(135deg, ${product.bg[0]}, ${product.bg[1]})` }}>
+                    <Ic name={b.ic} className="w-5 h-5" style={{ color: theme.wine }} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-display text-lg mb-1" style={{ color: theme.ink }}>{b.t}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: theme.ink + '99' }}>{b.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* RESULTS — before & after evidence */}
+      {product.beforeAfter && (
+        <section className="px-5 py-16">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-[10px] tracking-widest uppercase"
+                style={{ background: theme.wine + '11', color: theme.wine, border: `1px solid ${theme.wine}33` }}>
+                <Ic name="check-circle" className="w-3 h-3" /> ნამდვილი შედეგები
+              </div>
+              <h2 className="font-display text-3xl sm:text-4xl mb-3" style={{ color: theme.ink }}>
+                შედეგები რომ <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ლაპარაკობენ</span>
+              </h2>
+              <p className="text-base max-w-xl mx-auto" style={{ color: theme.ink + '99' }}>
+                რეალური მომხმარებლების ფოტოები — გამოყენების ციკლის შემდეგ
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {product.beforeAfter.map((b, i) => (
+                <div key={i} className="rounded-3xl overflow-hidden anim-fadeup"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`,
+                           boxShadow: '0 20px 50px -20px rgba(35,23,18,0.2)' }}>
+                  {/* Image */}
+                  <div className="relative aspect-[4/3] overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.cream})` }}>
+                    <img src={b.image} alt={b.title}
+                      className="w-full h-full object-cover" />
+                    {/* Result badge */}
+                    <div className="absolute top-4 right-4 px-3 py-2 rounded-full backdrop-blur-md flex items-center gap-1.5"
+                      style={{ background: theme.cream + 'EE', color: theme.wine, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                      <Ic name="trending-up" className="w-3.5 h-3.5" />
+                      <span className="text-xs font-display">{b.result}</span>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="font-display text-xl" style={{ color: theme.ink }}>{b.title}</p>
+                      <div className="flex">
+                        {[1,2,3,4,5].map(s => (
+                          <Ic key={s} name="star" className="w-3 h-3"
+                            style={{ color: theme.gold, fill: theme.gold }} />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm font-display-lat italic mb-3" style={{ color: theme.wine }}>{b.subtitle}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>{b.note}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-center mt-8 max-w-2xl mx-auto" style={{ color: theme.ink + '77' }}>
+              * შედეგები შეიძლება განსხვავდებოდეს ინდივიდუალურად, კანის ტიპის, ცხოვრების სტილისა და გამოყენების რეგულარობის მიხედვით
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* VIDEOS — product demo videos */}
+      {product.videos && (
+        <section className="px-5 py-16" style={{ background: theme.ivory }}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>ვიდეო პრეზენტაცია</p>
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                ნახე <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>მოქმედებაში</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {product.videos.map((v, i) => <ProductVideo key={i} video={v} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* HOW IT WORKS — 3-step formula explanation */}
+      {product.howItWorks && (
+        <section className="px-5 py-16 relative overflow-hidden"
+          style={{ background: `linear-gradient(180deg, ${theme.ink} 0%, #2a1610 100%)` }}>
+          <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20 blur-3xl"
+            style={{ background: product.accent }} />
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-15 blur-3xl"
+            style={{ background: theme.gold }} />
+
+          <div className="relative max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>როგორ მუშაობს ფორმულა</p>
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.cream }}>
+                სამი <span className="font-display-lat italic font-normal" style={{ color: theme.gold }}>ფაზა</span> — ერთი შედეგი
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 relative">
+              {/* connecting line */}
+              <div className="hidden sm:block absolute top-12 left-[16%] right-[16%] h-px"
+                style={{ background: `linear-gradient(90deg, ${theme.gold}00, ${theme.gold}66, ${theme.gold}00)` }} />
+
+              {product.howItWorks.map((s, i) => (
+                <div key={i} className="text-center relative">
+                  <div className="relative inline-flex w-24 h-24 rounded-full mb-5 items-center justify-center"
+                    style={{ background: `linear-gradient(135deg, ${theme.cream}11, ${theme.cream}05)`,
+                             border: `1px solid ${theme.gold}44`,
+                             backdropFilter: 'blur(10px)' }}>
+                    <Ic name={s.ic} className="w-8 h-8" style={{ color: theme.gold }} />
+                    <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full font-display text-sm flex items-center justify-center"
+                      style={{ background: theme.gold, color: theme.ink }}>
+                      0{s.step}
+                    </span>
+                  </div>
+                  <p className="font-display text-2xl mb-2" style={{ color: theme.cream }}>{s.title}</p>
+                  <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: theme.cream + '99' }}>{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* INGREDIENTS — key actives */}
+      {product.ingredients && (
+        <section className="px-5 py-16">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>აქტიური კომპონენტები</p>
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                რა <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ამუშავებს</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {product.ingredients.map((ing, i) => (
+                <div key={i} className="flex gap-4 p-5 rounded-2xl"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-display"
+                    style={{ background: `linear-gradient(135deg, ${product.bg[0]}, ${product.bg[1]})`, color: theme.wine }}>
+                    {String(i+1).padStart(2,'0')}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-display text-base mb-1" style={{ color: theme.ink }}>{ing.name}</p>
+                    <p className="text-xs leading-relaxed" style={{ color: theme.ink + '99' }}>{ing.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* HOW TO USE */}
+      {product.howToUse && (
+        <section className="px-5 py-16" style={{ background: theme.ivory }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>გამოყენების წესი</p>
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                სამი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>მარტივი</span> ნაბიჯი
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
+              {/* Connecting line */}
+              <div className="hidden sm:block absolute top-10 left-[16%] right-[16%] h-px" style={{ background: `${theme.gold}44` }} />
+
+              {product.howToUse.map((s, i) => (
+                <div key={i} className="text-center relative">
+                  <div className="relative inline-flex w-20 h-20 rounded-full mb-4 items-center justify-center font-display text-2xl"
+                    style={{ background: theme.cream, border: `2px solid ${theme.gold}66`, color: theme.wine,
+                             boxShadow: '0 8px 24px -8px rgba(122,30,44,0.15)' }}>
+                    0{s.step}
+                  </div>
+                  <p className="font-display text-lg mb-2" style={{ color: theme.ink }}>{s.title}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: theme.ink + '99' }}>{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* SUITABLE FOR */}
+      {product.suitableFor && (
+        <section className="px-5 py-12">
+          <div className="max-w-3xl mx-auto rounded-3xl p-6 sm:p-10"
+            style={{ background: `linear-gradient(135deg, ${product.bg[0]}, ${product.bg[1]})`,
+                     border: `1px solid ${theme.gold}22` }}>
+            <p className="text-xs tracking-widest uppercase mb-3" style={{ color: theme.gold }}>ვისთვის გამოდგება</p>
+            <h2 className="font-display text-2xl sm:text-3xl mb-6" style={{ color: theme.ink }}>
+              იდეალურია <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>თუ</span>
+            </h2>
+            <ul className="space-y-3">
+              {product.suitableFor.map((item, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5"
+                    style={{ background: theme.wine, color: theme.cream }}>
+                    <Ic name="check" className="w-3 h-3" />
+                  </div>
+                  <span className="text-base" style={{ color: theme.ink }}>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
+      {/* RITUAL — CINEMATIC LUX masterclass */}
+      {product.ritual && (
+        <section className="relative overflow-hidden"
+          style={{ background: '#0a0808', color: theme.cream }}>
+          {/* Cinematic ambient gradients */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[600px] opacity-40 blur-3xl"
+            style={{ background: `radial-gradient(ellipse at center top, ${theme.wine}, transparent 60%)` }} />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl"
+            style={{ background: '#A21CAF' }} />
+          <div className="absolute top-1/2 right-0 w-[500px] h-[500px] rounded-full opacity-15 blur-3xl"
+            style={{ background: theme.gold }} />
+
+          {/* Top ornamental frame */}
+          <div className="relative px-5 pt-16 pb-8">
+            <div className="max-w-6xl mx-auto">
+              <div className="flex items-center gap-4 text-[10px] tracking-[0.3em] uppercase opacity-70">
+                <span style={{ color: theme.gold }}>✦</span>
+                <span>FARMASI</span>
+                <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${theme.gold}66, transparent)` }} />
+                <span>EST. 1950</span>
+                <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${theme.gold}66)` }} />
+                <span>COLLECTION 2026</span>
+                <span style={{ color: theme.gold }}>✦</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative px-5 py-12">
+            <div className="max-w-6xl mx-auto">
+              {/* Cinema title */}
+              <div className="text-center mb-20">
+                <div className="text-[10px] tracking-[0.5em] uppercase mb-6" style={{ color: theme.gold }}>
+                  ◆ {' '} A FARMASI PRESENTATION {' '} ◆
+                </div>
+
+                <h2 className="font-display-lat italic mb-4"
+                  style={{ fontSize: 'clamp(3rem, 9vw, 8rem)', lineHeight: 0.95, color: theme.cream, fontWeight: 400 }}>
+                  Vitalizing
+                </h2>
+
+                <div className="flex items-center justify-center gap-3 mb-6">
+                  <div className="w-12 h-px" style={{ background: theme.gold }} />
+                  <span style={{ color: theme.gold }}>✦</span>
+                  <p className="text-xs tracking-[0.4em] uppercase" style={{ color: theme.gold }}>
+                    HAIR CARE COLLECTION
+                  </p>
+                  <span style={{ color: theme.gold }}>✦</span>
+                  <div className="w-12 h-px" style={{ background: theme.gold }} />
+                </div>
+
+                <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-display-lat italic mt-6"
+                  style={{ color: theme.cream + 'CC' }}>
+                  {product.ritual.subtitle}
+                </p>
+              </div>
+
+              {/* Three cinematic acts */}
+              <div className="space-y-24 sm:space-y-32">
+                {product.ritual.items.map((item, i) => (
+                  <CinematicAct key={i} item={item} index={i} reverse={i % 2 === 1} onShop={goShop} />
+                ))}
+              </div>
+
+              {/* Bundle finale */}
+              <div className="mt-24 relative">
+                {/* Top ornament */}
+                <div className="flex items-center gap-3 mb-10 justify-center">
+                  <div className="w-20 h-px" style={{ background: `linear-gradient(90deg, transparent, ${theme.gold})` }} />
+                  <span className="text-xs tracking-[0.4em] uppercase" style={{ color: theme.gold }}>FINALE</span>
+                  <div className="w-20 h-px" style={{ background: `linear-gradient(90deg, ${theme.gold}, transparent)` }} />
+                </div>
+
+                <div className="relative rounded-[2rem] overflow-hidden"
+                  style={{ background: `linear-gradient(135deg, #1a0e0c 0%, #0a0808 100%)`,
+                           border: `1px solid ${theme.gold}33` }}>
+                  <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-30 blur-3xl"
+                    style={{ background: theme.wine, transform: 'translate(30%, -30%)' }} />
+                  <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full opacity-20 blur-3xl"
+                    style={{ background: theme.gold, transform: 'translate(-30%, 30%)' }} />
+
+                  <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-center p-8 sm:p-12">
+                    {/* Bundle photo with subtle radial glow behind */}
+                    <div className="relative aspect-[4/3] flex items-center justify-center">
+                      {/* Spotlight glow behind transparent products */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-3/4 h-3/4 rounded-full blur-3xl"
+                          style={{ background: `radial-gradient(circle, ${theme.wine}66, transparent 70%)` }} />
+                      </div>
+                      <img src={product.ritual.bundleImage} alt="Vitalizing კოლექცია"
+                        className="relative z-10 w-full h-full object-contain p-4 anim-float"
+                        style={{ filter: `drop-shadow(0 30px 60px ${theme.wine}66) drop-shadow(0 0 40px rgba(255,255,255,0.1))` }} />
+                    </div>
+
+                    {/* Pricing finale */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span style={{ color: theme.gold }}>◆</span>
+                        <span className="text-[10px] tracking-[0.3em] uppercase" style={{ color: theme.gold }}>
+                          THE COMPLETE COLLECTION
+                        </span>
+                      </div>
+                      <h3 className="font-display text-3xl sm:text-4xl lg:text-5xl mb-4 leading-tight">
+                        სამივე ერთად <span className="font-display-lat italic" style={{ color: theme.gold }}>·</span><br/>
+                        <span className="font-display-lat italic" style={{ color: theme.gold }}>ერთი ფასი</span>
+                      </h3>
+
+                      <div className="flex items-center gap-3 mb-6 flex-wrap">
+                        <span className="font-display text-5xl sm:text-6xl">{product.ritual.bundlePrice} ₾</span>
+                        <span className="text-base line-through opacity-50">
+                          {(product.ritual.items.reduce((s, i) => s + i.price, 0)).toFixed(2)} ₾
+                        </span>
+                        <span className="px-2.5 py-1 rounded-full text-[10px] tracking-wider font-medium"
+                          style={{ background: theme.gold, color: '#0a0808' }}>
+                          −{product.ritual.savings} ₾
+                        </span>
+                      </div>
+
+                      <button onClick={goShop}
+                        className="group relative w-full sm:w-auto py-4 px-8 rounded-full flex items-center justify-center gap-3 font-medium text-sm tracking-[0.2em] uppercase transition hover:scale-[1.02] overflow-hidden"
+                        style={{ background: theme.cream, color: '#0a0808' }}>
+                        <span style={{ color: theme.wine }}>✦</span>
+                        შეიძინე კოლექცია
+                        <Ic name="arrow-right" className="w-4 h-4" />
+                      </button>
+
+                      <div className="flex items-center gap-4 mt-5 text-[10px] tracking-widest uppercase opacity-60 flex-wrap">
+                        <span className="flex items-center gap-1.5">
+                          <Ic name="truck" className="w-3 h-3" /> უფასო მიწოდება
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1.5">
+                          <Ic name="rotate-ccw" className="w-3 h-3" /> 14 დღე დაბრუნება
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Closing manifesto — like film credits */}
+              {product.ritual.tagline && (
+                <div className="text-center mt-24 mb-8 max-w-3xl mx-auto">
+                  <div className="text-7xl mb-3 leading-none" style={{ color: theme.gold, opacity: 0.4 }}>"</div>
+                  <p className="font-display-lat italic leading-tight -mt-10"
+                    style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: theme.cream }}>
+                    {product.ritual.tagline}
+                  </p>
+                  <div className="flex items-center justify-center gap-3 mt-8">
+                    <div className="w-12 h-px" style={{ background: theme.gold }} />
+                    <span style={{ color: theme.gold }}>✦</span>
+                    <div className="w-12 h-px" style={{ background: theme.gold }} />
+                  </div>
+                  <p className="text-[10px] tracking-[0.4em] uppercase mt-4" style={{ color: theme.gold }}>
+                    Dr. C. Tuna · Vitalizing Hair Care
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom ornamental frame */}
+          <div className="relative px-5 pb-10">
+            <div className="max-w-6xl mx-auto flex items-center gap-4 text-[10px] tracking-[0.3em] uppercase opacity-50">
+              <span style={{ color: theme.gold }}>◆</span>
+              <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+              <span>FARMASI · GEORGIA</span>
+              <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+              <span style={{ color: theme.gold }}>◆</span>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* REVIEWS */}
+      {product.reviews && (
+        <section className="px-5 py-16" style={{ background: theme.ivory }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
+              <div>
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>შეფასებები</p>
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                  რას <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ამბობენ</span>
+                </h2>
+              </div>
+              {product.rating && (
+                <div className="flex items-center gap-3">
+                  <div className="flex">
+                    {[1,2,3,4,5].map(i => (
+                      <Ic key={i} name="star" className="w-5 h-5"
+                        style={{ color: i <= Math.round(product.rating) ? theme.gold : theme.ink + '22',
+                                 fill: i <= Math.round(product.rating) ? theme.gold : 'none' }} />
+                    ))}
+                  </div>
+                  <div>
+                    <span className="font-display text-2xl" style={{ color: theme.ink }}>{product.rating}</span>
+                    <span className="text-xs ml-2" style={{ color: theme.ink + '77' }}>{product.reviewCount} შეფასებიდან</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {product.reviews.map((r, i) => (
+                <div key={i} className="p-5 rounded-2xl"
+                  style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                  <div className="flex mb-3">
+                    {[1,2,3,4,5].map(s => (
+                      <Ic key={s} name="star" className="w-3.5 h-3.5"
+                        style={{ color: s <= r.stars ? theme.gold : theme.ink + '22',
+                                 fill: s <= r.stars ? theme.gold : 'none' }} />
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed mb-4 font-display-lat" style={{ color: theme.ink + 'CC' }}>"{r.text}"</p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium" style={{ color: theme.ink }}>{r.name}</span>
+                    <span style={{ color: theme.ink + '77' }}>{r.date}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FAQ */}
+      {product.faqs && (
+        <section className="px-5 py-16">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>ხშირი კითხვები</p>
+              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                FAQ
+              </h2>
+            </div>
+            <div className="space-y-3">
+              {product.faqs.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* FULL INGREDIENTS — collapsible */}
+      {product.fullIngredients && (
+        <section className="px-5 py-12" style={{ background: theme.ivory }}>
+          <div className="max-w-3xl mx-auto">
+            <FaqItem
+              q="სრული შემადგენლობა (INCI)"
+              a={product.fullIngredients}
+              mono
+            />
+          </div>
+        </section>
+      )}
+
+      {/* DELIVERY INFO */}
+      <section className="px-5 py-12">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { ic: 'truck',         t: 'სწრაფი მიწოდება',  d: '1–2 სამუშაო დღე საქართველოში' },
+            { ic: 'rotate-ccw',    t: 'დაბრუნება',        d: '14 დღე გახსნამდე' },
+            { ic: 'badge-check',   t: 'ორიგინალი',         d: 'პირდაპირ FARMASI-დან' },
+          ].map((b, i) => (
+            <div key={i} className="flex items-start gap-3 p-5 rounded-2xl"
+              style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+              <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: theme.wine + '11' }}>
+                <Ic name={b.ic} className="w-4 h-4" style={{ color: theme.wine }} />
+              </div>
+              <div>
+                <p className="font-display text-base mb-0.5" style={{ color: theme.ink }}>{b.t}</p>
+                <p className="text-xs" style={{ color: theme.ink + '99' }}>{b.d}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Sticky bottom CTA bar (mobile-friendly) */}
+      <div className="sticky bottom-0 z-30 px-5 py-3 backdrop-blur-md border-t"
+        style={{ background: theme.cream + 'EE', borderColor: theme.gold + '33' }}>
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] tracking-widest uppercase truncate" style={{ color: theme.ink + '77' }}>{product.name}</p>
+            <p className="font-display text-xl" style={{ color: theme.wine }}>{product.price} ₾</p>
+          </div>
+          {rep.whatsapp && (
+            <button onClick={shareWA}
+              className="px-4 py-3 rounded-xl flex items-center justify-center text-xs"
+              style={{ background: theme.ivory, color: theme.ink, border: `1.5px solid ${theme.gold}66` }}>
+              <SocialIcon name="whatsapp" className="w-4 h-4" style={{ color: '#25D366' }} />
+            </button>
+          )}
+          <button onClick={goShop}
+            className="flex-1 py-3 px-5 rounded-xl flex items-center justify-center gap-2 font-medium text-xs tracking-wider uppercase"
+            style={{ background: theme.wine, color: theme.cream }}>
+            <Ic name="shopping-bag" className="w-4 h-4" /> შეიძინე
+          </button>
+        </div>
+      </div>
+
+      {/* Rep card — who is selling this */}
+      <section className="px-5 py-12">
+        <div className="max-w-2xl mx-auto rounded-3xl p-6 sm:p-8 flex items-center gap-5"
+          style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`, boxShadow: '0 4px 20px -8px rgba(35,23,18,0.1)' }}>
+          <div className="relative flex-shrink-0">
+            <div className="absolute -inset-1 rounded-full"
+              style={{ background: `conic-gradient(${theme.gold}, ${theme.rose}, ${theme.wine}, ${theme.gold})`, opacity: 0.4, filter: 'blur(4px)' }} />
+            <div className="relative w-20 h-20 rounded-full overflow-hidden"
+              style={{ border: `2px solid ${theme.ivory}` }}>
+              {rep.photo
+                ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                : <div className="w-full h-full flex items-center justify-center text-2xl"
+                     style={{ background: theme.mist, color: theme.gold }}>{rep.name.charAt(0) || '?'}</div>}
+            </div>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.gold }}>გყიდის</p>
+            <p className="font-display text-xl truncate" style={{ color: theme.ink }}>{rep.name}</p>
+            {rep.city && (
+              <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: theme.ink + '88' }}>
+                <Ic name="map-pin" className="w-3 h-3" /> {rep.city}
+              </p>
+            )}
+          </div>
+          <button onClick={onBack}
+            className="text-xs tracking-widest uppercase px-4 py-2 rounded-full hidden sm:block"
+            style={{ background: theme.ink, color: theme.cream }}>
+            პროფილი
+          </button>
+        </div>
+      </section>
+
+      {/* Other products */}
+      <section className="px-5 py-12" style={{ background: theme.ivory }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>ასევე გასინჯე</p>
+              <h2 className="font-display text-2xl sm:text-3xl" style={{ color: theme.ink }}>
+                სხვა <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>favourites</span>
+              </h2>
+            </div>
+            <button onClick={onBack} className="text-xs flex items-center gap-1 hover:gap-2 transition-all"
+              style={{ color: theme.wine }}>
+              ყველა <Ic name="chevron-right" className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {otherProducts.map(p => <ProductCard key={p.id} p={p} onClick={() => onProduct(p)} />)}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="px-5 py-10 text-center" style={{ background: theme.ink, color: theme.cream }}>
+        <p className="font-display text-xl mb-1">{rep.name}</p>
+        <p className="text-xs tracking-widest uppercase opacity-60 mb-4">FARMASI · Tantalize Cosmetics</p>
+        <p className="text-xs opacity-50">© FARMASI Georgia ოფიციალური წარმომადგენელი</p>
+        <p className="font-mono text-[10px] opacity-40 mt-1">{productUrl}</p>
+      </footer>
+
+      <button onClick={() => setChatOpen(true)}
+        className="fixed bottom-24 sm:bottom-5 left-5 z-40 w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110"
+        style={{ background: theme.ink, color: theme.cream, boxShadow: `0 10px 30px -8px rgba(0,0,0,0.4)` }}
+        title="მესიჯი">
+        <Ic name="message-square" className="w-5 h-5" />
+      </button>
+
+      {rep.whatsapp && (
+        <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა! "${product.name}"-ს შესახებ მაინტერესებს...`)}`}
+          target="_blank" rel="noreferrer"
+          className="fixed bottom-24 sm:bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
+          style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.6)' }}>
+          <SocialIcon name="whatsapp" className="w-5 h-5" />
+          <span className="text-sm font-medium hidden sm:inline">WhatsApp</span>
+        </a>
+      )}
+
+      {chatOpen && <ChatModal rep={rep} product={product} onClose={() => setChatOpen(false)} />}
+    </div>
+  );
+}
+
+function BrandVideo({ videoId, thumbnail }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <div className="relative aspect-video rounded-3xl overflow-hidden cursor-pointer group"
+      style={{ boxShadow: '0 30px 60px -20px rgba(35,23,18,0.3)' }}
+      onClick={() => setPlaying(true)}>
+      {playing ? (
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
+          title="FARMASI"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+          style={{ border: 0 }}
+        />
+      ) : (
+        <>
+          <img src={thumbnail} alt="FARMASI"
+            className="w-full h-full object-cover transition group-hover:scale-105"
+            onError={(e) => { e.target.src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`; }} />
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, rgba(229,5,113,0.4), rgba(0,0,0,0.5))' }}>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full anim-float"
+                style={{ background: theme.cream, opacity: 0.3, filter: 'blur(20px)', transform: 'scale(1.5)' }} />
+              <button className="relative w-20 h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                style={{ background: theme.cream, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)' }}>
+                <svg viewBox="0 0 24 24" className="w-8 h-8 ml-1" fill={theme.wine}>
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-5"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
+            <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.cream + 'CC' }}>FARMASI ისტორია</p>
+            <p className="font-display text-lg" style={{ color: theme.cream }}>გაიცანი ჩვენი მსოფლიო</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProductVideo({ video }) {
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef(null);
+  const handlePlay = () => {
+    setPlaying(true);
+    setTimeout(() => videoRef.current?.play(), 100);
+  };
+  return (
+    <div className="relative aspect-video rounded-3xl overflow-hidden group"
+      style={{ background: theme.ink, boxShadow: '0 20px 50px -20px rgba(35,23,18,0.3)' }}>
+      <video ref={videoRef}
+        src={video.src}
+        poster={video.poster}
+        controls={playing}
+        className="w-full h-full object-cover"
+        onEnded={() => setPlaying(false)}
+      />
+      {!playing && (
+        <button onClick={handlePlay}
+          className="absolute inset-0 flex items-center justify-center cursor-pointer"
+          style={{ background: 'linear-gradient(135deg, rgba(229,5,113,0.3), rgba(0,0,0,0.5))' }}>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full anim-float"
+              style={{ background: theme.cream, opacity: 0.3, filter: 'blur(20px)', transform: 'scale(1.5)' }} />
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+              style={{ background: theme.cream, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)' }}>
+              <svg viewBox="0 0 24 24" className="w-7 h-7 ml-1" fill={theme.wine}>
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-5 text-left"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
+            <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{video.subtitle}</p>
+            <p className="font-display text-lg sm:text-xl" style={{ color: theme.cream }}>{video.title}</p>
+          </div>
+        </button>
+      )}
+    </div>
+  );
+}
+
+// CINEMATIC ACT — masterclass-style dark luxury showcase
+function CinematicAct({ item, index, reverse, onShop }) {
+  const stepLabel = String(index + 1).padStart(2, '0');
+  return (
+    <div className="relative">
+      {/* Top ornamental ACT divider */}
+      <div className="flex items-center gap-3 mb-10">
+        <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: '#B8924E' }}>
+          ACT {stepLabel}
+        </span>
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #B8924E66, transparent)' }} />
+        <span style={{ color: '#B8924E' }}>✦</span>
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, transparent, #B8924E66)' }} />
+        <span className="text-[10px] tracking-[0.4em] uppercase font-display-lat italic" style={{ color: '#B8924E' }}>
+          {item.subtitle}
+        </span>
+      </div>
+
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}>
+        {/* Photo — full bleed against black */}
+        <div className="lg:col-span-6 relative">
+          <div className="relative aspect-[3/4] flex items-center justify-center">
+            {/* Spotlight glow behind product */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-40"
+                style={{ background: `radial-gradient(circle, ${item.accent}, transparent 70%)` }} />
+            </div>
+            {/* Watermark step number */}
+            <div className="absolute top-0 left-0 z-0 select-none pointer-events-none font-display-lat italic"
+              style={{ fontSize: 'clamp(8rem, 22vw, 22rem)', lineHeight: 0.85,
+                       color: '#FFFFFF', opacity: 0.04, fontWeight: 400 }}>
+              {stepLabel}
+            </div>
+            {/* The product image — these have transparent or black bg, blends with section */}
+            <img src={item.image} alt={item.name}
+              className="relative z-10 max-w-full max-h-full object-contain anim-float"
+              style={{ filter: `drop-shadow(0 40px 60px ${item.accent}66) drop-shadow(0 0 80px ${item.accent}33)` }} />
+          </div>
+
+          {/* Volume tag at bottom */}
+          {item.volume && (
+            <div className="text-center mt-4">
+              <span className="text-[10px] tracking-[0.3em] uppercase" style={{ color: '#B8924E' }}>
+                ◆ {item.volume} ◆
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Content — cinematic typography */}
+        <div className="lg:col-span-6">
+          {/* Step indicator with diamond */}
+          <div className="flex items-center gap-3 mb-5">
+            <span className="font-display-lat italic"
+              style={{ fontSize: 'clamp(3rem, 6vw, 5rem)', lineHeight: 1,
+                       color: '#B8924E', fontWeight: 400 }}>
+              {stepLabel}
+            </span>
+            <div className="flex-1">
+              <div className="h-px" style={{ background: '#B8924E66' }} />
+              <p className="text-[10px] tracking-[0.4em] uppercase mt-2" style={{ color: '#B8924E' }}>
+                CHAPTER {stepLabel} · OF 03
+              </p>
+            </div>
+          </div>
+
+          {/* Big title */}
+          <h3 className="font-display mb-2 leading-[1.05]"
+            style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)', color: '#F8F6F1' }}>
+            {item.name}
+          </h3>
+
+          {/* Subtitle italic */}
+          <p className="font-display-lat italic mb-6"
+            style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', color: item.accent }}>
+            {item.subtitle}
+          </p>
+
+          {/* Quote — cinematic blockquote */}
+          {item.quote && (
+            <div className="relative mb-6 pl-6">
+              <div className="absolute left-0 top-0 bottom-0 w-px"
+                style={{ background: `linear-gradient(180deg, ${item.accent}, transparent)` }} />
+              <p className="font-display-lat italic leading-relaxed"
+                style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', color: '#F8F6F1DD' }}>
+                "{item.quote}"
+              </p>
+            </div>
+          )}
+
+          {/* Description */}
+          <p className="text-sm sm:text-base leading-relaxed mb-6 max-w-xl" style={{ color: '#F8F6F1AA' }}>
+            {item.desc}
+          </p>
+
+          {/* Benefit highlight */}
+          {item.benefit && (
+            <div className="flex items-start gap-3 p-4 rounded-2xl mb-8"
+              style={{ background: `${item.accent}11`,
+                       border: `1px solid ${item.accent}44`,
+                       backdropFilter: 'blur(10px)' }}>
+              <span style={{ color: '#B8924E', fontSize: '1rem' }}>✦</span>
+              <p className="text-sm font-display leading-snug italic" style={{ color: '#F8F6F1' }}>
+                {item.benefit}
+              </p>
+            </div>
+          )}
+
+          {/* CTA + price row */}
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>ფასი</p>
+              <p className="font-display" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', color: '#F8F6F1' }}>
+                {item.price} ₾
+              </p>
+            </div>
+            <button onClick={onShop}
+              className="group relative py-3 px-6 sm:py-4 sm:px-8 rounded-full flex items-center gap-3 text-sm tracking-[0.2em] uppercase transition hover:scale-[1.02] overflow-hidden"
+              style={{ background: 'transparent', color: '#F8F6F1',
+                       border: `1px solid ${item.accent}` }}>
+              <span style={{ color: item.accent }}>✦</span>
+              შეიძინე
+              <Ic name="arrow-right" className="w-4 h-4" />
+              {/* hover background */}
+              <span className="absolute inset-0 transition opacity-0 group-hover:opacity-100"
+                style={{ background: item.accent, zIndex: -1 }} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FaqItem({ q, a, mono }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl overflow-hidden"
+      style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+      <button onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-5 text-left transition"
+        style={{ color: theme.ink }}>
+        <span className="font-display text-base sm:text-lg pr-4">{q}</span>
+        <Ic name={open ? 'minus' : 'plus'} className="w-4 h-4 flex-shrink-0"
+          style={{ color: theme.wine, transition: 'transform 0.3s', transform: open ? 'rotate(0deg)' : 'rotate(0deg)' }} />
+      </button>
+      {open && (
+        <div className="px-5 pb-5 anim-fadeup">
+          <p className={`text-sm leading-relaxed ${mono ? 'font-mono text-xs' : ''}`}
+            style={{ color: theme.ink + 'BB' }}>{a}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChatModal({ rep, onClose, product }) {
+  const [msg, setMsg] = useState(product ? `გამარჯობა, "${product.name}"-ს შესახებ მაინტერესებს...` : '');
+  const [sent, setSent] = useState(false);
+  const send = () => {
+    if (!msg.trim()) return;
+    setSent(true);
+    setTimeout(() => { onClose(); setSent(false); setMsg(''); }, 2000);
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-10"
+      style={{ background: 'rgba(35,23,18,0.6)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 anim-fadeup"
+        style={{ background: theme.ivory }} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>მომწერე</p>
+            <p className="font-display text-xl" style={{ color: theme.ink }}>{rep.name}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: theme.cream, color: theme.ink }}>
+            <Ic name="x" className="w-4 h-4" />
+          </button>
+        </div>
+        {sent ? (
+          <div className="py-10 text-center">
+            <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center"
+              style={{ background: theme.gold + '22', color: theme.gold }}>
+              <Ic name="check" className="w-6 h-6" />
+            </div>
+            <p className="font-display text-lg" style={{ color: theme.ink }}>გაიგზავნა!</p>
+            <p className="text-xs mt-1" style={{ color: theme.ink + '99' }}>მალე გიპასუხებ ✨</p>
+          </div>
+        ) : (
+          <>
+            <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={4}
+              placeholder="გამარჯობა! მაინტერესებს..."
+              className="w-full p-3 rounded-xl outline-none text-sm resize-none"
+              style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+            <div className="flex gap-2 mt-4">
+              {rep.whatsapp && (
+                <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(msg)}`}
+                  target="_blank" rel="noreferrer"
+                  className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium"
+                  style={{ background: '#25D366', color: '#fff' }}>
+                  <SocialIcon name="whatsapp" className="w-4 h-4" /> WhatsApp
+                </a>
+              )}
+              <button onClick={send}
+                className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium"
+                style={{ background: theme.wine, color: theme.cream }}>
+                <Ic name="send" className="w-4 h-4" /> გაგზავნა
+              </button>
+            </div>
+            <p className="text-[10px] mt-3 text-center" style={{ color: theme.ink + '77' }}>
+              {rep.phone && `ან დარეკე: ${rep.phone}`}
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
