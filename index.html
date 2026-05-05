@@ -420,6 +420,60 @@ function api(params) {
   });
 }
 
+// For large payloads (photos): submit form to hidden iframe, poll the result via JSONP afterwards
+function apiUpload(params) {
+  return new Promise((resolve, reject) => {
+    const iframeName = 'upload_iframe_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName;
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = API_URL;
+    form.target = iframeName;
+    form.enctype = 'application/x-www-form-urlencoded';
+    form.style.display = 'none';
+
+    Object.entries(params).forEach(([k, v]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = k;
+      input.value = v;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+
+    const timeout = setTimeout(() => {
+      iframe.remove();
+      form.remove();
+      reject(new Error('Upload timed out'));
+    }, 60000);
+
+    iframe.onload = () => {
+      clearTimeout(timeout);
+      try {
+        // Apps Script returns JSON in iframe body
+        const body = iframe.contentDocument?.body?.innerText || '';
+        const data = JSON.parse(body);
+        iframe.remove();
+        form.remove();
+        resolve(data);
+      } catch (e) {
+        iframe.remove();
+        form.remove();
+        // If we can't read response (cross-origin block), still resolve as success
+        // and refetch rep data afterwards
+        resolve({ ok: true, _silent: true });
+      }
+    };
+
+    form.submit();
+  });
+}
+
 // Extract PID from URL: /?pid=153205 or /?pid=153205&edit=1
 function getUrlParams() {
   const params = new URLSearchParams(window.location.search);
@@ -638,14 +692,64 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
   const fileRef = useRef(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const shareUrl = `${window.location.host}/?pid=${repCode}`;
   const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
-  const onPhoto = (e) => {
+
+  const onPhoto = async (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => setRep(r => ({ ...r, photo: reader.result }));
-    reader.readAsDataURL(f);
+
+    // Size limit: 3MB
+    if (f.size > 3 * 1024 * 1024) {
+      setSaveError('ფოტო ძალიან დიდია — მაქსიმუმ 3 MB');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setSaveError('');
+
+    try {
+      // Read as base64
+      const reader = new FileReader();
+      const base64Data = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(f);
+      });
+
+      // Show preview immediately (optimistic UI)
+      setRep(r => ({ ...r, photo: base64Data }));
+
+      // Upload to Apps Script
+      const result = await apiUpload({
+        action: 'upload_photo',
+        pid: repCode,
+        photo_data: base64Data,
+      });
+
+      if (result.ok && result.photo_url) {
+        // Replace base64 with permanent Drive URL
+        setRep(r => ({ ...r, photo: result.photo_url }));
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 3000);
+      } else if (result._silent) {
+        // Cross-origin couldn't read response — re-fetch rep data
+        const refresh = await api({ action: 'get_rep', pid: repCode });
+        if (refresh.ok && refresh.rep.photo_url) {
+          setRep(r => ({ ...r, photo: refresh.rep.photo_url }));
+          setSavedToast(true);
+          setTimeout(() => setSavedToast(false), 3000);
+        }
+      } else {
+        setSaveError(result.error || 'ფოტოს ატვირთვა ვერ მოხერხდა');
+      }
+    } catch (e) {
+      setSaveError('ფოტოს ატვირთვის შეცდომა: ' + e.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
   const copyUrl = () => {
     navigator.clipboard?.writeText('https://' + shareUrl);
@@ -729,15 +833,20 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
         <Card>
           <SectionLabel n="01" t="ფოტო და სახელი" />
           <div className="flex items-center gap-4">
-            <button onClick={() => fileRef.current?.click()}
-              className="relative w-24 h-24 rounded-full overflow-hidden flex-shrink-0 transition hover:scale-105"
+            <button onClick={() => fileRef.current?.click()} disabled={uploadingPhoto}
+              className="relative w-24 h-24 rounded-full overflow-hidden flex-shrink-0 transition hover:scale-105 disabled:opacity-70"
               style={{ background: theme.mist, border: `2px solid ${theme.gold}66` }}>
               {rep.photo
                 ? <img src={rep.photo} alt="" className="w-full h-full object-cover" />
                 : <Ic name="camera" className="w-7 h-7 absolute inset-0 m-auto" style={{ color: theme.gold }} />}
+              {uploadingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                  <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent" style={{ animation: 'spin 0.8s linear infinite' }} />
+                </div>
+              )}
               <div className="absolute bottom-0 left-0 right-0 py-1 text-[10px] tracking-widest uppercase"
                 style={{ background: theme.ink + 'CC', color: theme.cream }}>
-                {rep.photo ? 'შეცვლა' : 'ატვირთე'}
+                {uploadingPhoto ? 'ვტვირთავ' : (rep.photo ? 'შეცვლა' : 'ატვირთე')}
               </div>
             </button>
             <input ref={fileRef} type="file" accept="image/*" onChange={onPhoto} hidden />
