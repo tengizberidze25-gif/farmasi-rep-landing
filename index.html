@@ -691,10 +691,19 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [visits, setVisits] = useState(null);
   const fileRef = useRef(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const shareUrl = `${window.location.host}/?pid=${repCode}`;
   const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
+
+  // Load visit stats
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_visits', pid: repCode })
+      .then(data => { if (data.ok) setVisits(data); })
+      .catch(() => {});
+  }, [repCode]);
 
   const onPhoto = async (e) => {
     const f = e.target.files?.[0];
@@ -830,6 +839,76 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
             </button>
           </div>
         </Card>
+
+        {/* Visits Analytics Card */}
+        {visits && (
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>📊 ანალიტიკა</p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>შენი გვერდის ვიზიტები</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="text-center p-4 rounded-2xl"
+                style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
+                <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.today}</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>დღეს</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl"
+                style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
+                <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.week}</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>7 დღე</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl"
+                style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
+                <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.total}</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>სულ</p>
+              </div>
+            </div>
+
+            {visits.days && visits.days.length > 0 && (
+              <div>
+                <p className="text-[10px] tracking-widest uppercase mb-3" style={{ color: theme.ink + '77' }}>ბოლო 7 დღე</p>
+                <div className="flex items-end gap-1.5 h-24">
+                  {visits.days.map((d, i) => {
+                    const maxCount = Math.max(...visits.days.map(x => x.count), 1);
+                    const heightPct = (d.count / maxCount) * 100;
+                    const dayName = ['კვ','ორ','სა','ოთ','ხუ','პა','შა'][new Date(d.date).getDay()];
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                        <div className="w-full flex-1 flex items-end">
+                          <div className="w-full rounded-t-md transition-all relative"
+                            style={{
+                              height: `${Math.max(heightPct, d.count > 0 ? 8 : 2)}%`,
+                              background: d.count > 0
+                                ? `linear-gradient(180deg, ${theme.wine}, ${theme.rose})`
+                                : theme.gold + '22',
+                              minHeight: '4px'
+                            }}>
+                            {d.count > 0 && (
+                              <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-mono" style={{ color: theme.wine }}>
+                                {d.count}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-[9px] tracking-wider uppercase" style={{ color: theme.ink + '77' }}>{dayName}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {visits.total === 0 && (
+              <p className="text-xs text-center mt-4 italic" style={{ color: theme.ink + '77' }}>
+                ჯერ ვიზიტები არ არის — გააზიარე შენი ლინკი! 🚀
+              </p>
+            )}
+          </Card>
+        )}
         <Card>
           <SectionLabel n="01" t="ფოტო და სახელი" />
           <div className="flex items-center gap-4">
