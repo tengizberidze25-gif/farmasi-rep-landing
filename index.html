@@ -2092,6 +2092,111 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
         </div>
       </section>
 
+      {/* Garlic Series — educational deep-dive about FARMASI Vitalizing's heritage */}
+      <section className="px-5 py-20 sm:py-28 relative overflow-hidden" style={{ background: theme.cream }}>
+        {/* Decorative ornaments */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-30"
+          style={{ background: `radial-gradient(circle, ${theme.rose}, transparent 70%)`, filter: 'blur(40px)' }} />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-30"
+          style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)`, filter: 'blur(40px)' }} />
+
+        <div className="max-w-5xl mx-auto relative">
+          {/* Heading */}
+          <div className="text-center mb-14 sm:mb-20">
+            <p className="text-xs uppercase tracking-[0.4em] mb-4 anim-fadeup" style={{ color: theme.wine }}>
+              ✦ FARMASI VITALIZING ✦
+            </p>
+            <h2 className="font-display text-4xl sm:text-6xl mb-6 anim-fadeup" style={{ color: theme.ink, animationDelay: '80ms' }}>
+              ნივრის <em style={{ color: theme.wine, fontStyle: 'italic' }}>ძალა</em>
+            </h2>
+            <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed anim-fadeup" style={{ color: theme.ink + 'CC', animationDelay: '160ms' }}>
+              საუკუნეების მანძილზე ცნობილი თმის გამხდელი ბუნებრივი ფორმულა,
+              გაერთიანებული ფარმასის თანამედროვე მეცნიერებასთან.
+            </p>
+          </div>
+
+          {/* 3 benefit pillars */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-7 mb-14">
+            {[
+              {
+                icon: 'shield-check',
+                title: 'ფესვების სიძლიერე',
+                text: 'ნივრის სულფურის ნაერთები ფესვებში შეაღწევენ, ფოლიკულებს ანამზადებენ და ცვენას ბლოკავენ უკვე პირველი თვიდან.',
+                stat: '85%',
+                statLabel: 'ცვენის შემცირება'
+              },
+              {
+                icon: 'sparkles',
+                title: 'ბრწყინვალება',
+                text: 'B ვიტამინები, ბიოტინი და ნიაცინი თმას სიცოცხლეს უბრუნებენ — ანათებს, ხდება მოცულობითი და რბილი.',
+                stat: '+40%',
+                statLabel: 'სიცხადე'
+              },
+              {
+                icon: 'leaf',
+                title: 'ბუნებრიობა',
+                text: 'ნივრის ექსტრაქტი + ანტიოქსიდანტები სკალპს არიდებენ თავისუფალ რადიკალებს და ჯანსაღ გარემოს ქმნიან.',
+                stat: '100%',
+                statLabel: 'ვეგანური'
+              }
+            ].map((b, i) => (
+              <div key={i} className="relative p-7 rounded-3xl anim-fadeup transition hover:-translate-y-1"
+                style={{
+                  background: theme.ivory,
+                  boxShadow: `0 10px 40px -15px ${theme.wine}22`,
+                  border: `1px solid ${theme.gold}15`,
+                  animationDelay: `${240 + i * 80}ms`
+                }}>
+                <div className="w-14 h-14 mb-5 rounded-2xl flex items-center justify-center"
+                  style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.gold})`, color: theme.cream }}>
+                  <Ic name={b.icon} className="w-7 h-7" />
+                </div>
+                <h3 className="font-display text-2xl mb-3" style={{ color: theme.ink }}>
+                  {b.title}
+                </h3>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: theme.ink + 'AA' }}>
+                  {b.text}
+                </p>
+                <div className="pt-4" style={{ borderTop: `1px solid ${theme.gold}22` }}>
+                  <p className="font-display text-3xl" style={{ color: theme.wine }}>{b.stat}</p>
+                  <p className="text-[10px] uppercase tracking-widest" style={{ color: theme.ink + '88' }}>{b.statLabel}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Heritage stripe */}
+          <div className="rounded-3xl p-8 sm:p-10 text-center anim-fadeup"
+            style={{
+              background: `linear-gradient(135deg, ${theme.ink}, #1F1F1F)`,
+              color: theme.cream,
+              animationDelay: '480ms',
+              boxShadow: `0 20px 50px -15px ${theme.wine}33`
+            }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+              <div>
+                <p className="font-display text-4xl sm:text-5xl mb-1" style={{ color: theme.wine }}>1955</p>
+                <p className="text-xs tracking-widest uppercase opacity-70">ფარმასის დაარსება</p>
+              </div>
+              <div className="sm:border-l sm:border-r" style={{ borderColor: theme.cream + '22' }}>
+                <p className="font-display text-4xl sm:text-5xl mb-1" style={{ color: theme.wine }}>43+</p>
+                <p className="text-xs tracking-widest uppercase opacity-70">ქვეყანა მსოფლიოში</p>
+              </div>
+              <div>
+                <p className="font-display text-4xl sm:text-5xl mb-1" style={{ color: theme.wine }}>4.8★</p>
+                <p className="text-xs tracking-widest uppercase opacity-70">მომხმარებელთა შეფასება</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Closing tagline */}
+          <p className="text-center mt-10 text-sm italic max-w-2xl mx-auto anim-fadeup"
+            style={{ color: theme.ink + '99', animationDelay: '560ms' }}>
+            "ბუნება იცის, ფარმასი იცავს — ერთი წლის შემდეგ აღარ გახსოვდება როგორი იყო შენი თმა."
+          </p>
+        </div>
+      </section>
+
       {/* Customer testimonial videos — bottom of page, only shown if rep added any */}
       {(rep.customerVideos || []).length > 0 && (
         <section className="px-5 py-16 sm:py-20" style={{ background: `linear-gradient(180deg, ${theme.ivory}, ${theme.cream})` }}>
