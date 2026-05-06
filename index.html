@@ -439,7 +439,21 @@ const products = [
 // ════════════════════════════════════════════════════════════════════════════
 const PROBLEMS = [
   // თმის მოვლა (4)
-  { id: 'hair-loss',     label: 'თმის ცვენა',         icon: 'wind',         productId: 909,  accent: '#E50571' },
+  {
+    id: 'hair-loss', label: 'თმის ცვენა', icon: 'wind', productId: 909, accent: '#E50571',
+    bridge: {
+      eyebrow: 'შენ აირჩიე',
+      headline: 'ვიცი ეს ტკივილი.',
+      paragraphs: [
+        'ყოველი ღერი, რომელიც სავარცხელზე რჩება — ცოტა-ცოტა შენი თავდაჯერებულობის ნაჭრებია.',
+        'სარკეში ცქერა, რომელიც ერთ დროს თამაშივით იყო — ახლა ცოტა მძიმე მომენტი გახდა.',
+        'მაგრამ მოისმინე — ეს დაბრუნდება. ნელ-ნელა, რიტუალით, საკუთარი თავის მზრუნველობით.',
+      ],
+      stat: 'ყოველ მე-3 ქალს საქართველოში თმის ცვენის პრობლემა აქვს. შენ მარტო არ ხარ.',
+      repNote: 'მე გავიარე ეს გზა — შენც გაივლი.',
+      cta: 'ნახე შენი რიტუალი',
+    }
+  },
   { id: 'oily-scalp',    label: 'ცხიმიანი სკალპი',    icon: 'droplets',     productId: null, accent: '#0EA5E9' },
   { id: 'dull-hair',     label: 'უსიცოცხლო თმა',      icon: 'cloud-off',    productId: null, accent: '#A78BFA' },
   { id: 'graying',       label: 'გათეთრება',           icon: 'snowflake',    productId: null, accent: '#94A3B8' },
@@ -546,12 +560,13 @@ function apiUpload(params) {
   });
 }
 
-// Extract PID from URL: /?pid=153205 or /?pid=153205&edit=1
+// Extract PID from URL: /?pid=153205 or /?pid=153205&edit=1 or /?pid=153205&problem=hair-loss
 function getUrlParams() {
   const params = new URLSearchParams(window.location.search);
   return {
     pid: params.get('pid'),
     edit: params.get('edit') === '1',
+    problem: params.get('problem'),
   };
 }
 
@@ -562,6 +577,7 @@ function App() {
   const [view, setView] = useState(urlParams.pid ? 'loading' : 'login');
   const [repCode, setRepCode] = useState(urlParams.pid || '');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProblem, setSelectedProblem] = useState(null);
   const [loadError, setLoadError] = useState('');
   const [rep, setRep] = useState({
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
@@ -589,8 +605,20 @@ function App() {
             telegram: data.rep.telegram || '',
             city: data.rep.city || '',
           });
-          // Decide view: edit mode → dashboard, otherwise → public
-          setView(urlParams.edit ? 'dashboard' : 'public');
+          // Decide view: edit mode → dashboard, ?problem=X → bridge, otherwise → public
+          if (urlParams.edit) {
+            setView('dashboard');
+          } else if (urlParams.problem) {
+            const problem = PROBLEMS.find(p => p.id === urlParams.problem && p.productId);
+            if (problem) {
+              setSelectedProblem(problem);
+              setView('bridge');
+            } else {
+              setView('public');
+            }
+          } else {
+            setView('public');
+          }
           // Log visit if not in edit mode
           if (!urlParams.edit) {
             api({ action: 'log_visit', pid: urlParams.pid }).catch(() => {});
@@ -608,6 +636,12 @@ function App() {
 
   const openProduct = (p) => { setSelectedProduct(p); setView('product'); window.scrollTo(0, 0); };
   const backToPublic = () => { setSelectedProduct(null); setView('public'); window.scrollTo(0, 0); };
+  const openBridge = (problem) => { setSelectedProblem(problem); setView('bridge'); window.scrollTo(0, 0); };
+  const proceedFromBridge = () => {
+    if (!selectedProblem?.productId) return;
+    const product = products.find(p => p.id === selectedProblem.productId);
+    if (product) openProduct(product);
+  };
 
   return (
     <div style={{ background: theme.cream, minHeight: '100vh' }}>
@@ -615,7 +649,8 @@ function App() {
       {view === 'loading' && <LoadingScreen />}
       {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} />}
       {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} />}
-      {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} />}
+      {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} onProblemSelect={openBridge} />}
+      {view === 'bridge' && <PainBridge rep={rep} problem={selectedProblem} onProceed={proceedFromBridge} onBack={() => setView('public')} />}
       {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} />}
     </div>
   );
@@ -1098,17 +1133,22 @@ function Input({ label, value, onChange, placeholder, icon, iconType, small, gre
   );
 }
 
-function PublicPage({ rep, repCode, onProduct }) {
+function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
   const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
   const goCatalog = () => window.open(CATALOG_URL, '_blank');
 
-  // Hour 4: Pain Bridge view will go between this and onProduct
+  // Quiz click → goes through Pain Bridge (empathy screen) before product
   const handleProblemSelect = (problem) => {
-    const product = products.find(p => p.id === problem.productId);
-    if (product) onProduct(product);
+    if (onProblemSelect) {
+      onProblemSelect(problem);
+    } else {
+      // Fallback (shouldn't happen): direct to product
+      const product = products.find(p => p.id === problem.productId);
+      if (product) onProduct(product);
+    }
   };
 
   const socials = [
@@ -1699,6 +1739,116 @@ function PainQuiz({ onSelect }) {
 
       <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
     </section>
+  );
+}
+
+function PainBridge({ rep, problem, onProceed, onBack }) {
+  if (!problem || !problem.bridge) return null;
+  const b = problem.bridge;
+
+  return (
+    <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+      {/* Soft cinematic ambient gradients */}
+      <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+        style={{ background: theme.blush }} />
+      <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
+        style={{ background: problem.accent + '88' }} />
+      <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: theme.gold }} />
+
+      {/* Sticky top bar with back */}
+      <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center"
+        style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase transition hover:gap-3"
+          style={{ color: theme.ink }}>
+          <Ic name="arrow-left" className="w-4 h-4" /> უკან
+        </button>
+      </div>
+
+      <div className="relative max-w-3xl mx-auto px-5 py-12 sm:py-20">
+        {/* Eyebrow with problem icon */}
+        <div className="text-center mb-8 anim-fadeup">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ background: problem.accent + '11', border: `1px solid ${problem.accent}33` }}>
+            <Ic name={problem.icon} className="w-3.5 h-3.5" style={{ color: problem.accent }} />
+            <span className="text-[10px] tracking-[0.25em] uppercase font-medium" style={{ color: problem.accent }}>
+              {b.eyebrow} · {problem.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Headline */}
+        <h1 className="font-display text-center mb-10 anim-fadeup"
+          style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', color: theme.ink, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          {b.headline}
+        </h1>
+
+        {/* Empathy paragraphs */}
+        <div className="max-w-xl mx-auto space-y-5 mb-12">
+          {b.paragraphs.map((p, i) => (
+            <p key={i} className="font-display-lat italic text-center leading-relaxed anim-fadeup"
+              style={{ color: theme.ink + 'CC', fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', animationDelay: `${i * 100}ms` }}>
+              {p}
+            </p>
+          ))}
+        </div>
+
+        {/* "You're not alone" stat */}
+        {b.stat && (
+          <div className="max-w-xl mx-auto rounded-3xl p-6 sm:p-8 mb-10 text-center anim-fadeup"
+            style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`,
+                     border: `1px solid ${problem.accent}33`,
+                     boxShadow: `0 4px 30px -8px ${problem.accent}22` }}>
+            <div className="flex justify-center mb-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: problem.accent + '22' }}>
+                <Ic name="users" className="w-4 h-4" style={{ color: problem.accent }} />
+              </div>
+            </div>
+            <p className="text-base sm:text-lg leading-relaxed font-display" style={{ color: theme.ink }}>
+              {b.stat}
+            </p>
+          </div>
+        )}
+
+        {/* Rep card — personal touch */}
+        {rep.name && b.repNote && (
+          <div className="max-w-md mx-auto flex items-center gap-4 p-4 rounded-3xl mb-10 anim-fadeup"
+            style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+            <div className="relative flex-shrink-0">
+              <div className="w-14 h-14 rounded-full overflow-hidden"
+                style={{ border: `2px solid ${theme.cream}`, boxShadow: `0 4px 12px ${problem.accent}33` }}>
+                {rep.photo
+                  ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-lg"
+                       style={{ background: theme.mist, color: theme.gold }}>{rep.name.charAt(0) || '?'}</div>}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] tracking-widest uppercase mb-0.5" style={{ color: theme.gold }}>{rep.name}</p>
+              <p className="text-sm italic font-display-lat leading-snug" style={{ color: theme.ink }}>
+                "{b.repNote}"
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* CTA */}
+        <div className="text-center anim-fadeup">
+          <button onClick={onProceed}
+            className="group relative inline-flex items-center gap-3 py-5 px-8 sm:px-10 rounded-full font-medium text-sm tracking-[0.2em] uppercase transition hover:scale-[1.03]"
+            style={{ background: problem.accent, color: theme.cream,
+                     boxShadow: `0 20px 50px -10px ${problem.accent}66` }}>
+            <span>✦</span>
+            {b.cta}
+            <Ic name="arrow-right" className="w-4 h-4" />
+          </button>
+          <p className="text-xs mt-5" style={{ color: theme.ink + '77' }}>
+            არანაირი ვალდებულება — მხოლოდ შენი რიტუალის ჩვენება
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
