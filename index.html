@@ -599,7 +599,7 @@ function App() {
   const [loadError, setLoadError] = useState('');
   const [rep, setRep] = useState({
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
-    instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '',
+    instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
   });
 
   // Load rep data from API on mount if PID is in URL
@@ -623,6 +623,14 @@ function App() {
             telegram: data.rep.telegram || '',
             city: data.rep.city || '',
             videoUrl: data.rep.video_url || '',
+            customerVideos: (() => {
+              try {
+                const raw = data.rep.customer_videos;
+                if (!raw) return [];
+                const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                return Array.isArray(parsed) ? parsed : [];
+              } catch { return []; }
+            })(),
           });
           // Decide view: edit mode → dashboard, ?problem=X → bridge, otherwise → public
           if (urlParams.edit) {
@@ -819,7 +827,10 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
   const [saveError, setSaveError] = useState('');
   const [visits, setVisits] = useState(null);
   const fileRef = useRef(null);
+  const videoFileRef = useRef(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const shareUrl = `${window.location.host}/?pid=${repCode}`;
   const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
 
@@ -886,6 +897,208 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
       setUploadingPhoto(false);
     }
   };
+
+  const onVideoFile = async (e) => {
+    if (!f) return;
+
+    // Type check
+    if (!f.type.startsWith('video/')) {
+      setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+
+    // Size limit: 5MB (Apps Script payload limit)
+    if (f.size > 5 * 1024 * 1024) {
+      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB. მოკლედ ჩაჭერი ან ხარისხი დააწიე.`);
+      setTimeout(() => setSaveError(''), 6000);
+      return;
+    }
+
+    setUploadingVideo(true);
+    setVideoUploadProgress(0);
+    setSaveError('');
+
+    try {
+      // Read as base64 (with progress simulation since FileReader is sync-ish)
+      const reader = new FileReader();
+      reader.onprogress = (ev) => {
+        if (ev.lengthComputable) {
+          setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 50)); // 0-50% for read
+        }
+      };
+      const base64Data = await new Promise((resolve, reject) => {
+        reader.onload = () => { setVideoUploadProgress(50); resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(f);
+      });
+
+      setVideoUploadProgress(60); // 60% — uploading to Drive
+
+      const result = await apiUpload({
+        action: 'upload_video',
+        pid: repCode,
+        video_data: base64Data,
+        video_filename: f.name,
+      });
+
+      setVideoUploadProgress(95);
+
+      if (result.ok && result.video_url) {
+        setRep(r => ({ ...r, videoUrl: result.video_url }));
+        setVideoUploadProgress(100);
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 3000);
+      } else if (result._silent) {
+        // Cross-origin couldn't read response — re-fetch rep data
+        const refresh = await api({ action: 'get_rep', pid: repCode });
+        if (refresh.ok && refresh.rep.video_url) {
+          setRep(r => ({ ...r, videoUrl: refresh.rep.video_url }));
+          setVideoUploadProgress(100);
+          setSavedToast(true);
+          setTimeout(() => setSavedToast(false), 3000);
+        }
+      } else {
+        setSaveError(result.error || 'ვიდეოს ატვირთვა ვერ მოხერხდა');
+      }
+    } catch (err) {
+      setSaveError('ვიდეოს ატვირთვის შეცდომა: ' + err.message);
+    } finally {
+      setUploadingVideo(false);
+      setTimeout(() => setVideoUploadProgress(0), 1500);
+      // Reset file input so same file can be selected again
+      if (videoFileRef.current) videoFileRef.current.value = '';
+    }
+  };
+
+  // ─── Customer Videos (testimonial gallery at bottom of public page) ───
+  const customerVideoFileRef = useRef(null);
+  const [uploadingCustomerVideo, setUploadingCustomerVideo] = useState(false);
+  const [customerUploadProgress, setCustomerUploadProgress] = useState(0);
+  const [newCustomerUrl, setNewCustomerUrl] = useState('');
+  const [newCustomerCaption, setNewCustomerCaption] = useState('');
+
+  const persistCustomerVideos = async (updatedList) => {
+    setRep(r => ({ ...r, customerVideos: updatedList }));
+    // Auto-save the updated list to Sheet
+    try {
+      await api({
+        action: 'save_rep',
+        pid: repCode,
+        customer_videos: JSON.stringify(updatedList),
+      });
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 2000);
+    } catch (err) {
+      setSaveError('ვერ შეინახა: ' + err.message);
+    }
+  };
+
+  const addCustomerVideoFromUrl = async () => {
+    const url = newCustomerUrl.trim();
+    if (!url) return;
+    if (!parseVideoUrl(url)) {
+      setSaveError('ლინკი არ მესმის — სცადე YouTube/Instagram/TikTok/Facebook');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    if ((rep.customerVideos || []).length >= 6) {
+      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    const newItem = { url, caption: newCustomerCaption.trim() };
+    const updated = [...(rep.customerVideos || []), newItem];
+    setNewCustomerUrl('');
+    setNewCustomerCaption('');
+    await persistCustomerVideos(updated);
+  };
+
+  const onCustomerVideoFile = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith('video/')) {
+      setSaveError('ფაილი უნდა იყოს ვიდეო');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB.`);
+      setTimeout(() => setSaveError(''), 5000);
+      return;
+    }
+    if ((rep.customerVideos || []).length >= 6) {
+      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+
+    setUploadingCustomerVideo(true);
+    setCustomerUploadProgress(0);
+    setSaveError('');
+
+    try {
+      const reader = new FileReader();
+      reader.onprogress = (ev) => {
+        if (ev.lengthComputable) setCustomerUploadProgress(Math.round((ev.loaded / ev.total) * 50));
+      };
+      const base64Data = await new Promise((resolve, reject) => {
+        reader.onload = () => { setCustomerUploadProgress(50); resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(f);
+      });
+
+      setCustomerUploadProgress(70);
+
+      const result = await apiUpload({
+        action: 'upload_video',
+        pid: repCode,
+        slot: 'customer',  // tells Apps Script to NOT update video_url field
+        video_data: base64Data,
+        video_filename: f.name,
+      });
+
+      setCustomerUploadProgress(90);
+
+      let returnedUrl = '';
+      if (result.ok && result.video_url) {
+        returnedUrl = result.video_url;
+      } else if (result._silent) {
+        // Fallback: re-fetch isn't useful here since slot='customer' doesn't update Sheet
+        // The URL is in result, but if we can't read it, ask user to retry
+        setSaveError('ვიდეო ატვირთულია, მაგრამ პასუხი ვერ წავიკითხე. გადატვირთე გვერდი და ცადე ხელახლა.');
+        setTimeout(() => setSaveError(''), 6000);
+        return;
+      } else {
+        setSaveError(result.error || 'ატვირთვა ვერ მოხერხდა');
+        return;
+      }
+
+      const newItem = { url: returnedUrl, caption: newCustomerCaption.trim() };
+      const updated = [...(rep.customerVideos || []), newItem];
+      setNewCustomerCaption('');
+      setCustomerUploadProgress(100);
+      await persistCustomerVideos(updated);
+    } catch (err) {
+      setSaveError('ატვირთვის შეცდომა: ' + err.message);
+    } finally {
+      setUploadingCustomerVideo(false);
+      setTimeout(() => setCustomerUploadProgress(0), 1500);
+      if (customerVideoFileRef.current) customerVideoFileRef.current.value = '';
+    }
+  };
+
+  const removeCustomerVideo = async (index) => {
+    const updated = (rep.customerVideos || []).filter((_, i) => i !== index);
+    await persistCustomerVideos(updated);
+  };
+
+  const updateCustomerCaption = async (index, caption) => {
+    const updated = (rep.customerVideos || []).map((v, i) => i === index ? { ...v, caption } : v);
+    setRep(r => ({ ...r, customerVideos: updated }));
+    // Don't auto-save on every keystroke — user will click save or trigger via blur
+  };
+
   const copyUrl = () => {
     navigator.clipboard?.writeText('https://' + shareUrl);
     setCopied(true);
@@ -910,6 +1123,7 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
         youtube: rep.youtube,
         telegram: rep.telegram,
         video_url: rep.videoUrl || '',
+        customer_videos: JSON.stringify(rep.customerVideos || []),
         // photo_url left out for now — base64 too large for JSONP, will handle separately
       });
       if (result.ok) {
@@ -1073,19 +1287,63 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
 
         <Card>
           <SectionLabel n="02" t="ვიდეო მიმართვა" />
-          <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
-            ჩაწერე მოკლე ვიდეო ტელეფონზე (15–30 წამი — "გამარჯობა, მე ვარ..."), ატვირთე Instagram/TikTok/YouTube-ზე და ლინკი აქ ჩასვი. ვიდეო ფოტოს გვერდით გამოჩნდება.
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            მოკლე ვიდეო (15–30 წამი) ფოტოს გვერდით გამოჩნდება. <strong>ფაილის ატვირთვა ყველაზე სუფთად ჩანს</strong> — TikTok/Instagram-ის ლინკზე მათი caption და music ჩანს.
           </p>
-          <Input icon="play" label="ვიდეოს ლინკი" value={rep.videoUrl}
+
+          {/* PRIMARY: Direct file upload */}
+          <div className="mb-4">
+            <button onClick={() => videoFileRef.current?.click()}
+              disabled={uploadingVideo}
+              className="w-full py-4 rounded-2xl flex items-center justify-center gap-2.5 text-sm font-medium transition hover:scale-[1.01]"
+              style={{ background: theme.ink, color: theme.cream, opacity: uploadingVideo ? 0.7 : 1 }}>
+              {uploadingVideo ? (
+                <>
+                  <Ic name="loader" className="w-4 h-4 animate-spin" />
+                  ვტვირთავ... {videoUploadProgress > 0 && `${videoUploadProgress}%`}
+                </>
+              ) : (
+                <>
+                  <Ic name="upload" className="w-4 h-4" />
+                  ატვირთე ვიდეო ფაილი (MP4, max 5 MB)
+                </>
+              )}
+            </button>
+            {uploadingVideo && videoUploadProgress > 0 && (
+              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                <div className="h-full transition-all duration-300"
+                  style={{ width: `${videoUploadProgress}%`, background: theme.wine }} />
+              </div>
+            )}
+            <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*"
+              onChange={onVideoFile} className="hidden" />
+            <p className="text-[10px] mt-2 leading-relaxed text-center" style={{ color: theme.ink + '77' }}>
+              💡 TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე
+            </p>
+          </div>
+
+          {/* OR divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>ან</span>
+            <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+          </div>
+
+          {/* SECONDARY: URL paste */}
+          <Input icon="link" label="ჩასვი ლინკი (იქონია მეტადატა)" value={rep.videoUrl}
             onChange={upd('videoUrl')}
             placeholder="https://instagram.com/reel/... ან https://youtu.be/..." />
           {rep.videoUrl && (
             <div className="mt-3">
               {parseVideoUrl(rep.videoUrl) ? (
-                <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
+                <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg"
                   style={{ background: '#10B98111', color: '#059669', border: '1px solid #10B98133' }}>
-                  <Ic name="check-circle" className="w-3.5 h-3.5" />
-                  <span>ლინკი ცნობილია — ({parseVideoUrl(rep.videoUrl).type})</span>
+                  <span className="flex items-center gap-2">
+                    <Ic name="check-circle" className="w-3.5 h-3.5" />
+                    ლინკი ცნობილია — ({parseVideoUrl(rep.videoUrl).type})
+                  </span>
+                  <button onClick={() => setRep(r => ({ ...r, videoUrl: '' }))}
+                    className="text-[10px] underline opacity-70 hover:opacity-100">წაშლა</button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
@@ -1097,7 +1355,7 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
             </div>
           )}
           <p className="text-[10px] mt-3 leading-relaxed" style={{ color: theme.ink + '77' }}>
-            💡 მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Facebook (Watch/Reels) · Vimeo · MP4 პირდაპირი ლინკი
+            მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Facebook (Watch/Reels) · Vimeo · MP4 პირდაპირი ლინკი
           </p>
         </Card>
 
@@ -1117,6 +1375,104 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
             <Input icon="youtube"   iconType="social" label="YouTube"   value={rep.youtube}   onChange={upd('youtube')}   placeholder="youtube.com/..." />
             <Input icon="telegram"  iconType="social" label="Telegram"  value={rep.telegram}  onChange={upd('telegram')}  placeholder="@yourhandle" />
           </div>
+        </Card>
+
+        <Card>
+          <SectionLabel n="05" t="კმაყოფილი მომხმარებლები" />
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            დაამატე მომხმარებლების ვიდეო-რეცენზიები (მაქს. 6) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. იგივე წესები: ფაილი 5 MB-მდე, ან ნებისმიერი ვიდეო-პლატფორმის ლინკი.
+          </p>
+
+          {/* Existing customer videos list */}
+          {(rep.customerVideos || []).length > 0 && (
+            <div className="space-y-2 mb-4">
+              {rep.customerVideos.map((v, idx) => {
+                const parsed = parseVideoUrl(v.url);
+                return (
+                  <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl"
+                    style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: parsed ? theme.wine + '15' : theme.rose + '22', color: theme.wine }}>
+                      <Ic name="play" className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <input type="text" value={v.caption || ''}
+                        onChange={(e) => updateCustomerCaption(idx, e.target.value)}
+                        onBlur={() => persistCustomerVideos(rep.customerVideos)}
+                        placeholder="წარწერა (მაგ. ანი, 8 კვირა)"
+                        className="w-full text-sm bg-transparent outline-none truncate"
+                        style={{ color: theme.ink }} />
+                      <p className="text-[10px] truncate" style={{ color: theme.ink + '66' }}>
+                        {parsed ? parsed.type : '⚠ უცნობი ფორმატი'} · {v.url.slice(0, 40)}…
+                      </p>
+                    </div>
+                    <button onClick={() => removeCustomerVideo(idx)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition hover:scale-110"
+                      style={{ background: theme.rose + '22', color: theme.wine }}>
+                      <Ic name="trash" className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Add new — only show if under limit */}
+          {(rep.customerVideos || []).length < 6 ? (
+            <div className="rounded-2xl p-3" style={{ background: theme.cream + '88', border: `1px dashed ${theme.gold}44` }}>
+              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.ink + '99' }}>
+                დაამატე ახალი ({(rep.customerVideos || []).length}/6)
+              </p>
+
+              <input type="text" value={newCustomerCaption}
+                onChange={(e) => setNewCustomerCaption(e.target.value)}
+                placeholder="წარწერა (არასავალდებულო) — მაგ. 'ანი, 8 კვირა'"
+                className="w-full px-3 py-2 mb-2 rounded-xl outline-none text-sm"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+
+              <button onClick={() => customerVideoFileRef.current?.click()}
+                disabled={uploadingCustomerVideo}
+                className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium mb-2"
+                style={{ background: theme.ink, color: theme.cream, opacity: uploadingCustomerVideo ? 0.7 : 1 }}>
+                {uploadingCustomerVideo ? (
+                  <><Ic name="loader" className="w-4 h-4 animate-spin" /> ვტვირთავ... {customerUploadProgress}%</>
+                ) : (
+                  <><Ic name="upload" className="w-4 h-4" /> ფაილის ატვირთვა</>
+                )}
+              </button>
+              {uploadingCustomerVideo && customerUploadProgress > 0 && (
+                <div className="mb-2 h-1 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                  <div className="h-full transition-all duration-300"
+                    style={{ width: `${customerUploadProgress}%`, background: theme.wine }} />
+                </div>
+              )}
+              <input ref={customerVideoFileRef} type="file" accept="video/*"
+                onChange={onCustomerVideoFile} className="hidden" />
+
+              <div className="flex items-center gap-2 my-2">
+                <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+                <span className="text-[9px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>ან ლინკი</span>
+                <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+              </div>
+
+              <div className="flex gap-2">
+                <input type="url" value={newCustomerUrl}
+                  onChange={(e) => setNewCustomerUrl(e.target.value)}
+                  placeholder="https://instagram.com/reel/..."
+                  className="flex-1 px-3 py-2 rounded-xl outline-none text-sm"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+                <button onClick={addCustomerVideoFromUrl} disabled={!newCustomerUrl.trim()}
+                  className="px-4 rounded-xl text-sm font-medium disabled:opacity-40"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  დამატება
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-center py-3 rounded-xl" style={{ background: theme.cream, color: theme.ink + '88' }}>
+              მაქსიმუმ მიღწეულია (6 ვიდეო) — წაშალე ერთი დასამატებლად
+            </div>
+          )}
         </Card>
 
         {/* Save error message */}
@@ -1225,6 +1581,14 @@ function parseVideoUrl(url) {
 
   // Direct video file (mp4, webm, mov, m4v)
   if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(u)) return { type: 'direct', orientation: 'vertical', url: u };
+
+  // Google Drive video (from uploaded files via upload_video action)
+  if (/drive\.google\.com|googleusercontent\.com/.test(u)) {
+    const idMatch = u.match(/\/d\/([a-zA-Z0-9_-]+)|[?&]id=([a-zA-Z0-9_-]+)/);
+    const driveId = idMatch ? (idMatch[1] || idMatch[2]) : null;
+    if (driveId) return { type: 'drive', orientation: 'vertical',
+      embedUrl: `https://drive.google.com/file/d/${driveId}/preview` };
+  }
 
   return null;
 }
@@ -1717,6 +2081,50 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
           </div>
         </div>
       </section>
+
+      {/* Customer testimonial videos — bottom of page, only shown if rep added any */}
+      {(rep.customerVideos || []).length > 0 && (
+        <section className="px-5 py-16 sm:py-20" style={{ background: `linear-gradient(180deg, ${theme.ivory}, ${theme.cream})` }}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs uppercase tracking-[0.3em] mb-3" style={{ color: theme.wine }}>
+                ✨ კმაყოფილი მომხმარებლები
+              </p>
+              <h2 className="font-display text-3xl sm:text-5xl mb-3" style={{ color: theme.ink }}>
+                ნამდვილი ისტორიები
+              </h2>
+              <p className="text-sm max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
+                ჩემი მომხმარებლების გამოცდილება და შედეგები — მათივე სიტყვებით
+              </p>
+            </div>
+
+            <div className={`grid gap-5 ${
+              rep.customerVideos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+              rep.customerVideos.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
+              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+            }`}>
+              {rep.customerVideos.map((v, idx) => {
+                const parsed = parseVideoUrl(v.url);
+                if (!parsed) return null;
+                const isVertical = parsed.orientation === 'vertical';
+                return (
+                  <div key={idx} className="group anim-fadeup" style={{ animationDelay: `${idx * 80}ms` }}>
+                    <div className={`relative ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3`}
+                      style={{ background: theme.ink, boxShadow: `0 20px 50px -10px ${theme.wine}33`, border: `2px solid ${theme.cream}` }}>
+                      <VideoIntro url={v.url} />
+                    </div>
+                    {v.caption && (
+                      <p className="text-center text-sm italic px-3" style={{ color: theme.ink + 'CC' }}>
+                        "{v.caption}"
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       <footer className="px-5 py-12 text-center" style={{ background: theme.ink, color: theme.cream }}>
         <p className="font-display text-2xl mb-1">{rep.name}</p>
