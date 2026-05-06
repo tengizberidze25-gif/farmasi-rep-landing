@@ -1619,6 +1619,7 @@ function VideoIntro({ url }) {
 function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
+  const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
   const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
   const goCatalog = () => window.open(CATALOG_URL, '_blank');
@@ -1677,26 +1678,35 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
               </div>
             </div>
 
-            {/* Video greeting — shows if rep uploaded one, aspect adapts to platform orientation */}
-            {(() => {
-              const parsed = rep.videoUrl ? parseVideoUrl(rep.videoUrl) : null;
-              if (!parsed) return null;
-              const isVertical = parsed.orientation === 'vertical';
-              return (
-                <div className="relative anim-fadeup" style={{ animationDelay: '120ms' }}>
-                  <div className={`relative ${isVertical ? 'w-44 sm:w-48 aspect-[9/16]' : 'w-72 sm:w-80 aspect-video'} rounded-3xl overflow-hidden`}
-                    style={{ border: `3px solid ${theme.ivory}`,
-                             boxShadow: `0 20px 50px -10px ${theme.wine}55`,
-                             background: theme.ink }}>
-                    <VideoIntro url={rep.videoUrl} />
+            {/* Video greeting — round play button matching photo size, opens modal on click */}
+            {rep.videoUrl && parseVideoUrl(rep.videoUrl) && (
+              <div className="relative anim-fadeup" style={{ animationDelay: '120ms' }}>
+                {/* Glowing aura ring (matches photo's conic gradient style) */}
+                <div className="absolute -inset-2 rounded-full"
+                  style={{ background: `conic-gradient(${theme.wine}, ${theme.gold}, ${theme.rose}, ${theme.wine})`,
+                           opacity: 0.5, filter: 'blur(8px)' }} />
+                {/* Round play button */}
+                <button onClick={() => setVideoToPlay(rep.videoUrl)}
+                  className="relative w-36 h-36 rounded-full flex flex-col items-center justify-center gap-2 transition hover:scale-105 cursor-pointer overflow-hidden"
+                  style={{
+                    background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`,
+                    border: `3px solid ${theme.ivory}`,
+                    boxShadow: `0 20px 50px -10px ${theme.wine}66`,
+                    color: theme.cream
+                  }}>
+                  {/* Pulsing play circle */}
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full animate-ping"
+                      style={{ background: theme.cream + '55', animationDuration: '2s' }} />
+                    <div className="relative w-14 h-14 rounded-full flex items-center justify-center"
+                      style={{ background: theme.cream, boxShadow: `0 4px 12px ${theme.ink}44` }}>
+                      <Ic name="play" className="w-6 h-6" style={{ color: theme.wine, marginLeft: '3px' }} />
+                    </div>
                   </div>
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium flex items-center gap-1.5 whitespace-nowrap"
-                    style={{ background: theme.wine, color: theme.cream, boxShadow: `0 4px 12px ${theme.wine}66` }}>
-                    <Ic name="play" className="w-2.5 h-2.5" /> ვიდეო მიმართვა
-                  </div>
-                </div>
-              );
-            })()}
+                  <p className="text-[9px] uppercase tracking-[0.2em] font-medium opacity-90">ვიდეო მიმართვა</p>
+                </button>
+              </div>
+            )}
           </div>
           <h1 className="text-center font-display text-4xl sm:text-5xl mb-2 anim-fadeup" style={{ color: theme.ink }}>
             {rep.name || 'შენი სახელი'}
@@ -2109,15 +2119,42 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
                 const isVertical = parsed.orientation === 'vertical';
                 return (
                   <div key={idx} className="group anim-fadeup" style={{ animationDelay: `${idx * 80}ms` }}>
-                    <div className={`relative ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3`}
-                      style={{ background: theme.ink, boxShadow: `0 20px 50px -10px ${theme.wine}33`, border: `2px solid ${theme.cream}` }}>
-                      <VideoIntro url={v.url} />
-                    </div>
-                    {v.caption && (
-                      <p className="text-center text-sm italic px-3" style={{ color: theme.ink + 'CC' }}>
-                        "{v.caption}"
-                      </p>
-                    )}
+                    <button onClick={() => setVideoToPlay(v.url)}
+                      className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
+                      style={{
+                        background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`,
+                        boxShadow: `0 20px 50px -10px ${theme.wine}33`,
+                        border: `2px solid ${theme.cream}`
+                      }}>
+                      {/* Decorative pattern */}
+                      <div className="absolute inset-0 opacity-20"
+                        style={{ background: `radial-gradient(circle at 30% 20%, ${theme.gold}, transparent 50%), radial-gradient(circle at 70% 80%, ${theme.rose}, transparent 50%)` }} />
+                      {/* Centered play icon */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-full animate-ping"
+                            style={{ background: theme.cream + '44', animationDuration: '2.5s' }} />
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                            style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
+                            <Ic name="play" className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.wine, marginLeft: '4px' }} />
+                          </div>
+                        </div>
+                      </div>
+                      {/* Platform badge */}
+                      <div className="absolute top-3 left-3 px-2 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium"
+                        style={{ background: 'rgba(255,255,255,0.15)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
+                        {parsed.type}
+                      </div>
+                      {/* Caption overlay if exists */}
+                      {v.caption && (
+                        <div className="absolute bottom-0 left-0 right-0 p-4"
+                          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}>
+                          <p className="text-sm italic text-center" style={{ color: theme.cream }}>
+                            "{v.caption}"
+                          </p>
+                        </div>
+                      )}
+                    </button>
                   </div>
                 );
               })}
@@ -2183,6 +2220,29 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
           </div>
         </div>
       )}
+
+      {/* Video lightbox modal — opens when ANY video play button is clicked (rep greeting OR customer video) */}
+      {videoToPlay && (() => {
+        const parsed = parseVideoUrl(videoToPlay);
+        if (!parsed) return null;
+        const isVertical = parsed.orientation === 'vertical';
+        return (
+          <div onClick={() => setVideoToPlay(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fadeup"
+            style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)' }}>
+            <button onClick={() => setVideoToPlay(null)}
+              className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 z-10"
+              style={{ background: theme.cream, color: theme.ink }}>
+              <Ic name="x" className="w-5 h-5" />
+            </button>
+            <div onClick={(e) => e.stopPropagation()}
+              className={`relative ${isVertical ? 'h-[85vh] aspect-[9/16]' : 'w-[92vw] max-w-5xl aspect-video'} rounded-3xl overflow-hidden`}
+              style={{ background: theme.ink, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
+              <VideoIntro url={videoToPlay} />
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
