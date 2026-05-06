@@ -93,6 +93,7 @@ const theme = {
 };
 
 const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
+const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
 
 const Mockups = {
   serum: ({ accent = '#7A1E2C' }) => (
@@ -1572,8 +1573,11 @@ function parseVideoUrl(url) {
   const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   if (yt) {
     const isShort = /youtube\.com\/shorts\//.test(u);
+    // Preserve timestamp (?t=158s or ?t=158 → embed ?start=158)
+    const tMatch = u.match(/[?&]t=(\d+)/);
+    const startParam = tMatch ? `&start=${tMatch[1]}` : '';
     return { type: 'youtube', orientation: isShort ? 'vertical' : 'horizontal',
-      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1` };
+      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1${startParam}` };
   }
 
   // Vimeo: vimeo.com/{id}
@@ -2246,6 +2250,38 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem })
                 <p className="text-xs tracking-widest uppercase opacity-70">მომხმარებელთა შეფასება</p>
               </div>
             </div>
+
+            {/* Divider */}
+            <div className="h-px my-8" style={{ background: theme.cream + '22' }} />
+
+            {/* Factory video CTA — click to play in lightbox */}
+            <button onClick={() => setVideoToPlay(FACTORY_VIDEO)}
+              className="w-full flex items-center gap-4 sm:gap-6 p-3 sm:p-4 rounded-2xl transition hover:scale-[1.01] hover:bg-white/5 group cursor-pointer text-left"
+              style={{ background: theme.cream + '08', border: `1px solid ${theme.cream}11` }}>
+              {/* Play icon */}
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-full animate-ping"
+                  style={{ background: theme.wine + '66', animationDuration: '2.5s' }} />
+                <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition group-hover:scale-105"
+                  style={{ background: theme.wine, boxShadow: `0 8px 20px ${theme.wine}44` }}>
+                  <Ic name="play" className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: theme.cream, marginLeft: '3px' }} />
+                </div>
+              </div>
+              {/* Text */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] uppercase tracking-[0.25em] mb-1.5" style={{ color: theme.wine }}>
+                  ✦ Behind the Scenes
+                </p>
+                <p className="font-display text-lg sm:text-2xl mb-1" style={{ color: theme.cream }}>
+                  ფარმასის ქარხანა
+                </p>
+                <p className="text-xs opacity-70" style={{ color: theme.cream }}>
+                  ნახე საკუთარი თვალით სად და როგორ იქმნება პროდუქცია
+                </p>
+              </div>
+              <Ic name="chevron-right" className="w-5 h-5 shrink-0 transition group-hover:translate-x-1"
+                style={{ color: theme.cream, opacity: 0.5 }} />
+            </button>
           </div>
 
           {/* Closing tagline */}
