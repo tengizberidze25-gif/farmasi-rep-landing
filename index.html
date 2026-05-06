@@ -347,7 +347,7 @@ const products = [
       headline: 'თქვენი რიტუალი იწყება აქ',
       subtitle: 'სამი პროდუქტი — ერთი მიზანი. შამპუნი, ნიღაბი, ზეთი — Dr. C. Tuna Vitalizing-ის სრული კოლექცია მაქსიმალური შედეგისთვის.',
       bundleImage: 'vitalizing-bundle-products.png',
-      bundlePrice: 54.99,
+      bundlePrice: 71.99,
       savings: 9.98,
       tagline: 'მიეცით თქვენს თმას უფლება, გამოიყურებოდეს ისე, როგორც თქვენ იმსახურებთ.',
       items: [
@@ -361,7 +361,7 @@ const products = [
           accent: '#E50571'
         },
         {
-          step: 2, name: 'ინტენსიური ნიღაბი', subtitle: 'სინაზე და მზრუნველობა', price: 17.99,
+          step: 2, name: 'ინტენსიური ნიღაბი', subtitle: 'სინაზე და მზრუნველობა', price: 19.99,
           image: 'vitalizing-mask.png',
           quote: 'მიეცით თავს უფლება — რამდენიმე წუთით სრულ სიმშვიდეში ჩაიძიროთ.',
           desc: 'ვიტამინ B5-ით თქვენს თმას ისეთივე სინაზით ეხვევა, როგორც ყველაზე თბილი ჩახუტება. ღრმად კვებავს და აცოცხლებს დაზიანებულ სტრუქტურას, აქრობს დაღლილობის კვალს, ტოვებს მხოლოდ აბრეშუმისებრ სიმსუბუქეს.',
@@ -370,7 +370,7 @@ const products = [
           accent: '#A21CAF'
         },
         {
-          step: 3, name: 'გამაძლიერებელი ზეთი', subtitle: 'ჯადოსნური ტრანსფორმაცია', price: 16.99,
+          step: 3, name: 'გამაძლიერებელი ზეთი', subtitle: 'ჯადოსნური ტრანსფორმაცია', price: 31.99,
           image: 'vitalizing-oil.png',
           quote: 'თმის ყოველი ღერი თქვენი ისტორიის ნაწილია.',
           desc: 'როცა ის სუსტდება, თითქოს თქვენი თავდაჯერებულობაც იკლებს. კონცენტრირებული ფორმულა — იმედის წვეთები ფესვებისთვის. სიღრმისეულად მოქმედებს, რათა დააბრუნოს დაკარგული მოცულობა და სიმკვრივე.',
@@ -381,6 +381,52 @@ const products = [
       ],
     },
   },
+  // ⚡ ALTERNATIVE — VITALIZING FORTE Shampoo (პრემიუმ ყოველდღიური, კომპაქტური)
+  {
+    id: 1917,
+    name: 'Vitalizing FORTE შამპუნი',
+    fullName: 'Dr. C. Tuna · Vitalizing FORTE Hair Care',
+    cat: 'თმის მოვლა · 325 მლ',
+    headline: 'გაძლიერებული ფორმულა — ყოველდღე',
+    subheadline: 'პროფესიონალური ხაზის FORTE ფორმულა — UV დაცვა, ანტი-სტატიკური ეფექტი და სკალპის აღდგენა.',
+    price: 12.99, tag: 'FORTE',
+    image: 'https://farmasi.ge/public/images/product_fb/1917.png',
+    description: 'არ შეიცავს SLS-ს, პარაბენებს, გლუტენს, ფორმალდეჰიდს და ფტალატებს. დერმატოლოგიურად დადასტურებული მგრძნობიარე კანისთვისაც.',
+    bg: ['#FCE7F3', '#F472B6'], accent: '#DB2777',
+    sku: '1002480',
+  },
+
+  // 🧼 ALTERNATIVE — Garlic Soap (კომპაქტური, მრავალფუნქციური)
+  {
+    id: 233,
+    name: 'ნივრის საპონი Vitalizing',
+    fullName: 'Dr. C. Tuna · Garlic & Ginseng Soap',
+    cat: 'თმა + სხეული · 125 გრ',
+    headline: 'სამი დანიშნულება — ერთი საპონი',
+    subheadline: 'ნივრისა და ჟენშენის ექსტრაქტებით — გამოიყენე თმაზე, სახეზე და სხეულზე.',
+    price: 9.99, tag: 'კომპაქტური',
+    image: 'https://farmasi.ge/public/images/product_fb/233.png',
+    description: 'ნაზად აშორებს ჭუჭყს და ცხიმს კანის გამოშრობის გარეშე. იდეალურია სამოგზაუროდ ან მინი ფორმატის მოყვარულთათვის.',
+    bg: ['#FAE8FF', '#A21CAF'], accent: '#9333EA',
+    sku: '1119055',
+  },
+
+  // 🎣 TRIPWIRE — Single-use Tester (შესვლის წერტილი)
+  {
+    id: 1022,
+    name: 'Vitalizing ტესტერი',
+    fullName: 'Dr. C. Tuna · Single-Use Trial · Shampoo + Mask',
+    cat: 'ერთჯერადი · შამპუნი + ნიღაბი',
+    headline: 'სცადე ჯერ — სანამ იყიდი',
+    subheadline: 'ერთჯერადი დოზა შამპუნისა და ნიღბის — შენ თვითონ შეაფასე ეფექტი 2.99 ₾-ად.',
+    price: 2.99, tag: 'სცადე',
+    image: 'https://farmasi.ge/public/images/product_fb/1022.png',
+    description: 'სრული Vitalizing რიტუალის გაცნობა მინიმალური რისკით. იდეალური პირველი ნაბიჯი, თუ ჯერ არ გადაგიწყვეტია.',
+    bg: ['#FECACA', '#F87171'], accent: '#DC2626',
+    sku: '1000170',
+  },
+
+  { id: 2, name: 'Matte Velvet Lipstick', /* ... უკვე არსებული ... */ },
   { id: 2, name: 'Matte Velvet Lipstick',    cat: 'მაკიაჟი',        price: 35,   tag: 'ახალი',     mockup: 'lipstick', bg: ['#FBCFE8', '#FCE7F3'], accent: '#DB2777' },
   { id: 3, name: 'Tantalize Eau de Parfum',  cat: 'სუნამო',         price: 79,   tag: 'ფავორიტი',  mockup: 'perfume',  bg: ['#F5D0FE', '#FCE7F3'], accent: '#A21CAF' },
   { id: 4, name: 'Hyaluronic Glow Serum',    cat: 'სახის მოვლა',   price: 65,   tag: 'ვირუსული',  mockup: 'serum',    bg: ['#FECDD3', '#FCE7F3'], accent: '#E11D48' },
@@ -2165,13 +2211,17 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
 
                       <div className="flex items-center gap-3 mb-6 flex-wrap">
                         <span className="font-display text-5xl sm:text-6xl">{product.ritual.bundlePrice} ₾</span>
-                        <span className="text-base line-through opacity-50">
-                          {(product.ritual.items.reduce((s, i) => s + i.price, 0)).toFixed(2)} ₾
-                        </span>
-                        <span className="px-2.5 py-1 rounded-full text-[10px] tracking-wider font-medium"
-                          style={{ background: theme.gold, color: '#0a0808' }}>
-                          −{product.ritual.savings} ₾
-                        </span>
+                        {product.ritual.savings > 0 && (
+                          <>
+                            <span className="text-base line-through opacity-50">
+                              {(product.ritual.items.reduce((s, i) => s + i.price, 0)).toFixed(2)} ₾
+                            </span>
+                            <span className="px-2.5 py-1 rounded-full text-[10px] tracking-wider font-medium"
+                              style={{ background: theme.gold, color: '#0a0808' }}>
+                              −{product.ritual.savings} ₾
+                            </span>
+                          </>
+                        )}
                       </div>
 
                       <button onClick={goShop}
