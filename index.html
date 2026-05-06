@@ -599,7 +599,7 @@ function App() {
   const [loadError, setLoadError] = useState('');
   const [rep, setRep] = useState({
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
-    instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '',
+    instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '',
   });
 
   // Load rep data from API on mount if PID is in URL
@@ -622,6 +622,7 @@ function App() {
             youtube: data.rep.youtube || '',
             telegram: data.rep.telegram || '',
             city: data.rep.city || '',
+            videoUrl: data.rep.video_url || '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → bridge, otherwise → public
           if (urlParams.edit) {
@@ -908,6 +909,7 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
         tiktok: rep.tiktok,
         youtube: rep.youtube,
         telegram: rep.telegram,
+        video_url: rep.videoUrl || '',
         // photo_url left out for now — base64 too large for JSONP, will handle separately
       });
       if (result.ok) {
@@ -1068,15 +1070,46 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
             <p className="text-[10px] mt-1 text-right" style={{ color: theme.ink + '66' }}>{rep.bio.length}/200</p>
           </div>
         </Card>
+
         <Card>
-          <SectionLabel n="02" t="პირდაპირი კონტაქტი" />
+          <SectionLabel n="02" t="ვიდეო მიმართვა" />
+          <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            ჩაწერე მოკლე ვიდეო ტელეფონზე (15–30 წამი — "გამარჯობა, მე ვარ..."), ატვირთე Instagram/TikTok/YouTube-ზე და ლინკი აქ ჩასვი. ვიდეო ფოტოს გვერდით გამოჩნდება.
+          </p>
+          <Input icon="play" label="ვიდეოს ლინკი" value={rep.videoUrl}
+            onChange={upd('videoUrl')}
+            placeholder="https://instagram.com/reel/... ან https://youtu.be/..." />
+          {rep.videoUrl && (
+            <div className="mt-3">
+              {parseVideoUrl(rep.videoUrl) ? (
+                <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
+                  style={{ background: '#10B98111', color: '#059669', border: '1px solid #10B98133' }}>
+                  <Ic name="check-circle" className="w-3.5 h-3.5" />
+                  <span>ლინკი ცნობილია — ({parseVideoUrl(rep.videoUrl).type})</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
+                  style={{ background: theme.rose + '22', color: theme.wine, border: `1px solid ${theme.rose}55` }}>
+                  <Ic name="alert-circle" className="w-3.5 h-3.5" />
+                  <span>ლინკი არ მესმის — სცადე YouTube, Instagram, TikTok ან Vimeo</span>
+                </div>
+              )}
+            </div>
+          )}
+          <p className="text-[10px] mt-3 leading-relaxed" style={{ color: theme.ink + '77' }}>
+            💡 მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Vimeo · MP4 პირდაპირი ლინკი
+          </p>
+        </Card>
+
+        <Card>
+          <SectionLabel n="03" t="პირდაპირი კონტაქტი" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input icon="phone" label="ტელეფონი" value={rep.phone} onChange={upd('phone')} placeholder="+995 555 123456" />
             <Input icon="message-circle" label="WhatsApp" value={rep.whatsapp} onChange={upd('whatsapp')} placeholder="+995 555 123456" green />
           </div>
         </Card>
         <Card>
-          <SectionLabel n="03" t="სოციალური ქსელები" />
+          <SectionLabel n="04" t="სოციალური ქსელები" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input icon="instagram" iconType="social" label="Instagram" value={rep.instagram} onChange={upd('instagram')} placeholder="@yourhandle" />
             <Input icon="facebook"  iconType="social" label="Facebook"  value={rep.facebook}  onChange={upd('facebook')}  placeholder="facebook.com/..." />
@@ -1151,6 +1184,59 @@ function Input({ label, value, onChange, placeholder, icon, iconType, small, gre
   );
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// VIDEO INTRO — embeds rep's video greeting from YouTube/Vimeo/Instagram/TikTok
+// or direct video URL (mp4/webm/mov)
+// ════════════════════════════════════════════════════════════════════════════
+function parseVideoUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const u = url.trim();
+
+  // YouTube: youtube.com/watch?v=, youtu.be/, youtube.com/shorts/
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) return { type: 'youtube', embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1` };
+
+  // Vimeo: vimeo.com/{id}
+  const vm = u.match(/vimeo\.com\/(\d+)/);
+  if (vm) return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${vm[1]}` };
+
+  // Instagram: instagram.com/p/{id}/ or /reel/{id}/
+  const ig = u.match(/instagram\.com\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
+  if (ig) return { type: 'instagram', embedUrl: `https://www.instagram.com/p/${ig[1]}/embed` };
+
+  // TikTok: tiktok.com/@user/video/{id}
+  const tt = u.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
+  if (tt) return { type: 'tiktok', embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}` };
+
+  // Direct video file
+  if (/\.(mp4|webm|mov)(\?.*)?$/i.test(u)) return { type: 'direct', url: u };
+
+  return null;
+}
+
+function VideoIntro({ url }) {
+  const parsed = parseVideoUrl(url);
+  if (!parsed) return null;
+
+  if (parsed.type === 'direct') {
+    return (
+      <video src={parsed.url} controls playsInline
+        className="w-full h-full object-cover"
+        style={{ background: theme.ink }} />
+    );
+  }
+
+  return (
+    <iframe
+      src={parsed.embedUrl}
+      title="წარმომადგენლის ვიდეო მიმართვა"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      className="w-full h-full"
+      style={{ border: 0, background: theme.ink }} />
+  );
+}
+
 function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
@@ -1192,7 +1278,7 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
               <Ic name="sparkles" className="w-3 h-3" /> FARMASI ოფიციალური წარმომადგენელი
             </div>
           </div>
-          <div className="flex justify-center mb-6 anim-fadeup">
+          <div className={`flex items-center justify-center mb-6 anim-fadeup ${rep.videoUrl ? 'flex-col sm:flex-row gap-5' : ''}`}>
             <div className="relative">
               <div className="absolute -inset-2 rounded-full"
                 style={{ background: `conic-gradient(${theme.gold}, ${theme.rose}, ${theme.wine}, ${theme.gold})`, opacity: 0.4, filter: 'blur(8px)' }} />
@@ -1211,6 +1297,22 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
                 )}
               </div>
             </div>
+
+            {/* Video greeting — shows if rep uploaded one */}
+            {rep.videoUrl && parseVideoUrl(rep.videoUrl) && (
+              <div className="relative anim-fadeup" style={{ animationDelay: '120ms' }}>
+                <div className="relative w-44 sm:w-48 aspect-[9/16] rounded-3xl overflow-hidden"
+                  style={{ border: `3px solid ${theme.ivory}`,
+                           boxShadow: `0 20px 50px -10px ${theme.wine}55`,
+                           background: theme.ink }}>
+                  <VideoIntro url={rep.videoUrl} />
+                </div>
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium flex items-center gap-1.5 whitespace-nowrap"
+                  style={{ background: theme.wine, color: theme.cream, boxShadow: `0 4px 12px ${theme.wine}66` }}>
+                  <Ic name="play" className="w-2.5 h-2.5" /> ვიდეო მიმართვა
+                </div>
+              </div>
+            )}
           </div>
           <h1 className="text-center font-display text-4xl sm:text-5xl mb-2 anim-fadeup" style={{ color: theme.ink }}>
             {rep.name || 'შენი სახელი'}
