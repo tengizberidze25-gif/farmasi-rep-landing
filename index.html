@@ -1759,10 +1759,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem })
               style={{ color: theme.ink + 'CC' }}>"{rep.bio}"</p>
           )}
           <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
-            <button onClick={goShop}
+            <button onClick={() => document.getElementById('pain-quiz-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               className="flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
               style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
-              <Ic name="shopping-bag" className="w-4 h-4" /> შეიძინე ახლა
+              <Ic name="sparkles" className="w-4 h-4" /> გავიგოთ რა გჭირდება
             </button>
             {rep.whatsapp && (
               <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`} target="_blank" rel="noreferrer"
@@ -1879,7 +1879,9 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem })
       )}
 
       {/* ═══ PAIN QUIZ — Pain → Solution Engine entry point (Sprint 6) ═══ */}
-      <PainQuiz onSelect={handleProblemSelect} selectedId={selectedProblem?.id} />
+      <div id="pain-quiz-section">
+        <PainQuiz onSelect={handleProblemSelect} selectedId={selectedProblem?.id} />
+      </div>
 
       {/* ═══ EXPANDED CONTENT — only shown when user clicks a problem ═══ */}
       {selectedProblem ? (
