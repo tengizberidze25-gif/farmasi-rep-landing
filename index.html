@@ -1091,13 +1091,13 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
                 <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
                   style={{ background: theme.rose + '22', color: theme.wine, border: `1px solid ${theme.rose}55` }}>
                   <Ic name="alert-circle" className="w-3.5 h-3.5" />
-                  <span>ლინკი არ მესმის — სცადე YouTube, Instagram, TikTok ან Vimeo</span>
+                  <span>ლინკი არ მესმის — სცადე YouTube, Instagram, TikTok, Facebook ან Vimeo</span>
                 </div>
               )}
             </div>
           )}
           <p className="text-[10px] mt-3 leading-relaxed" style={{ color: theme.ink + '77' }}>
-            💡 მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Vimeo · MP4 პირდაპირი ლინკი
+            💡 მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Facebook (Watch/Reels) · Vimeo · MP4 პირდაპირი ლინკი
           </p>
         </Card>
 
@@ -1185,31 +1185,46 @@ function Input({ label, value, onChange, placeholder, icon, iconType, small, gre
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// VIDEO INTRO — embeds rep's video greeting from YouTube/Vimeo/Instagram/TikTok
+// VIDEO INTRO — embeds rep's video greeting from YouTube/Vimeo/Instagram/TikTok/Facebook
 // or direct video URL (mp4/webm/mov)
 // ════════════════════════════════════════════════════════════════════════════
 function parseVideoUrl(url) {
   if (!url || typeof url !== 'string') return null;
   const u = url.trim();
 
-  // YouTube: youtube.com/watch?v=, youtu.be/, youtube.com/shorts/
-  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (yt) return { type: 'youtube', embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1` };
+  // YouTube: youtube.com/watch?v=, youtu.be/, youtube.com/shorts/, /embed/, /live/
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) {
+    const isShort = /youtube\.com\/shorts\//.test(u);
+    return { type: 'youtube', orientation: isShort ? 'vertical' : 'horizontal',
+      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1` };
+  }
 
   // Vimeo: vimeo.com/{id}
   const vm = u.match(/vimeo\.com\/(\d+)/);
-  if (vm) return { type: 'vimeo', embedUrl: `https://player.vimeo.com/video/${vm[1]}` };
+  if (vm) return { type: 'vimeo', orientation: 'horizontal',
+    embedUrl: `https://player.vimeo.com/video/${vm[1]}` };
 
-  // Instagram: instagram.com/p/{id}/ or /reel/{id}/
-  const ig = u.match(/instagram\.com\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/);
-  if (ig) return { type: 'instagram', embedUrl: `https://www.instagram.com/p/${ig[1]}/embed` };
+  // Instagram: /p/, /reel/, /reels/, /tv/
+  const ig = u.match(/instagram\.com\/(?:p|reel|reels|tv)\/([a-zA-Z0-9_-]+)/);
+  if (ig) return { type: 'instagram', orientation: 'vertical',
+    embedUrl: `https://www.instagram.com/p/${ig[1]}/embed` };
 
   // TikTok: tiktok.com/@user/video/{id}
   const tt = u.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
-  if (tt) return { type: 'tiktok', embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}` };
+  if (tt) return { type: 'tiktok', orientation: 'vertical',
+    embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}` };
 
-  // Direct video file
-  if (/\.(mp4|webm|mov)(\?.*)?$/i.test(u)) return { type: 'direct', url: u };
+  // Facebook: facebook.com/watch?v=..., facebook.com/{user}/videos/..., fb.watch/...
+  if (/(?:facebook\.com\/(?:watch|[^/]+\/videos|video\.php|reel)|fb\.watch)/.test(u)) {
+    // Detect if it's a Reel (vertical) vs regular video (horizontal)
+    const isFbReel = /facebook\.com\/reel\//.test(u);
+    return { type: 'facebook', orientation: isFbReel ? 'vertical' : 'horizontal',
+      embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(u)}&show_text=false&width=560` };
+  }
+
+  // Direct video file (mp4, webm, mov, m4v)
+  if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(u)) return { type: 'direct', orientation: 'vertical', url: u };
 
   return null;
 }
@@ -1298,21 +1313,26 @@ function PublicPage({ rep, repCode, onProduct, onProblemSelect }) {
               </div>
             </div>
 
-            {/* Video greeting — shows if rep uploaded one */}
-            {rep.videoUrl && parseVideoUrl(rep.videoUrl) && (
-              <div className="relative anim-fadeup" style={{ animationDelay: '120ms' }}>
-                <div className="relative w-44 sm:w-48 aspect-[9/16] rounded-3xl overflow-hidden"
-                  style={{ border: `3px solid ${theme.ivory}`,
-                           boxShadow: `0 20px 50px -10px ${theme.wine}55`,
-                           background: theme.ink }}>
-                  <VideoIntro url={rep.videoUrl} />
+            {/* Video greeting — shows if rep uploaded one, aspect adapts to platform orientation */}
+            {(() => {
+              const parsed = rep.videoUrl ? parseVideoUrl(rep.videoUrl) : null;
+              if (!parsed) return null;
+              const isVertical = parsed.orientation === 'vertical';
+              return (
+                <div className="relative anim-fadeup" style={{ animationDelay: '120ms' }}>
+                  <div className={`relative ${isVertical ? 'w-44 sm:w-48 aspect-[9/16]' : 'w-72 sm:w-80 aspect-video'} rounded-3xl overflow-hidden`}
+                    style={{ border: `3px solid ${theme.ivory}`,
+                             boxShadow: `0 20px 50px -10px ${theme.wine}55`,
+                             background: theme.ink }}>
+                    <VideoIntro url={rep.videoUrl} />
+                  </div>
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium flex items-center gap-1.5 whitespace-nowrap"
+                    style={{ background: theme.wine, color: theme.cream, boxShadow: `0 4px 12px ${theme.wine}66` }}>
+                    <Ic name="play" className="w-2.5 h-2.5" /> ვიდეო მიმართვა
+                  </div>
                 </div>
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium flex items-center gap-1.5 whitespace-nowrap"
-                  style={{ background: theme.wine, color: theme.cream, boxShadow: `0 4px 12px ${theme.wine}66` }}>
-                  <Ic name="play" className="w-2.5 h-2.5" /> ვიდეო მიმართვა
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
           <h1 className="text-center font-display text-4xl sm:text-5xl mb-2 anim-fadeup" style={{ color: theme.ink }}>
             {rep.name || 'შენი სახელი'}
