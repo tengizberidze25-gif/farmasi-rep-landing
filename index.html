@@ -2270,18 +2270,53 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem })
               {/* Text */}
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.25em] mb-1.5" style={{ color: theme.wine }}>
-                  ✦ Behind the Scenes
+                  ✦ INSIDE FARMASI
                 </p>
                 <p className="font-display text-lg sm:text-2xl mb-1" style={{ color: theme.cream }}>
-                  ფარმასის ქარხანა
+                  ფარმასის სამყარო
                 </p>
                 <p className="text-xs opacity-70" style={{ color: theme.cream }}>
-                  ნახე საკუთარი თვალით სად და როგორ იქმნება პროდუქცია
+                  ნახე იქ, საიდანაც იშვება შენი რიტუალი
                 </p>
               </div>
               <Ic name="chevron-right" className="w-5 h-5 shrink-0 transition group-hover:translate-x-1"
                 style={{ color: theme.cream, opacity: 0.5 }} />
             </button>
+
+            {/* Certifications row — clickable badges linking to PDFs */}
+            <div className="mt-8 pt-6" style={{ borderTop: `1px solid ${theme.cream}22` }}>
+              <p className="text-[10px] tracking-[0.3em] uppercase text-center mb-4 opacity-60"
+                style={{ color: theme.cream }}>
+                ✦ სერთიფიკაცია · INDEPENDENTLY VERIFIED
+              </p>
+              <div className="flex flex-wrap gap-2 sm:gap-3 justify-center">
+                {[
+                  { label: 'GMP', sub: 'FDA STANDARD', file: 'certificates/gmp-fda.pdf' },
+                  { label: 'ISO 22716', sub: 'COSMETICS GMP', file: 'certificates/iso-22716.pdf' },
+                  { label: 'ISO 9001', sub: 'QUALITY MGT', file: 'certificates/iso-9001.pdf' },
+                  { label: 'ISO 27001', sub: 'DATA SECURITY', file: 'certificates/iso-27001.pdf' },
+                  { label: 'HALAL', sub: 'CERTIFIED', file: 'certificates/halal-cosmetics.pdf' },
+                ].map((c, i) => (
+                  <a key={i} href={`/${c.file}`} target="_blank" rel="noreferrer"
+                    className="flex flex-col items-center justify-center px-3 sm:px-4 py-2.5 rounded-xl transition hover:scale-105 cursor-pointer min-w-[90px]"
+                    style={{
+                      background: theme.cream + '0F',
+                      border: `1px solid ${theme.cream}22`,
+                      color: theme.cream
+                    }}>
+                    <p className="font-display text-sm sm:text-base font-medium leading-tight">
+                      {c.label}
+                    </p>
+                    <p className="text-[8px] tracking-[0.15em] opacity-60 mt-0.5">
+                      {c.sub}
+                    </p>
+                  </a>
+                ))}
+              </div>
+              <p className="text-[10px] text-center mt-3 opacity-50" style={{ color: theme.cream }}>
+                გადაამოწმე — დააკლიკე ნებისმიერ ბადჯზე
+              </p>
+            </div>
           </div>
 
           {/* Closing tagline */}
