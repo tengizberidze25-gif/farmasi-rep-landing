@@ -322,11 +322,25 @@ const products = [
         result: 'თმის სიხშირის +40%'
       },
       {
-        image: 'before-after-men.png',
+        image: 'before-after-women-2.png',
         title: '12 კვირის შემდეგ',
-        subtitle: 'გიორგი მ., 35',
+        subtitle: 'ნათია გ., 32',
         note: 'შამპუნი + ზეთი + ნიღაბი, რეგულარული რიტუალი',
         result: 'ცვენის შემცირება -85%'
+      },
+      {
+        image: 'before-after-women-3.png',
+        title: '10 კვირის შემდეგ',
+        subtitle: 'თამარ კ., 38',
+        note: 'სრული რიტუალი + ყოველდღიური ვიტამინები',
+        result: 'მოცულობის +50%'
+      },
+      {
+        image: 'before-after-men.png',
+        title: '16 კვირის შემდეგ',
+        subtitle: 'გიორგი მ., 35',
+        note: 'შამპუნი + ზეთი, ყოველდღიური მოვლა',
+        result: 'სიხშირის +60%'
       },
     ],
     videos: [
@@ -340,7 +354,7 @@ const products = [
         src: 'video-hair-routine.mp4',
         title: 'სრული თმის რიტუალი',
         subtitle: 'შამპუნი + ნიღაბი + ზეთი — როგორ მუშაობს ერთად',
-        poster: 'before-after-men.png',
+        poster: 'before-after-women-2.png',
       },
     ],
     ritual: {
@@ -390,7 +404,7 @@ const products = [
     headline: 'გაძლიერებული ფორმულა — ყოველდღე',
     subheadline: 'პროფესიონალური ხაზის FORTE ფორმულა — UV დაცვა, ანტი-სტატიკური ეფექტი და სკალპის აღდგენა.',
     price: 12.99, tag: 'FORTE',
-    image: 'https://farmasi.ge/public/images/product_fb/1917.png',
+    image: 'vitalizing-shampoo-forte.png',
     description: 'არ შეიცავს SLS-ს, პარაბენებს, გლუტენს, ფორმალდეჰიდს და ფტალატებს. დერმატოლოგიურად დადასტურებული მგრძნობიარე კანისთვისაც.',
     bg: ['#FCE7F3', '#F472B6'], accent: '#DB2777',
     sku: '1002480',
@@ -405,7 +419,7 @@ const products = [
     headline: 'სამი დანიშნულება — ერთი საპონი',
     subheadline: 'ნივრისა და ჟენშენის ექსტრაქტებით — გამოიყენე თმაზე, სახეზე და სხეულზე.',
     price: 9.99, tag: 'კომპაქტური',
-    image: 'https://farmasi.ge/public/images/product_fb/233.png',
+    image: 'vitalizing-soap.png',
     description: 'ნაზად აშორებს ჭუჭყს და ცხიმს კანის გამოშრობის გარეშე. იდეალურია სამოგზაუროდ ან მინი ფორმატის მოყვარულთათვის.',
     bg: ['#FAE8FF', '#A21CAF'], accent: '#9333EA',
     sku: '1119055',
@@ -420,7 +434,7 @@ const products = [
     headline: 'სცადე ჯერ — სანამ იყიდი',
     subheadline: 'ერთჯერადი დოზა შამპუნისა და ნიღბის — შენ თვითონ შეაფასე ეფექტი 2.99 ₾-ად.',
     price: 2.99, tag: 'სცადე',
-    image: 'https://farmasi.ge/public/images/product_fb/1022.png',
+    image: 'vitalizing-tester.png',
     description: 'სრული Vitalizing რიტუალის გაცნობა მინიმალური რისკით. იდეალური პირველი ნაბიჯი, თუ ჯერ არ გადაგიწყვეტია.',
     bg: ['#FECACA', '#F87171'], accent: '#DC2626',
     sku: '1000170',
@@ -2204,7 +2218,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {product.beforeAfter.map((b, i) => (
                 <div key={i} className="rounded-3xl overflow-hidden anim-fadeup"
                   style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`,
