@@ -25,8 +25,12 @@
   }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes floatBig { 0%, 100% { transform: translateY(0) scale(1.35); } 50% { transform: translateY(-22px) scale(1.35); } }
+  @keyframes floatBundle { 0%, 100% { transform: translateY(0) scale(1.15); } 50% { transform: translateY(-14px) scale(1.15); } }
   .anim-fadeup { animation: fadeUp 0.6s ease-out both; }
   .anim-float { animation: float 4s ease-in-out infinite; }
+  .anim-float-big { animation: floatBig 5s ease-in-out infinite; }
+  .anim-float-bundle { animation: floatBundle 6s ease-in-out infinite; }
   .icn { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; }
   .product-card:hover .product-mockup { transform: scale(1.06) rotate(-2deg); }
   .product-mockup { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -2494,7 +2498,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
                           style={{ background: `radial-gradient(circle, ${theme.wine}66, transparent 70%)` }} />
                       </div>
                       <img src={product.ritual.bundleImage} alt="Vitalizing კოლექცია"
-                        className="relative z-10 w-full h-full object-contain p-4 anim-float"
+                        className="relative z-10 w-full h-full object-contain p-4 anim-float-bundle"
                         style={{ filter: `drop-shadow(0 30px 60px ${theme.wine}66) drop-shadow(0 0 40px rgba(255,255,255,0.1))` }} />
                     </div>
 
@@ -2912,7 +2916,7 @@ function CinematicAct({ item, index, reverse, onShop }) {
             </div>
             {/* The product image — these have transparent or black bg, blends with section */}
             <img src={item.image} alt={item.name}
-              className="relative z-10 max-w-full max-h-full object-contain anim-float"
+              className="relative z-10 max-w-full max-h-full object-contain anim-float-big"
               style={{ filter: `drop-shadow(0 40px 60px ${item.accent}66) drop-shadow(0 0 80px ${item.accent}33)` }} />
           </div>
 
