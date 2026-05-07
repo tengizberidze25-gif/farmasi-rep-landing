@@ -28,13 +28,28 @@
   @keyframes floatBig { 0%, 100% { transform: translateY(0) scale(1.35); } 50% { transform: translateY(-22px) scale(1.35); } }
   @keyframes floatBundle { 0%, 100% { transform: translateY(0) scale(1.15); } 50% { transform: translateY(-14px) scale(1.15); } }
   @keyframes pulseSoft { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-4px); opacity: 0.85; } }
+  @keyframes revealUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes revealLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes revealRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes revealScale { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
   .anim-fadeup { animation: fadeUp 0.6s ease-out both; }
   .anim-pulse-soft { animation: pulseSoft 2s ease-in-out infinite; }
   .anim-float { animation: float 4s ease-in-out infinite; }
   .anim-float-big { animation: floatBig 5s ease-in-out infinite; }
   .anim-float-bundle { animation: floatBundle 6s ease-in-out infinite; }
+  /* Scroll-reveal — triggered when 'is-visible' class added by IntersectionObserver */
+  .reveal-up, .reveal-left, .reveal-right, .reveal-scale { opacity: 0; will-change: opacity, transform; }
+  .reveal-up.is-visible { animation: revealUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .reveal-left.is-visible { animation: revealLeft 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .reveal-right.is-visible { animation: revealRight 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .reveal-scale.is-visible { animation: revealScale 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .icn { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; }
-  .product-card:hover .product-mockup { transform: scale(1.06) rotate(-2deg); }
+  /* 3D tilt for product images — interactive mouse-tracking */
+  .product-tilt-3d {
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+    transform-style: preserve-3d;
+  }
   .product-mockup { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
 </style>
 </head>
@@ -1668,7 +1683,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [photoZoom, setPhotoZoom] = useState(false);
   const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const expandedRef = useRef(null);
+  const heroPhotoTiltRef = useRef(null);
+  const heroPhotoContainerRef = useRef(null);
   const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
   const goCatalog = () => window.open(CATALOG_URL, '_blank');
@@ -1680,6 +1698,49 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       setTimeout(() => expandedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
     }
   }, [initialProblem]);
+
+  // Scroll-triggered reveal — adds 'is-visible' class when element enters viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target); // animate once
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+    const elements = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-scale');
+    elements.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [selectedProblem]); // re-run when expanded content mounts
+
+  // Reading progress — fills a thin bar at top as user scrolls
+  useEffect(() => {
+    const handleScroll = () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = total > 0 ? (window.scrollY / total) * 100 : 0;
+      setScrollProgress(Math.min(100, Math.max(0, progress)));
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Hero photo 3D tilt — interactive mouse-tracking
+  const handleHeroPhotoMove = (e) => {
+    if (!heroPhotoContainerRef.current || !heroPhotoTiltRef.current) return;
+    const rect = heroPhotoContainerRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    heroPhotoTiltRef.current.style.transform =
+      `perspective(1400px) rotateY(${px * 12}deg) rotateX(${-py * 8}deg) scale(1.02)`;
+  };
+
+  const handleHeroPhotoLeave = () => {
+    if (heroPhotoTiltRef.current) heroPhotoTiltRef.current.style.transform = '';
+  };
+
 
   // Quiz click → expand content inline + smooth scroll to it
   const handleProblemSelect = (problem) => {
@@ -1706,6 +1767,17 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
   return (
     <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+      {/* Reading progress bar — fills as user scrolls */}
+      <div className="fixed top-0 left-0 right-0 h-[2px] z-[60] pointer-events-none"
+        style={{ background: theme.ink + '08' }}>
+        <div className="h-full transition-[width] duration-150 ease-out"
+          style={{
+            width: `${scrollProgress}%`,
+            background: `linear-gradient(90deg, ${theme.wine}, ${theme.gold})`,
+            boxShadow: `0 0 8px ${theme.wine}66`
+          }} />
+      </div>
+
       {/* ═══ HERO — Editorial Magazine Style ═══ */}
       <section className="relative overflow-hidden" style={{ background: theme.cream }}>
         {/* Atmospheric glow background */}
@@ -1822,29 +1894,32 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
             {/* ── PHOTO COLUMN ── */}
             <div className="lg:col-span-5 relative order-1 lg:order-2 anim-fadeup" style={{ animationDelay: '120ms' }}>
-              <div className="relative max-w-md mx-auto lg:max-w-none">
+              <div ref={heroPhotoContainerRef} onMouseMove={handleHeroPhotoMove} onMouseLeave={handleHeroPhotoLeave}
+                className="relative max-w-md mx-auto lg:max-w-none" style={{ perspective: '1400px' }}>
                 {/* Decorative outline frame */}
                 <div className="absolute -inset-3 rounded-sm pointer-events-none"
                   style={{ border: `1px solid ${theme.gold}55` }} />
 
-                {/* Main photo frame */}
-                <div onClick={() => rep.photo && setPhotoZoom(true)}
-                  className="relative aspect-[3/4] overflow-hidden cursor-zoom-in transition hover:scale-[1.01]"
-                  style={{
-                    borderRadius: '4px',
-                    boxShadow: `0 40px 100px -20px ${theme.wine}55, 0 15px 40px -10px ${theme.ink}33`
-                  }}>
-                  {rep.photo
-                    ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center text-9xl font-display"
-                         style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.mist})`, color: theme.wine }}>
-                        {rep.name.charAt(0) || '?'}
-                      </div>}
+                {/* Main photo frame with tilt */}
+                <div ref={heroPhotoTiltRef} className="product-tilt-3d">
+                  <div onClick={() => rep.photo && setPhotoZoom(true)}
+                    className="relative aspect-[3/4] overflow-hidden cursor-zoom-in"
+                    style={{
+                      borderRadius: '4px',
+                      boxShadow: `0 40px 100px -20px ${theme.wine}55, 0 15px 40px -10px ${theme.ink}33`
+                    }}>
+                    {rep.photo
+                      ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center text-9xl font-display"
+                           style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.mist})`, color: theme.wine }}>
+                          {rep.name.charAt(0) || '?'}
+                        </div>}
 
-                  {/* Top edition badge */}
-                  <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-[9px] tracking-[0.3em] uppercase backdrop-blur-md font-medium"
-                    style={{ background: theme.cream + 'DD', color: theme.ink }}>
-                    ✦ Edition №01
+                    {/* Top edition badge */}
+                    <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-[9px] tracking-[0.3em] uppercase backdrop-blur-md font-medium"
+                      style={{ background: theme.cream + 'DD', color: theme.ink }}>
+                      ✦ Edition №01
+                    </div>
                   </div>
                 </div>
 
@@ -1881,90 +1956,58 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </div>
       </section>
 
-      {/* ═══ CONNECT — easy contact section ═══ */}
-      {(rep.whatsapp || rep.phone || socials.length > 0) && (
-        <section className="px-5 py-12 relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.ivory})` }}>
-          <div className="absolute -top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
-            style={{ background: theme.rose }} />
+      {/* ═══ MANIFESTO — Editorial statement moment ═══ */}
+      <section className="relative overflow-hidden py-20 sm:py-32 px-5 sm:px-12"
+        style={{ background: theme.ink, color: theme.cream }}>
+        {/* Atmospheric gradient */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full opacity-[0.12] blur-3xl"
+          style={{ background: theme.wine }} />
+        <div className="absolute -bottom-40 right-1/4 w-[500px] h-[400px] rounded-full opacity-[0.08] blur-3xl"
+          style={{ background: theme.gold }} />
 
-          <div className="relative max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>დამიკავშირდი</p>
-              <h2 className="font-display text-3xl sm:text-4xl mb-2" style={{ color: theme.ink }}>
-                გაქვს <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>კითხვა?</span>
-              </h2>
-              <p className="text-sm" style={{ color: theme.ink + 'AA' }}>
-                აირჩიე შენთვის ყველაზე მოსახერხებელი გზა
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-              {rep.whatsapp && (
-                <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`}
-                  target="_blank" rel="noreferrer"
-                  className="p-5 rounded-2xl flex items-center gap-4 transition hover:scale-[1.02] hover:shadow-lg"
-                  style={{ background: '#25D366', color: '#fff' }}>
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.2)' }}>
-                    <SocialIcon name="whatsapp" className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-[10px] tracking-widest uppercase opacity-80">სწრაფი მესიჯი</p>
-                    <p className="font-display text-lg leading-tight">WhatsApp</p>
-                    <p className="text-xs opacity-80 truncate">{rep.whatsapp}</p>
-                  </div>
-                  <Ic name="arrow-right" className="w-5 h-5 opacity-60 flex-shrink-0" />
-                </a>
-              )}
-
-              {rep.phone && (
-                <a href={`tel:${rep.phone}`}
-                  className="p-5 rounded-2xl flex items-center gap-4 transition hover:scale-[1.02] hover:shadow-lg"
-                  style={{ background: theme.ink, color: theme.cream }}>
-                  <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.15)' }}>
-                    <Ic name="phone" className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-[10px] tracking-widest uppercase opacity-70">დარეკე</p>
-                    <p className="font-display text-lg leading-tight">ტელეფონი</p>
-                    <p className="text-xs opacity-70 truncate">{rep.phone}</p>
-                  </div>
-                  <Ic name="arrow-right" className="w-5 h-5 opacity-50 flex-shrink-0" />
-                </a>
-              )}
-            </div>
-
-            {socials.length > 0 && (
-              <>
-                <div className="flex items-center gap-3 my-6">
-                  <div className="flex-1 h-px" style={{ background: `${theme.ink}22` }} />
-                  <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '77' }}>
-                    ან მომყევი
-                  </p>
-                  <div className="flex-1 h-px" style={{ background: `${theme.ink}22` }} />
-                </div>
-
-                <div className="grid gap-3"
-                  style={{ gridTemplateColumns: `repeat(${Math.min(socials.length, 5)}, minmax(0, 1fr))` }}>
-                  {socials.map((s, i) => (
-                    <a key={i} href={s.href} target="_blank" rel="noreferrer"
-                      className="p-4 rounded-2xl flex flex-col items-center gap-2 transition hover:scale-105 hover:shadow-md"
-                      style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.cream})` }}>
-                        <SocialIcon name={s.icon} className="w-5 h-5" style={{ color: theme.wine }} />
-                      </div>
-                      <span className="text-[10px] tracking-wide uppercase" style={{ color: theme.ink }}>{s.label}</span>
-                    </a>
-                  ))}
-                </div>
-              </>
-            )}
+        <div className="relative max-w-4xl mx-auto">
+          {/* Chapter marker */}
+          <div className="flex items-center gap-4 mb-12 anim-fadeup">
+            <span className="font-display-lat italic text-2xl" style={{ color: theme.gold }}>I.</span>
+            <div className="h-px flex-1" style={{ background: theme.cream + '22' }} />
+            <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.cream + '77' }}>
+              ფილოსოფია
+            </span>
           </div>
-        </section>
-      )}
+
+          {/* Main statement — massive editorial typography */}
+          <div className="anim-fadeup" style={{ animationDelay: '120ms' }}>
+            <p className="font-display leading-[1.05] mb-12"
+              style={{
+                fontSize: 'clamp(2.25rem, 6vw, 4.5rem)',
+                color: theme.cream,
+                letterSpacing: '-0.01em'
+              }}>
+              შენი ნამდვილი თავი<br />
+              <span className="font-display-lat italic" style={{ color: theme.gold }}>
+                არ წაშლილა.
+              </span>
+            </p>
+
+            <p className="font-display-lat italic leading-[1.4] max-w-2xl"
+              style={{
+                fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)',
+                color: theme.cream + 'CC'
+              }}>
+                ის უბრალოდ ცოტა<br />
+                ყურადღებას ელოდება.
+            </p>
+          </div>
+
+          {/* Signature */}
+          <div className="mt-16 flex items-center gap-4 anim-fadeup" style={{ animationDelay: '240ms' }}>
+            <div className="h-px w-12" style={{ background: theme.gold }} />
+            <p className="font-display-lat italic text-sm" style={{ color: theme.gold }}>
+              მარიამი
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* ═══ PAIN QUIZ — Pain → Solution Engine entry point (Sprint 6) ═══ */}
       <div id="pain-quiz-section">
@@ -2038,18 +2081,34 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       </section>
 
       {/* ═══ ABOUT FARMASI — brand intro with video and stats ═══ */}
-      <section className="px-5 py-16" style={{ background: theme.ivory }}>
-        <div className="max-w-6xl mx-auto">
+      <section className="px-5 sm:px-12 py-20 sm:py-24" style={{ background: theme.ivory }}>
+        <div className="max-w-6xl mx-auto reveal-up">
+          {/* Editorial chapter marker */}
+          <div className="flex items-center gap-4 mb-14 max-w-2xl">
+            <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>III.</span>
+            <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+            <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+              მემკვიდრეობა
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center mb-12">
             {/* Video */}
             <BrandVideo videoId="NlRhIeKCwDk" thumbnail="https://i.ytimg.com/vi/NlRhIeKCwDk/maxresdefault.jpg" />
 
             {/* Story */}
             <div>
-              <p className="text-xs tracking-widest uppercase mb-3" style={{ color: theme.gold }}>FARMASI-ს ისტორია</p>
-              <h2 className="font-display text-3xl sm:text-4xl leading-tight mb-5" style={{ color: theme.ink }}>
-                <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>1950</span> წლიდან —
-                სილამაზე და ხარისხი
+              <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                ✦ FARMASI-ს ისტორია
+              </p>
+              <h2 className="font-display leading-[0.95] mb-6"
+                style={{
+                  fontSize: 'clamp(2.25rem, 5vw, 3.75rem)',
+                  color: theme.ink,
+                  letterSpacing: '-0.02em'
+                }}>
+                <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>1950</span> წლიდან —<br />
+                <span style={{ fontSize: '0.85em' }}>სილამაზე და ხარისხი</span>
               </h2>
               <p className="text-base leading-relaxed mb-4" style={{ color: theme.ink + 'CC' }}>
                 ფარმასის ისტორია 1950 წელს იღებს სათავეს, როცა ექიმმა <span style={{ color: theme.wine }}>ჟევდერ ტუნამ</span> დაიწყო კოსმეტიკური პროდუქციის წარმოება.
@@ -2058,7 +2117,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 ჩვენი მთავარი ქარხანა მდებარეობს თურქეთში, 360 000 კმ²-ის ფართობზე — ყოველდღე იქმნება 2000-ზე მეტი დასახელების პროდუქტი.
               </p>
               <button onClick={() => window.open('https://www.youtube.com/@farmasigeorgiaofficial7034', '_blank')}
-                className="text-xs tracking-widest uppercase flex items-center gap-2 hover:gap-3 transition-all"
+                className="text-[10px] tracking-[0.3em] uppercase flex items-center gap-2 hover:gap-3 transition-all"
                 style={{ color: theme.wine }}>
                 მეტი ვიდეო <Ic name="arrow-right" className="w-3 h-3" />
               </button>
@@ -2083,11 +2142,27 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       </section>
 
       {/* ═══ BRAND VALUES — 4 pillars ═══ */}
-      <section className="px-5 py-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>რა გამოგვარჩევს</p>
-            <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+      <section className="px-5 sm:px-12 py-20 sm:py-24">
+        <div className="max-w-5xl mx-auto reveal-up">
+          {/* Editorial chapter marker */}
+          <div className="flex items-center gap-4 mb-14 max-w-2xl mx-auto">
+            <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>IV.</span>
+            <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+            <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+              ღირებულებები
+            </span>
+          </div>
+
+          <div className="text-center mb-14">
+            <p className="text-[10px] tracking-[0.4em] uppercase mb-5 font-medium" style={{ color: theme.gold }}>
+              ✦ რა გამოგვარჩევს
+            </p>
+            <h2 className="font-display leading-[0.95] mb-3"
+              style={{
+                fontSize: 'clamp(2.25rem, 6vw, 4rem)',
+                color: theme.ink,
+                letterSpacing: '-0.02em'
+              }}>
               FARMASI-ს <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ღირებულებები</span>
             </h2>
           </div>
@@ -2114,11 +2189,27 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       </section>
 
       {/* ═══ TESTIMONIALS — customer stories ═══ */}
-      <section className="px-5 py-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>ისტორიები</p>
-            <h2 className="font-display text-3xl sm:text-4xl mb-2" style={{ color: theme.ink }}>
+      <section className="px-5 sm:px-12 py-20 sm:py-24" style={{ background: theme.ivory }}>
+        <div className="max-w-5xl mx-auto reveal-up">
+          {/* Editorial chapter marker */}
+          <div className="flex items-center gap-4 mb-14 max-w-2xl mx-auto">
+            <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>V.</span>
+            <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+            <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+              ხმები
+            </span>
+          </div>
+
+          <div className="text-center mb-14">
+            <p className="text-[10px] tracking-[0.4em] uppercase mb-5 font-medium" style={{ color: theme.gold }}>
+              ✦ ისტორიები
+            </p>
+            <h2 className="font-display leading-[0.95] mb-4"
+              style={{
+                fontSize: 'clamp(2.25rem, 6vw, 4rem)',
+                color: theme.ink,
+                letterSpacing: '-0.02em'
+              }}>
               რას ამბობენ <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>კლიენტები</span>
             </h2>
             <div className="flex items-center justify-center gap-2 mt-4">
@@ -2465,20 +2556,105 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </section>
       )}
 
-      <footer className="px-5 py-12 text-center" style={{ background: theme.ink, color: theme.cream }}>
-        <p className="font-display text-2xl mb-1">{rep.name}</p>
-        <p className="text-xs tracking-widest uppercase opacity-60 mb-6">FARMASI · Tantalize Cosmetics</p>
-        <div className="flex justify-center gap-2 mb-6">
-          {socials.map((s, i) => (
-            <a key={i} href={s.href} target="_blank" rel="noreferrer"
-              className="w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110"
-              style={{ background: theme.cream + '11', color: theme.cream }}>
-              <SocialIcon name={s.icon} className="w-4 h-4" />
-            </a>
-          ))}
+      {/* ═══ FOOTER — Editorial Sign-off ═══ */}
+      <footer className="relative overflow-hidden" style={{ background: theme.ink, color: theme.cream }}>
+        {/* Atmospheric glow */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10 blur-3xl"
+          style={{ background: theme.wine }} />
+
+        <div className="relative max-w-5xl mx-auto px-5 sm:px-12 py-16">
+          {/* Top editorial bar */}
+          <div className="flex items-center justify-between text-[10px] tracking-[0.3em] uppercase mb-12 opacity-60">
+            <div className="flex items-center gap-2">
+              <span style={{ color: theme.gold }}>✦</span>
+              <span className="hidden sm:inline">END · CONTACT</span>
+              <span className="sm:hidden">CONTACT</span>
+            </div>
+            <div className="font-display-lat italic">№ 01</div>
+          </div>
+
+          <div className="h-px mb-12" style={{ background: theme.cream + '15' }} />
+
+          {/* Rep name — massive editorial */}
+          <div className="text-center mb-3">
+            <h2 className="font-display leading-[0.95] mb-3"
+              style={{
+                fontSize: 'clamp(2.5rem, 7vw, 5rem)',
+                color: theme.cream,
+                letterSpacing: '-0.02em'
+              }}>
+              {rep.name || 'შენი სახელი'}
+            </h2>
+            <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: theme.gold }}>
+              FARMASI · TANTALIZE COSMETICS
+            </p>
+          </div>
+
+          {/* Italic line */}
+          <div className="flex items-center justify-center gap-4 mb-12 mt-6">
+            <div className="h-px w-16" style={{ background: theme.gold + '66' }} />
+            <p className="font-display-lat italic text-base" style={{ color: theme.cream + 'CC' }}>
+              დაგვიკავშირდი
+            </p>
+            <div className="h-px w-16" style={{ background: theme.gold + '66' }} />
+          </div>
+
+          {/* Primary contact buttons — WhatsApp + Phone */}
+          {(rep.whatsapp || rep.phone) && (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto mb-10">
+              {rep.whatsapp && (
+                <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`} target="_blank" rel="noreferrer"
+                  className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.02]"
+                  style={{ background: '#25D366', color: '#fff', boxShadow: `0 20px 50px -15px #25D36677` }}>
+                  <SocialIcon name="whatsapp" className="w-4 h-4" />
+                  WhatsApp
+                  <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+                </a>
+              )}
+              {rep.phone && (
+                <a href={`tel:${rep.phone}`}
+                  className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.02]"
+                  style={{ background: theme.cream + '15', color: theme.cream, border: `1px solid ${theme.cream}33` }}>
+                  <Ic name="phone" className="w-4 h-4" />
+                  დარეკე
+                  <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Social platform links — minimal magazine style */}
+          {socials.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 mb-12 text-[10px] tracking-[0.3em] uppercase">
+              {socials.map((s, i) => (
+                <a key={i} href={s.href} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-2 transition hover:opacity-100 hover:underline"
+                  style={{ color: theme.cream + '99' }}>
+                  <SocialIcon name={s.icon} className="w-3.5 h-3.5" />
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          )}
+
+          {/* Bottom hairline */}
+          <div className="h-px mb-8" style={{ background: theme.cream + '15' }} />
+
+          {/* Bottom row — copyright + ID + back-to-top */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] tracking-[0.25em] uppercase opacity-60">
+            <div className="text-center sm:text-left">
+              <p>© {new Date().getFullYear()} FARMASI GEORGIA</p>
+              <p className="font-mono mt-1 normal-case tracking-normal">ID #{repCode}</p>
+            </div>
+
+            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="flex items-center gap-2 transition hover:opacity-100 hover:gap-3"
+              style={{ color: theme.cream }}>
+              <Ic name="arrow-up" className="w-3 h-3" />
+              ზემოთ დაბრუნება
+            </button>
+          </div>
         </div>
-        <p className="text-xs opacity-50">© FARMASI Georgia ოფიციალური წარმომადგენელი</p>
-        <p className="font-mono text-[10px] opacity-40 mt-1">ID #{repCode}</p>
       </footer>
 
       <button onClick={() => setChatOpen(true)}
@@ -2562,18 +2738,38 @@ function PainQuiz({ onSelect, selectedId, problems = PROBLEMS }) {
       <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full opacity-25 blur-3xl"
         style={{ background: theme.gold + '66' }} />
 
-      <div className="relative max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-[10px] tracking-widest uppercase"
-            style={{ background: theme.wine + '11', color: theme.wine, border: `1px solid ${theme.wine}22` }}>
-            <Ic name="sparkles" className="w-3 h-3" /> შენთვის შერჩეული
-          </div>
-          <h2 className="font-display text-4xl sm:text-5xl mb-3 leading-tight" style={{ color: theme.ink }}>
+      <div className="relative max-w-5xl mx-auto reveal-up">
+        {/* Editorial chapter marker */}
+        <div className="flex items-center gap-4 mb-12 max-w-2xl mx-auto">
+          <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>II.</span>
+          <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+          <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+            დიაგნოსტიკა
+          </span>
+        </div>
+
+        {/* Header — dramatic editorial */}
+        <div className="text-center mb-14">
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-5 font-medium" style={{ color: theme.gold }}>
+            ✦ შენთვის შერჩეული
+          </p>
+          <h2 className="font-display leading-[0.95] mb-6"
+            style={{
+              fontSize: 'clamp(2.5rem, 8vw, 5.5rem)',
+              color: theme.ink,
+              letterSpacing: '-0.02em'
+            }}>
             რა <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>გაწუხებს?</span>
           </h2>
-          <p className="text-base max-w-md mx-auto" style={{ color: theme.ink + 'AA' }}>
-            აირჩიე — გაჩვენებ რიტუალს, რომელმაც სხვებს დაეხმარა
+          <div className="flex items-center justify-center gap-3 mb-5">
+            <div className="h-px w-12" style={{ background: theme.wine + '66' }} />
+            <span className="text-[9px] tracking-[0.3em] uppercase" style={{ color: theme.wine }}>
+              ერთი არჩევანი
+            </span>
+            <div className="h-px w-12" style={{ background: theme.wine + '66' }} />
+          </div>
+          <p className="font-display-lat italic max-w-md mx-auto text-lg" style={{ color: theme.ink + 'AA' }}>
+            გაჩვენებ რიტუალს, რომელმაც სხვებს დაეხმარა
           </p>
         </div>
 
@@ -2756,25 +2952,47 @@ function PainBridge({ rep, problem, onProceed, onBack }) {
 function ProductCard({ p, onClick, featured }) {
   const Mockup = p.mockup ? Mockups[p.mockup] : null;
   const hasImage = !!p.image;
+  const tiltRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // 3D tilt — mouse-tracking for natural product rotation feel
+  const handleMouseMove = (e) => {
+    if (!containerRef.current || !tiltRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;  // -0.5 to 0.5
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    tiltRef.current.style.transform =
+      `perspective(1000px) rotateY(${px * 22}deg) rotateX(${-py * 14}deg) scale(1.06)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (tiltRef.current) tiltRef.current.style.transform = '';
+  };
+
   return (
     <button onClick={onClick}
       className={`product-card text-left rounded-2xl overflow-hidden transition hover:shadow-2xl group block w-full ${featured ? 'sm:flex' : ''}`}
       style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`, boxShadow: '0 4px 20px -8px rgba(35,23,18,0.1)' }}>
-      <div className={`relative flex items-center justify-center overflow-hidden ${featured ? 'sm:w-3/5 aspect-[4/3] sm:aspect-auto' : 'aspect-square'}`}
-        style={{ background: `linear-gradient(135deg, ${p.bg[0]}, ${p.bg[1]})` }}>
+      <div ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+        className={`relative flex items-center justify-center overflow-hidden ${featured ? 'sm:w-3/5 aspect-[4/3] sm:aspect-auto' : 'aspect-square'}`}
+        style={{ background: `linear-gradient(135deg, ${p.bg[0]}, ${p.bg[1]})`, perspective: '1200px' }}>
         <div className="absolute top-4 right-4 w-20 h-20 rounded-full opacity-30 blur-2xl" style={{ background: p.accent }} />
         <div className="absolute bottom-6 left-6 w-32 h-32 rounded-full opacity-20 blur-3xl" style={{ background: p.accent }} />
         {hasImage ? (
-          <div className={`product-mockup relative z-10 ${featured ? 'w-3/5 sm:w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float p-4`}>
-            <img src={p.image} alt={p.name}
-              className="max-w-full max-h-full object-contain"
-              style={{ filter: 'drop-shadow(0 20px 30px rgba(35,23,18,0.25))' }}
-              onError={(e) => { e.target.style.display = 'none'; }}
-            />
+          <div className={`relative z-10 ${featured ? 'w-3/5 sm:w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float p-4`}>
+            <div ref={tiltRef} className="product-tilt-3d w-full h-full flex items-center justify-center">
+              <img src={p.image} alt={p.name}
+                className="max-w-full max-h-full object-contain"
+                style={{ filter: 'drop-shadow(0 20px 30px rgba(35,23,18,0.25))' }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </div>
           </div>
         ) : Mockup ? (
-          <div className={`product-mockup relative z-10 ${featured ? 'w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float`}>
-            <Mockup accent={p.accent} />
+          <div className={`relative z-10 ${featured ? 'w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float`}>
+            <div ref={tiltRef} className="product-tilt-3d w-full h-full flex items-center justify-center">
+              <Mockup accent={p.accent} />
+            </div>
           </div>
         ) : null}
         {p.tag && (
@@ -3776,6 +3994,22 @@ function ProductVideo({ video }) {
 
 // CINEMATIC ACT — masterclass-style dark luxury showcase
 function CinematicAct({ item, index, reverse, onShop }) {
+  const tiltRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // 3D tilt — same physics as ProductCard for consistency
+  const handleMouseMove = (e) => {
+    if (!containerRef.current || !tiltRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    tiltRef.current.style.transform =
+      `perspective(1200px) rotateY(${px * 18}deg) rotateX(${-py * 12}deg) scale(1.04)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (tiltRef.current) tiltRef.current.style.transform = '';
+  };
   const stepLabel = String(index + 1).padStart(2, '0');
   return (
     <div className="relative">
@@ -3795,7 +4029,9 @@ function CinematicAct({ item, index, reverse, onShop }) {
       <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}>
         {/* Photo — full bleed against black */}
         <div className="lg:col-span-6 relative">
-          <div className="relative aspect-[3/4] flex items-center justify-center">
+          <div ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+            className="relative aspect-[3/4] flex items-center justify-center"
+            style={{ perspective: '1400px' }}>
             {/* Spotlight glow behind product */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-40"
@@ -3807,10 +4043,12 @@ function CinematicAct({ item, index, reverse, onShop }) {
                        color: '#FFFFFF', opacity: 0.04, fontWeight: 400 }}>
               {stepLabel}
             </div>
-            {/* The product image — these have transparent or black bg, blends with section */}
-            <img src={item.image} alt={item.name}
-              className="relative z-10 max-w-full max-h-full object-contain anim-float-big"
-              style={{ filter: `drop-shadow(0 40px 60px ${item.accent}66) drop-shadow(0 0 80px ${item.accent}33)` }} />
+            {/* The product image with 3D tilt — wraps the floating image */}
+            <div ref={tiltRef} className="product-tilt-3d relative z-10 w-full h-full flex items-center justify-center anim-float-big">
+              <img src={item.image} alt={item.name}
+                className="max-w-full max-h-full object-contain"
+                style={{ filter: `drop-shadow(0 40px 60px ${item.accent}66) drop-shadow(0 0 80px ${item.accent}33)` }} />
+            </div>
           </div>
 
           {/* Volume tag at bottom */}
