@@ -2671,10 +2671,24 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // Split description into paragraphs (by newlines) for better readability
-  const paragraphs = product.description
-    ? product.description.split(/\n+/).map(p => p.trim()).filter(Boolean)
-    : [];
+  // Smart description parser — handles paragraphs AND ✦ bullets even without newlines
+  // Logic: First try splitting by newlines. If single line but has ✦, split by ✦ markers.
+  const parseDescription = (text) => {
+    if (!text) return [];
+    let lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    // If everything is one line but has ✦ markers, split by them
+    if (lines.length <= 1 && text.includes('✦')) {
+      const parts = text.split('✦').map(s => s.trim()).filter(Boolean);
+      lines = parts.map((part, idx) => idx === 0 ? part : '✦ ' + part);
+    }
+    return lines.map(line => {
+      if (line.startsWith('✦')) {
+        return { type: 'bullet', text: line.replace(/^✦\s*/, '') };
+      }
+      return { type: 'paragraph', text: line };
+    });
+  };
+  const descSections = parseDescription(product.description);
 
   // Render via Portal at document.body — escapes any transformed ancestors
   // so that position:fixed centers correctly relative to viewport
@@ -2748,18 +2762,33 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
           {/* Hairline */}
           <div className="h-px mb-8" style={{ background: theme.cream + '15' }} />
 
-          {/* Full description — split into paragraphs for readability */}
-          {paragraphs.length > 0 && (
+          {/* Full description — rendered as paragraphs and bullets */}
+          {descSections.length > 0 && (
             <div className="mb-8">
               <p className="font-display-lat italic text-sm tracking-[0.2em] uppercase mb-5" style={{ color: theme.gold }}>
                 ✦ აღწერილობა
               </p>
               <div className="space-y-4">
-                {paragraphs.map((para, idx) => (
-                  <p key={idx} className="text-base leading-[1.75]" style={{ color: theme.cream + 'CC' }}>
-                    {para}
-                  </p>
-                ))}
+                {descSections.map((section, idx) => {
+                  if (section.type === 'bullet') {
+                    return (
+                      <div key={idx} className="flex gap-3 items-start">
+                        <div className="flex-shrink-0 mt-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+                          style={{ background: accent + '22', color: accent }}>
+                          <Ic name="sparkles" className="w-3 h-3" />
+                        </div>
+                        <p className="flex-1 text-base leading-[1.7]" style={{ color: theme.cream + 'CC' }}>
+                          {section.text}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p key={idx} className="text-base leading-[1.75]" style={{ color: theme.cream + 'CC' }}>
+                      {section.text}
+                    </p>
+                  );
+                })}
               </div>
             </div>
           )}
