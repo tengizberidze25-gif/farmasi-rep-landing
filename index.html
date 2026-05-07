@@ -2060,6 +2060,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {/* ── HAIR-LOSS-specific cinematic flow ── (other problems get ProblemProductShowcase below) */}
       {selectedProblem.id === 'hair-loss' ? (
+      <>
       <section className="px-5 py-16">
         <div className="max-w-5xl mx-auto">
           <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
@@ -2479,6 +2480,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           </p>
         </div>
       </section>
+      </>
       ) : (
         /* ── Other problems: dynamic Sheet-based product showcase ── */
         <ProblemProductShowcase
