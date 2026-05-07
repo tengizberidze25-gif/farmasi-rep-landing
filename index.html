@@ -3022,7 +3022,7 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp }) {
           'sm:grid-cols-2 lg:grid-cols-3'
         }`}>
           {products.map((p, idx) => (
-            <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent} />
+            <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent} repWhatsapp={repWhatsapp} />
           ))}
         </div>
 
@@ -3055,7 +3055,7 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp }) {
 }
 
 // Single product card for ProblemProductShowcase — with 3D tilt
-function ProblemProductCard({ product, index, accent }) {
+function ProblemProductCard({ product, index, accent, repWhatsapp }) {
   const tiltRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -3075,9 +3075,16 @@ function ProblemProductCard({ product, index, accent }) {
   // Build absolute path — images at root of GitHub repo (matches vitalizing convention)
   const imageSrc = product.image ? `/${product.image}` : null;
 
+  // WhatsApp link with product-specific message
+  const productMessage = `გამარჯობა! მაინტერესებს ${product.name} (#${product.id}) — ${product.price} ₾`;
+  const waLink = repWhatsapp
+    ? `https://wa.me/${repWhatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(productMessage)}`
+    : '#';
+
   return (
     <div className="reveal-up" style={{ animationDelay: `${index * 80}ms` }}>
-      <div className="rounded-2xl overflow-hidden"
+      <a href={waLink} target="_blank" rel="noreferrer"
+        className="block rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02] hover:shadow-2xl"
         style={{
           background: `linear-gradient(135deg, ${accent}22, ${theme.ink})`,
           border: `1px solid ${theme.cream}11`
@@ -3118,6 +3125,13 @@ function ProblemProductCard({ product, index, accent }) {
               {product.tag}
             </span>
           )}
+          {/* Hover hint — appears on hover */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 transition pointer-events-none"
+            style={{ background: '#25D366', color: '#fff', boxShadow: `0 8px 20px #25D36677` }}>
+            <span className="text-[10px] tracking-[0.2em] uppercase font-medium flex items-center gap-2">
+              <SocialIcon name="whatsapp" className="w-3 h-3" /> დააკლიკე → WhatsApp
+            </span>
+          </div>
         </div>
 
         {/* Info area */}
@@ -3147,7 +3161,7 @@ function ProblemProductCard({ product, index, accent }) {
             )}
           </div>
         </div>
-      </div>
+      </a>
     </div>
   );
 }
