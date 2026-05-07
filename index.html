@@ -3072,8 +3072,8 @@ function ProblemProductCard({ product, index, accent }) {
     if (tiltRef.current) tiltRef.current.style.transform = '';
   };
 
-  // Build absolute path — images go in /images/ folder on GitHub
-  const imageSrc = product.image ? `/images/${product.image}` : null;
+  // Build absolute path — images at root of GitHub repo (matches vitalizing convention)
+  const imageSrc = product.image ? `/${product.image}` : null;
 
   return (
     <div className="reveal-up" style={{ animationDelay: `${index * 80}ms` }}>
