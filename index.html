@@ -2511,15 +2511,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem })
 }
 
 function PainQuiz({ onSelect, selectedId }) {
-  const [comingSoonToast, setComingSoonToast] = useState(false);
-
   const handleClick = (problem) => {
-    if (problem.productId) {
-      onSelect(problem);
-    } else {
-      setComingSoonToast(true);
-      setTimeout(() => setComingSoonToast(false), 2500);
-    }
+    onSelect(problem);
   };
 
   return (
@@ -2541,26 +2534,30 @@ function PainQuiz({ onSelect, selectedId }) {
             რა <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>გაწუხებს?</span>
           </h2>
           <p className="text-base max-w-md mx-auto" style={{ color: theme.ink + 'AA' }}>
-            აირჩიე — შენთვის სპეციალურად შერჩეულ რიტუალს გაჩვენებ
+            აირჩიე — გაჩვენებ რიტუალს, რომელმაც სხვებს დაეხმარა
           </p>
         </div>
 
-        {/* Grid — 3 cols mobile, 5 cols desktop */}
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-          {PROBLEMS.map(p => {
-            const isActive = !!p.productId;
+        {/* Grid — only active problems shown. Layout adapts to count */}
+        {(() => {
+          const activeProblems = PROBLEMS.filter(p => p.productId);
+          const gridClass = activeProblems.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
+                            activeProblems.length === 2 ? 'grid-cols-2 max-w-md mx-auto' :
+                            activeProblems.length === 3 ? 'grid-cols-3 max-w-2xl mx-auto' :
+                            'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-4xl mx-auto';
+          return (
+        <div className={`grid gap-3 sm:gap-4 ${gridClass}`}>
+          {activeProblems.map(p => {
             const isSelected = selectedId === p.id;
             return (
               <button key={p.id} onClick={() => handleClick(p)}
-                className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition group ${isActive ? 'hover:scale-105 hover:shadow-xl cursor-pointer' : 'opacity-60 hover:opacity-80 cursor-pointer'} ${isSelected ? 'ring-2 ring-offset-2' : ''}`}
+                className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition group hover:scale-105 hover:shadow-xl cursor-pointer ${isSelected ? 'ring-2 ring-offset-2' : ''}`}
                 style={{
                   background: isSelected
                     ? `linear-gradient(135deg, ${p.accent}33, ${theme.cream})`
-                    : isActive
-                      ? `linear-gradient(135deg, ${p.accent}15, ${theme.cream})`
-                      : theme.ivory,
-                  border: `${isSelected ? '2px' : '1px'} solid ${isActive ? p.accent + (isSelected ? '' : '55') : theme.gold + '22'}`,
-                  boxShadow: isSelected ? `0 8px 30px -8px ${p.accent}66` : isActive ? `0 4px 20px -8px ${p.accent}44` : 'none',
+                    : `linear-gradient(135deg, ${p.accent}15, ${theme.cream})`,
+                  border: `${isSelected ? '2px' : '1px'} solid ${p.accent + (isSelected ? '' : '55')}`,
+                  boxShadow: isSelected ? `0 8px 30px -8px ${p.accent}66` : `0 4px 20px -8px ${p.accent}44`,
                   '--tw-ring-color': p.accent
                 }}>
                 {isSelected && (
@@ -2569,54 +2566,38 @@ function PainQuiz({ onSelect, selectedId }) {
                     <Ic name="check" className="w-3.5 h-3.5" />
                   </div>
                 )}
-                {/* Hover glow on active */}
-                {isActive && (
-                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition pointer-events-none"
-                    style={{ background: `radial-gradient(circle at center, ${p.accent}22, transparent 70%)` }} />
-                )}
+                {/* Hover glow */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition pointer-events-none"
+                  style={{ background: `radial-gradient(circle at center, ${p.accent}22, transparent 70%)` }} />
 
                 {/* Icon */}
                 <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition group-hover:scale-110"
-                  style={{ background: isActive ? p.accent + '22' : theme.mist }}>
+                  style={{ background: p.accent + '22' }}>
                   <Ic name={p.icon} className="w-5 h-5 sm:w-6 sm:h-6"
-                    style={{ color: isActive ? p.accent : theme.ink + '66' }} />
+                    style={{ color: p.accent }} />
                 </div>
 
                 {/* Label */}
                 <p className="relative text-[10px] sm:text-xs text-center leading-tight font-medium px-1"
-                  style={{ color: isActive ? theme.ink : theme.ink + '88' }}>
+                  style={{ color: theme.ink }}>
                   {p.label}
                 </p>
 
-                {/* Top-right indicator */}
-                {isActive ? (
-                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full"
-                    style={{ background: p.accent, boxShadow: `0 0 8px ${p.accent}`, animation: 'pulse 2s infinite' }} />
-                ) : (
-                  <span className="absolute top-1.5 right-1.5 text-[8px] px-1.5 py-0.5 rounded-full tracking-wider font-medium"
-                    style={{ background: theme.ink + 'CC', color: theme.cream }}>
-                    მალე
-                  </span>
-                )}
+                {/* Top-right pulse indicator */}
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full"
+                  style={{ background: p.accent, boxShadow: `0 0 8px ${p.accent}`, animation: 'pulse 2s infinite' }} />
               </button>
             );
           })}
         </div>
+          );
+        })()}
 
         {/* Footnote */}
         <p className="text-center text-xs mt-8 max-w-md mx-auto" style={{ color: theme.ink + '77' }}>
-          🌱 დღეს მხოლოდ <span style={{ color: theme.wine, fontWeight: 600 }}>თმის ცვენის</span> რიტუალი ხელმისაწვდომია — დანარჩენი მალე გამოვა
+          🌱 ყოველი რიტუალის უკან ნამდვილი ისტორიაა — დააკლიკე და ნახე
         </p>
       </div>
-
-      {/* Coming soon toast */}
-      {comingSoonToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full flex items-center gap-2 z-50 anim-fadeup"
-          style={{ background: theme.ink, color: theme.cream, boxShadow: '0 10px 30px -8px rgba(0,0,0,0.4)' }}>
-          <Ic name="clock" className="w-4 h-4" />
-          <span className="text-sm font-medium">ეს რიტუალი მალე გამოვა — გვაცადე ცოტა! ✨</span>
-        </div>
-      )}
 
       <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
     </section>
