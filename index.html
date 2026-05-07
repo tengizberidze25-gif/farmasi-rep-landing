@@ -4171,6 +4171,16 @@ function FaqItem({ q, a, mono }) {
 function ChatModal({ rep, onClose, product }) {
   const [msg, setMsg] = useState(product ? `გამარჯობა, "${product.name}"-ს შესახებ მაინტერესებს...` : '');
   const [sent, setSent] = useState(false);
+
+  // Build socials list — same logic as PublicPage
+  const socials = [
+    rep.instagram && { icon: 'instagram', label: 'Instagram', href: rep.instagram.startsWith('http') ? rep.instagram : `https://instagram.com/${rep.instagram.replace('@','')}` },
+    rep.facebook  && { icon: 'facebook',  label: 'Facebook',  href: rep.facebook.startsWith('http') ? rep.facebook : `https://facebook.com/${rep.facebook}` },
+    rep.tiktok    && { icon: 'tiktok',    label: 'TikTok',    href: rep.tiktok.startsWith('http') ? rep.tiktok : `https://tiktok.com/${rep.tiktok.startsWith('@') ? rep.tiktok : '@'+rep.tiktok}` },
+    rep.youtube   && { icon: 'youtube',   label: 'YouTube',   href: rep.youtube.startsWith('http') ? rep.youtube : `https://youtube.com/${rep.youtube}` },
+    rep.telegram  && { icon: 'telegram',  label: 'Telegram',  href: rep.telegram.startsWith('http') ? rep.telegram : `https://t.me/${rep.telegram.replace('@','')}` },
+  ].filter(Boolean);
+
   const send = () => {
     if (!msg.trim()) return;
     setSent(true);
@@ -4221,9 +4231,37 @@ function ChatModal({ rep, onClose, product }) {
                 <Ic name="send" className="w-4 h-4" /> გაგზავნა
               </button>
             </div>
-            <p className="text-[10px] mt-3 text-center" style={{ color: theme.ink + '77' }}>
-              {rep.phone && `ან დარეკე: ${rep.phone}`}
-            </p>
+
+            {/* Phone */}
+            {rep.phone && (
+              <p className="text-[10px] mt-3 text-center" style={{ color: theme.ink + '77' }}>
+                ან დარეკე: <a href={`tel:${rep.phone}`} className="underline" style={{ color: theme.wine }}>{rep.phone}</a>
+              </p>
+            )}
+
+            {/* Social links — editorial divider */}
+            {socials.length > 0 && (
+              <>
+                <div className="flex items-center gap-3 mt-5 mb-4">
+                  <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
+                  <p className="text-[9px] tracking-[0.3em] uppercase" style={{ color: theme.ink + '77' }}>
+                    ან მომყევი
+                  </p>
+                  <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-2">
+                  {socials.map((s, i) => (
+                    <a key={i} href={s.href} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] tracking-[0.15em] uppercase transition hover:scale-105"
+                      style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>
+                      <SocialIcon name={s.icon} className="w-3.5 h-3.5" style={{ color: theme.wine }} />
+                      {s.label}
+                    </a>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
