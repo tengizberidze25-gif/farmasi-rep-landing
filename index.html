@@ -1330,7 +1330,7 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
           </div>
 
           {/* SECONDARY: URL paste */}
-          <Input icon="link" label="ჩასვი ლინკი (იქონია მეტადატა)" value={rep.videoUrl}
+          <Input icon="link" label="ჩასვი ლინკი (გამოჩნდება მეტადატით)" value={rep.videoUrl}
             onChange={upd('videoUrl')}
             placeholder="https://instagram.com/reel/... ან https://youtu.be/..." />
           {rep.videoUrl && (
@@ -1479,7 +1479,7 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
               <div className="flex gap-2">
                 <input type="url" value={newCustomerUrl}
                   onChange={(e) => setNewCustomerUrl(e.target.value)}
-                  placeholder="https://instagram.com/reel/..."
+                  placeholder="ლინკი ნებისმიერი პლატფორმიდან..."
                   className="flex-1 px-3 py-2 rounded-xl outline-none text-sm"
                   style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
                 <button onClick={addCustomerVideoFromUrl} disabled={!newCustomerUrl.trim()}
@@ -1488,6 +1488,9 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
                   დამატება
                 </button>
               </div>
+              <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '77' }}>
+                ✓ YouTube · Instagram (Reels/Posts) · TikTok · Facebook · Vimeo · MP4
+              </p>
             </div>
           ) : (
             <div className="text-xs text-center py-3 rounded-xl" style={{ background: theme.cream, color: theme.ink + '88' }}>
