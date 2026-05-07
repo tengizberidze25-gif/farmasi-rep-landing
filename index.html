@@ -2672,21 +2672,86 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
   }, []);
 
   // Smart description parser — handles paragraphs AND ✦ bullets even without newlines
-  // Logic: First try splitting by newlines. If single line but has ✦, split by ✦ markers.
+  // Detects: leadout phrases (ending with ":"), bullets (✦), and trailing paragraphs
   const parseDescription = (text) => {
     if (!text) return [];
-    let lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
-    // If everything is one line but has ✦ markers, split by them
-    if (lines.length <= 1 && text.includes('✦')) {
-      const parts = text.split('✦').map(s => s.trim()).filter(Boolean);
-      lines = parts.map((part, idx) => idx === 0 ? part : '✦ ' + part);
+
+    // Try newline split first
+    const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    if (lines.length > 1) {
+      return lines.map(l => l.startsWith('✦')
+        ? { type: 'bullet', text: l.replace(/^✦\s*/, '') }
+        : { type: 'paragraph', text: l });
     }
-    return lines.map(line => {
-      if (line.startsWith('✦')) {
-        return { type: 'bullet', text: line.replace(/^✦\s*/, '') };
+
+    // No newlines — split by ✦ markers
+    if (!text.includes('✦')) {
+      return [{ type: 'paragraph', text }];
+    }
+
+    const parts = text.split('✦').map(s => s.trim()).filter(Boolean);
+    const sections = [];
+
+    // INTRO (before first ✦) — try to detect leadout sentence ending with ":"
+    const intro = parts[0];
+    const colonIdx = intro.lastIndexOf(':');
+    if (colonIdx > 0) {
+      const beforeColon = intro.substring(0, colonIdx);
+      const lastSentenceEnd = Math.max(
+        beforeColon.lastIndexOf('. '),
+        beforeColon.lastIndexOf('! '),
+        beforeColon.lastIndexOf('? ')
+      );
+      if (lastSentenceEnd > 0) {
+        sections.push({ type: 'paragraph', text: intro.substring(0, lastSentenceEnd + 1).trim() });
+        sections.push({ type: 'paragraph', text: intro.substring(lastSentenceEnd + 1).trim() });
+      } else {
+        sections.push({ type: 'paragraph', text: intro });
       }
-      return { type: 'paragraph', text: line };
-    });
+    } else {
+      sections.push({ type: 'paragraph', text: intro });
+    }
+
+    // BULLETS — for last bullet, detect trailing paragraphs by known markers
+    const trailingMarkers = ['კრემი საუკეთესოა', 'გამოყენების წესი', 'გამოყენება:', 'წაისვით', 'რეკომენდირებულია'];
+    for (let i = 1; i < parts.length; i++) {
+      let bulletText = parts[i];
+      if (i === parts.length - 1) {
+        // For last bullet, check if it has trailing paragraphs
+        let earliestMarker = -1;
+        let foundMarker = '';
+        for (const marker of trailingMarkers) {
+          const idx = bulletText.indexOf(marker);
+          if (idx > 0 && (earliestMarker === -1 || idx < earliestMarker)) {
+            earliestMarker = idx;
+            foundMarker = marker;
+          }
+        }
+        if (earliestMarker > 0) {
+          sections.push({ type: 'bullet', text: bulletText.substring(0, earliestMarker).trim() });
+          let remaining = bulletText.substring(earliestMarker).trim();
+          // Check for another marker in remaining
+          let secondMarker = -1;
+          for (const marker of trailingMarkers) {
+            if (marker === foundMarker) continue;
+            const idx = remaining.indexOf(marker);
+            if (idx > 0 && (secondMarker === -1 || idx < secondMarker)) {
+              secondMarker = idx;
+            }
+          }
+          if (secondMarker > 0) {
+            sections.push({ type: 'paragraph', text: remaining.substring(0, secondMarker).trim() });
+            sections.push({ type: 'paragraph', text: remaining.substring(secondMarker).trim() });
+          } else {
+            sections.push({ type: 'paragraph', text: remaining });
+          }
+          continue;
+        }
+      }
+      sections.push({ type: 'bullet', text: bulletText });
+    }
+
+    return sections;
   };
   const descSections = parseDescription(product.description);
 
