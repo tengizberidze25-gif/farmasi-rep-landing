@@ -2573,6 +2573,8 @@ function PainBridge({ rep, problem, onProceed, onBack }) {
 // ProblemProductShowcase — Editorial product display for non-hair-loss problems (from Sheet)
 // Shows products in elegant cinematic style without the heavy hair-loss-specific narrative
 function ProblemProductShowcase({ products, problem, onShop, repWhatsapp }) {
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   if (!products || products.length === 0) return null;
 
   const shopMessage = `გამარჯობა! მაინტერესებს რჩევა ${problem.label}-სთვის.`;
@@ -2612,7 +2614,8 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp }) {
           'sm:grid-cols-2 lg:grid-cols-3'
         }`}>
           {products.map((p, idx) => (
-            <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent} repWhatsapp={repWhatsapp} />
+            <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent}
+              onClick={() => setSelectedProduct(p)} />
           ))}
         </div>
 
@@ -2640,12 +2643,134 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp }) {
           </div>
         )}
       </div>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          repWhatsapp={repWhatsapp}
+        />
+      )}
     </section>
   );
 }
 
+// ProductDetailModal — Full-screen product detail with long description
+function ProductDetailModal({ product, onClose, repWhatsapp }) {
+  const accent = product.accent || theme.wine;
+  const imageSrc = product.image ? `/${product.image}` : null;
+  const productMessage = `გამარჯობა! მაინტერესებს ${product.name} (#${product.id}) — ${product.price} ₾`;
+  const waLink = repWhatsapp
+    ? `https://wa.me/${repWhatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(productMessage)}`
+    : '#';
+
+  // Lock body scroll when modal open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-10 anim-fadeup"
+      onClick={onClose}
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
+      <div className="relative w-full sm:max-w-3xl max-h-[100vh] sm:max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: theme.ink, color: theme.cream, border: `1px solid ${theme.cream}11` }}>
+
+        {/* Close button — sticky top right */}
+        <button onClick={onClose}
+          className="sticky top-4 ml-auto mr-4 mt-4 z-10 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 backdrop-blur-md"
+          style={{ background: theme.cream + '22', color: theme.cream, float: 'right' }}>
+          <Ic name="x" className="w-4 h-4" />
+        </button>
+
+        {/* Image area */}
+        <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden flex items-center justify-center"
+          style={{ background: `linear-gradient(135deg, ${accent}22, ${theme.ink})` }}>
+          {/* Spotlight glow */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-50"
+              style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }} />
+          </div>
+          {imageSrc && (
+            <img src={imageSrc} alt={product.name}
+              className="relative z-[1] max-h-full max-w-full object-contain p-8 anim-float"
+              style={{ filter: `drop-shadow(0 40px 80px ${accent}88) drop-shadow(0 0 100px ${accent}44)` }}
+              onError={(e) => { e.target.style.display = 'none'; }} />
+          )}
+          {/* Tag */}
+          {product.tag && (
+            <span className="absolute top-4 left-4 text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md font-medium z-[2]"
+              style={{ background: theme.cream + 'EE', color: theme.ink }}>
+              {product.tag}
+            </span>
+          )}
+        </div>
+
+        {/* Content area */}
+        <div className="p-6 sm:p-10">
+          {/* Category */}
+          {product.cat && (
+            <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+              {product.cat}
+            </p>
+          )}
+
+          {/* Title */}
+          <h2 className="font-display leading-[1.05] mb-5"
+            style={{
+              fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+              color: theme.cream,
+              letterSpacing: '-0.01em'
+            }}>
+            {product.name}
+          </h2>
+
+          {/* Price + ID row */}
+          <div className="flex items-center gap-5 mb-8 flex-wrap">
+            <p className="font-display text-3xl sm:text-4xl" style={{ color: accent }}>
+              {product.price ? `${product.price} ₾` : ''}
+            </p>
+            <span className="text-[10px] tracking-[0.3em] uppercase opacity-60 font-mono">
+              ID #{product.id}
+            </span>
+          </div>
+
+          {/* Hairline */}
+          <div className="h-px mb-8" style={{ background: theme.cream + '15' }} />
+
+          {/* Full description */}
+          {product.description && (
+            <div className="mb-8">
+              <p className="font-display-lat italic text-sm tracking-[0.2em] uppercase mb-4" style={{ color: theme.gold }}>
+                ✦ აღწერილობა
+              </p>
+              <p className="text-base leading-relaxed whitespace-pre-line" style={{ color: theme.cream + 'CC' }}>
+                {product.description}
+              </p>
+            </div>
+          )}
+
+          {/* WhatsApp CTA */}
+          {repWhatsapp && (
+            <a href={waLink} target="_blank" rel="noreferrer"
+              className="group flex items-center justify-center gap-3 px-8 py-4 rounded-full font-medium text-xs tracking-[0.2em] uppercase transition hover:scale-[1.01] hover:gap-4"
+              style={{ background: '#25D366', color: '#fff', boxShadow: `0 20px 50px -15px #25D36677` }}>
+              <SocialIcon name="whatsapp" className="w-4 h-4" />
+              შეუკვეთე ან გაიგე მეტი
+              <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Single product card for ProblemProductShowcase — with 3D tilt
-function ProblemProductCard({ product, index, accent, repWhatsapp }) {
+function ProblemProductCard({ product, index, accent, onClick }) {
   const tiltRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -2665,16 +2790,10 @@ function ProblemProductCard({ product, index, accent, repWhatsapp }) {
   // Build absolute path — images at root of GitHub repo (matches vitalizing convention)
   const imageSrc = product.image ? `/${product.image}` : null;
 
-  // WhatsApp link with product-specific message
-  const productMessage = `გამარჯობა! მაინტერესებს ${product.name} (#${product.id}) — ${product.price} ₾`;
-  const waLink = repWhatsapp
-    ? `https://wa.me/${repWhatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(productMessage)}`
-    : '#';
-
   return (
     <div className="reveal-up" style={{ animationDelay: `${index * 80}ms` }}>
-      <a href={waLink} target="_blank" rel="noreferrer"
-        className="block rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02] hover:shadow-2xl"
+      <button onClick={onClick}
+        className="block w-full text-left rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02] hover:shadow-2xl group"
         style={{
           background: `linear-gradient(135deg, ${accent}22, ${theme.ink})`,
           border: `1px solid ${theme.cream}11`
@@ -2717,9 +2836,9 @@ function ProblemProductCard({ product, index, accent, repWhatsapp }) {
           )}
           {/* Hover hint — appears on hover */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 transition pointer-events-none"
-            style={{ background: '#25D366', color: '#fff', boxShadow: `0 8px 20px #25D36677` }}>
+            style={{ background: theme.cream + 'EE', color: theme.ink, boxShadow: `0 8px 20px ${theme.ink}66` }}>
             <span className="text-[10px] tracking-[0.2em] uppercase font-medium flex items-center gap-2">
-              <SocialIcon name="whatsapp" className="w-3 h-3" /> დააკლიკე → WhatsApp
+              <Ic name="zoom-in" className="w-3 h-3" /> დააკლიკე → დეტალები
             </span>
           </div>
         </div>
@@ -2735,7 +2854,14 @@ function ProblemProductCard({ product, index, accent, repWhatsapp }) {
             {product.name}
           </h3>
           {product.description && (
-            <p className="text-sm leading-relaxed mb-4 font-display-lat italic" style={{ color: theme.cream + 'AA' }}>
+            <p className="text-sm leading-relaxed mb-4 font-display-lat italic"
+              style={{
+                color: theme.cream + 'AA',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}>
               {product.description}
             </p>
           )}
@@ -2751,7 +2877,7 @@ function ProblemProductCard({ product, index, accent, repWhatsapp }) {
             )}
           </div>
         </div>
-      </a>
+      </button>
     </div>
   );
 }
