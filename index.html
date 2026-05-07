@@ -2048,55 +2048,6 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </div>
       </section>
 
-      {/* ═══ GALLERY — masonry grid ═══ */}
-      <section className="px-5 py-16" style={{ background: theme.ivory }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
-            <div>
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>გალერეა</p>
-              <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
-                შთაგონების <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>წყარო</span>
-              </h2>
-            </div>
-            {rep.instagram && (
-              <a href={rep.instagram.startsWith('http') ? rep.instagram : `https://instagram.com/${rep.instagram.replace('@','')}`}
-                target="_blank" rel="noreferrer"
-                className="text-xs flex items-center gap-2 hover:gap-3 transition-all pb-2"
-                style={{ color: theme.wine }}>
-                <SocialIcon name="instagram" className="w-3.5 h-3.5" /> Instagram-ზე მომყევი
-              </a>
-            )}
-          </div>
-
-          <div className="grid grid-cols-4 grid-flow-row-dense gap-3" style={{ gridAutoRows: 'minmax(180px, auto)' }}>
-            {[
-              { id: 909, span: 'col-span-2 row-span-2', label: 'Vitalizing', cat: 'თმის მოვლა' },
-              { id: 565, span: 'col-span-1 row-span-1', label: 'FarmaColor', cat: 'ვეგანური' },
-              { id: 1297, span: 'col-span-1 row-span-1', label: 'AQUA Patches', cat: 'თვალის მოვლა' },
-              { id: 872, span: 'col-span-2 row-span-1', label: 'Beauty Shot', cat: 'NUTRIPLUS' },
-              { id: 50, span: 'col-span-1 row-span-1', label: 'Spray', cat: 'მოვლა' },
-              { id: 1260, span: 'col-span-1 row-span-1', label: 'Shake', cat: 'NUTRIPLUS' },
-            ].map((g, i) => (
-              <a key={i}
-                href={`https://farmasi.ge/ka/product/view/${g.id}`} target="_blank" rel="noreferrer"
-                className={`relative rounded-2xl overflow-hidden group cursor-pointer ${g.span}`}
-                style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.cream})` }}>
-                <img src={`https://farmasi.ge/public/images/product_fb/${g.id}.png`}
-                  alt={g.label}
-                  className="w-full h-full object-contain p-4 transition group-hover:scale-110"
-                  style={{ filter: 'drop-shadow(0 10px 20px rgba(35,23,18,0.15))' }}
-                  onError={(e) => { e.target.style.display = 'none'; }} />
-                <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition"
-                  style={{ background: `linear-gradient(to top, ${theme.ink}DD, transparent 50%)` }}>
-                  <p className="text-[9px] tracking-widest uppercase mb-0.5" style={{ color: theme.gold }}>{g.cat}</p>
-                  <p className="font-display text-base" style={{ color: theme.cream }}>{g.label}</p>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ═══ TESTIMONIALS — customer stories ═══ */}
       <section className="px-5 py-16">
         <div className="max-w-5xl mx-auto">
