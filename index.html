@@ -599,11 +599,36 @@ function App() {
   const [repCode, setRepCode] = useState(urlParams.pid || '');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
+  const [problems, setProblems] = useState(PROBLEMS); // hardcoded fallback, will be replaced from Sheet
   const [loadError, setLoadError] = useState('');
   const [rep, setRep] = useState({
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
     instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
   });
+
+  // Load problems from Sheet on mount — cached in localStorage for instant render
+  useEffect(() => {
+    // 1. Try cached version first (instant render)
+    try {
+      const cached = localStorage.getItem('farmasi_problems_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProblems(parsed);
+        }
+      }
+    } catch {}
+
+    // 2. Fetch fresh from Sheet (background refresh)
+    api({ action: 'get_problems' })
+      .then(data => {
+        if (data.ok && Array.isArray(data.problems) && data.problems.length > 0) {
+          setProblems(data.problems);
+          try { localStorage.setItem('farmasi_problems_cache', JSON.stringify(data.problems)); } catch {}
+        }
+      })
+      .catch(() => {/* silent fallback to hardcoded PROBLEMS */});
+  }, []);
 
   // Load rep data from API on mount if PID is in URL
   useEffect(() => {
@@ -639,7 +664,7 @@ function App() {
           if (urlParams.edit) {
             setView('dashboard');
           } else if (urlParams.problem) {
-            const problem = PROBLEMS.find(p => p.id === urlParams.problem && p.productId);
+            const problem = problems.find(p => p.id === urlParams.problem && p.productId);
             if (problem) {
               setSelectedProblem(problem);
               setView('public');
@@ -673,8 +698,8 @@ function App() {
       <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />
       {view === 'loading' && <LoadingScreen />}
       {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} />}
-      {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} />}
-      {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} />}
+      {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} />}
+      {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} />}
       {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} />}
     </div>
   );
@@ -817,7 +842,7 @@ function Login({ onLogin, initialError }) {
   );
 }
 
-function Dashboard({ rep, setRep, repCode, onPreview }) {
+function Dashboard({ rep, setRep, repCode, onPreview, problems }) {
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
@@ -1406,7 +1431,7 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
                         {v.problem ? (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-medium"
                             style={{ background: theme.wine + '22', color: theme.wine }}>
-                            {(PROBLEMS.find(p => p.id === v.problem) || {}).label || v.problem}
+                            {((problems || PROBLEMS).find(p => p.id === v.problem) || {}).label || v.problem}
                           </span>
                         ) : (
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-medium"
@@ -1446,7 +1471,7 @@ function Dashboard({ rep, setRep, repCode, onPreview }) {
                 className="w-full px-3 py-2 mb-3 rounded-xl outline-none text-sm cursor-pointer"
                 style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }}>
                 <option value="">🌐 ყველა პრობლემაზე (ზოგადი)</option>
-                {PROBLEMS.filter(p => p.productId).map(p => (
+                {(problems || PROBLEMS).filter(p => p.productId).map(p => (
                   <option key={p.id} value={p.id}>{p.icon === 'droplet' ? '💧' : '🎯'} {p.label}</option>
                 ))}
               </select>
@@ -1643,7 +1668,7 @@ function VideoIntro({ url }) {
   );
 }
 
-function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem }) {
+function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
   const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
@@ -1883,7 +1908,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem })
 
       {/* ═══ PAIN QUIZ — Pain → Solution Engine entry point (Sprint 6) ═══ */}
       <div id="pain-quiz-section">
-        <PainQuiz onSelect={handleProblemSelect} selectedId={selectedProblem?.id} />
+        <PainQuiz onSelect={handleProblemSelect} selectedId={selectedProblem?.id} problems={problems} />
       </div>
 
       {/* ═══ EXPANDED CONTENT — only shown when user clicks a problem ═══ */}
@@ -2513,7 +2538,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem })
   );
 }
 
-function PainQuiz({ onSelect, selectedId }) {
+function PainQuiz({ onSelect, selectedId, problems = PROBLEMS }) {
   const handleClick = (problem) => {
     onSelect(problem);
   };
@@ -2543,7 +2568,7 @@ function PainQuiz({ onSelect, selectedId }) {
 
         {/* Grid — only active problems shown. Layout adapts to count */}
         {(() => {
-          const activeProblems = PROBLEMS.filter(p => p.productId);
+          const activeProblems = problems.filter(p => p.productId);
           const gridClass = activeProblems.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
                             activeProblems.length === 2 ? 'grid-cols-2 max-w-md mx-auto' :
                             activeProblems.length === 3 ? 'grid-cols-3 max-w-2xl mx-auto' :
