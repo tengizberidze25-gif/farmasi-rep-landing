@@ -2993,82 +2993,13 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
   return ReactDOM.createPortal(modalContent, document.body);
 }
 
-// ProductImage — smart image component that removes white background from external URLs
-// Uses Canvas pixel processing (best result) with CSS mix-blend-mode fallback if CORS blocks Canvas.
+// ProductImage — simple wrapper that displays the image as-is.
+// Supports both local files (calendula-cream.png) and external URLs (FARMASI CDN).
+// Note: External URLs with white backgrounds will display with white bg —
+// to remove white bg, upload transparent PNG to GitHub root instead.
 function ProductImage({ src, alt, className, style, onError }) {
-  const [processedSrc, setProcessedSrc] = useState(src);
-  const [needsBlendMode, setNeedsBlendMode] = useState(false);
-
-  useEffect(() => {
-    if (!src) return;
-
-    // Local images (no http://) — use as-is, they're already transparent
-    if (!src.startsWith('http')) {
-      setProcessedSrc(src);
-      setNeedsBlendMode(false);
-      return;
-    }
-
-    // External images (FARMASI, etc.) — try Canvas-based bg removal first
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function() {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imgData.data;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          if (r > 245 && g > 245 && b > 245) {
-            data[i + 3] = 0;
-          } else if (r > 225 && g > 225 && b > 225) {
-            const minChannel = Math.min(r, g, b);
-            data[i + 3] = Math.max(0, Math.min(255, (255 - minChannel) * 8));
-          }
-        }
-
-        ctx.putImageData(imgData, 0, 0);
-        setProcessedSrc(canvas.toDataURL('image/png'));
-        setNeedsBlendMode(false);
-      } catch (err) {
-        // Tainted canvas (CORS denied pixel reading) — use CSS multiply fallback
-        console.warn('Canvas tainted (CORS), using CSS blend mode fallback');
-        setProcessedSrc(src);
-        setNeedsBlendMode(true);
-      }
-    };
-    img.onerror = function() {
-      // Image failed to load with crossOrigin (server has no CORS headers).
-      // The visible <img> tag (without crossOrigin) WILL still load fine.
-      // Use multiply fallback to visually remove white bg.
-      setProcessedSrc(src);
-      setNeedsBlendMode(true);
-    };
-    img.src = src;
-  }, [src]);
-
-  if (!processedSrc) return null;
-
-  // If Canvas failed (CORS), apply mix-blend-mode multiply to "remove" white visually
-  // brightness/contrast filter helps maintain product visibility on dark bg
-  const finalStyle = needsBlendMode
-    ? {
-        ...style,
-        mixBlendMode: 'multiply',
-        filter: (style?.filter ? style.filter + ' ' : '') + 'brightness(1.15) contrast(1.05)'
-      }
-    : style;
-
-  return <img src={processedSrc} alt={alt} className={className} style={finalStyle} onError={onError} decoding="async" />;
+  if (!src) return null;
+  return <img src={src} alt={alt} className={className} style={style} onError={onError} decoding="async" />;
 }
 
 // Single product card for ProblemProductShowcase — with 3D tilt
