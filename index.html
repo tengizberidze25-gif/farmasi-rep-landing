@@ -2790,26 +2790,26 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
         {/* Image area — responsive: square on portrait mobile, wider on landscape, capped height */}
         <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0"
           style={{
-            background: `linear-gradient(135deg, ${accent}22, ${theme.ink})`,
+            background: `linear-gradient(135deg, #ffffff, #f5f0e8)`,
             aspectRatio: '4/3',
             maxHeight: '55vh',
             minHeight: '200px'
           }}>
-          {/* Spotlight glow */}
+          {/* Soft accent glow — subtle on light bg */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-50"
+            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-25"
               style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }} />
           </div>
           {imageSrc && (
             <img src={imageSrc} alt={product.name}
               className="relative z-[1] max-h-full max-w-full object-contain p-6 sm:p-10 anim-float"
-              style={{ filter: `drop-shadow(0 30px 60px ${accent}88) drop-shadow(0 0 80px ${accent}44)` }}
+              style={{ filter: `drop-shadow(0 25px 45px rgba(0,0,0,0.15))` }}
               onError={(e) => { e.target.style.display = 'none'; }} />
           )}
           {/* Tag */}
           {product.tag && (
             <span className="absolute top-3 right-3 sm:top-4 sm:right-4 text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md font-medium z-[2]"
-              style={{ background: theme.cream + 'EE', color: theme.ink }}>
+              style={{ background: theme.ink + 'EE', color: theme.cream }}>
               {product.tag}
             </span>
           )}
@@ -2932,10 +2932,13 @@ function ProblemProductCard({ product, index, accent, onClick }) {
         {/* Image area */}
         <div ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
           className="relative aspect-[4/5] flex items-center justify-center overflow-hidden"
-          style={{ perspective: '1200px' }}>
-          {/* Spotlight glow */}
+          style={{
+            perspective: '1200px',
+            background: `linear-gradient(135deg, #ffffff, #f5f0e8)`
+          }}>
+          {/* Soft accent glow — subtle on light bg */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-40"
+            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-20"
               style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }} />
           </div>
           {/* Tilt container with image */}
@@ -2943,16 +2946,16 @@ function ProblemProductCard({ product, index, accent, onClick }) {
             {imageSrc ? (
               <img src={imageSrc} alt={product.name}
                 className="max-w-full max-h-full object-contain"
-                style={{ filter: `drop-shadow(0 30px 50px ${accent}66)` }}
+                style={{ filter: `drop-shadow(0 20px 35px rgba(0,0,0,0.12))` }}
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
             ) : (
               <div className="text-center opacity-60">
                 <div className="w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center"
-                  style={{ background: theme.cream + '11' }}>
-                  <Ic name="image" className="w-8 h-8" style={{ color: theme.cream }} />
+                  style={{ background: theme.ink + '11' }}>
+                  <Ic name="image" className="w-8 h-8" style={{ color: theme.ink + '66' }} />
                 </div>
-                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.cream + '88' }}>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '88' }}>
                   ფოტო მალე
                 </p>
               </div>
