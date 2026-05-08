@@ -3040,16 +3040,18 @@ function ProductImage({ src, alt, className, style, onError }) {
         setProcessedSrc(canvas.toDataURL('image/png'));
         setNeedsBlendMode(false);
       } catch (err) {
-        // CORS blocked Canvas — use CSS mix-blend-mode fallback
-        // This visually "removes" white bg without pixel access
-        console.warn('Canvas CORS blocked, using CSS blend mode fallback');
+        // Tainted canvas (CORS denied pixel reading) — use CSS multiply fallback
+        console.warn('Canvas tainted (CORS), using CSS blend mode fallback');
         setProcessedSrc(src);
         setNeedsBlendMode(true);
       }
     };
-    img.onerror = () => {
+    img.onerror = function() {
+      // Image failed to load with crossOrigin (server has no CORS headers).
+      // The visible <img> tag (without crossOrigin) WILL still load fine.
+      // Use multiply fallback to visually remove white bg.
       setProcessedSrc(src);
-      setNeedsBlendMode(false);
+      setNeedsBlendMode(true);
     };
     img.src = src;
   }, [src]);
