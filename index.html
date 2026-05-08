@@ -2911,7 +2911,11 @@ function ProductImage({ src, alt, className, style, onError }) {
       return;
     }
 
-    // External images (FARMASI, etc.) — try to remove white background via canvas
+    // External images (FARMASI, etc.) — proxy through images.weserv.nl
+    // to bypass CORS, then strip white background via canvas.
+    const proxiedSrc = 'https://images.weserv.nl/?url=' +
+      encodeURIComponent(src.replace(/^https?:\/\//, ''));
+
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
@@ -2937,7 +2941,6 @@ function ProductImage({ src, alt, className, style, onError }) {
           }
           // Light gray edges — semi-transparent for smooth blend
           else if (r > 225 && g > 225 && b > 225) {
-            // The whiter the pixel, the more transparent
             const minChannel = Math.min(r, g, b);
             data[i + 3] = Math.max(0, Math.min(255, (255 - minChannel) * 8));
           }
@@ -2946,13 +2949,14 @@ function ProductImage({ src, alt, className, style, onError }) {
         ctx.putImageData(imgData, 0, 0);
         setProcessedSrc(canvas.toDataURL('image/png'));
       } catch (err) {
-        // CORS issue or other — fall back to original image
+        // Should not happen now (proxy adds CORS), but just in case —
+        // show the proxied image (no bg removal) instead of failing.
         console.warn('Canvas processing failed:', err);
-        setProcessedSrc(src);
+        setProcessedSrc(proxiedSrc);
       }
     };
     img.onerror = () => setProcessedSrc(src);
-    img.src = src;
+    img.src = proxiedSrc;
   }, [src]);
 
   if (!processedSrc) return null;
