@@ -2758,23 +2758,34 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
   // Render via Portal at document.body — escapes any transformed ancestors
   // so that position:fixed centers correctly relative to viewport
   const modalContent = (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-10 anim-fadeup"
+    <div className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-6 anim-fadeup"
       onClick={onClose}
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
-      <div className="relative w-full sm:max-w-3xl max-h-[100vh] sm:max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl"
+      <div className="relative w-full sm:max-w-3xl h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-y-auto sm:rounded-3xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
         style={{ background: theme.ink, color: theme.cream, border: `1px solid ${theme.cream}11` }}>
 
-        {/* Close button — sticky top right */}
+        {/* Back arrow — top left, fixed within scroll container */}
         <button onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 backdrop-blur-md"
-          style={{ background: theme.cream + '22', color: theme.cream }}>
-          <Ic name="x" className="w-4 h-4" />
+          className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs tracking-[0.15em] uppercase font-medium transition hover:scale-105 backdrop-blur-md"
+          style={{
+            background: theme.ink + 'CC',
+            color: theme.cream,
+            border: `1px solid ${theme.cream}33`,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+          }}>
+          <Ic name="arrow-left" className="w-3.5 h-3.5" />
+          <span>უკან</span>
         </button>
 
-        {/* Image area */}
-        <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden flex items-center justify-center"
-          style={{ background: `linear-gradient(135deg, ${accent}22, ${theme.ink})` }}>
+        {/* Image area — responsive: square on portrait mobile, wider on landscape, capped height */}
+        <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0"
+          style={{
+            background: `linear-gradient(135deg, ${accent}22, ${theme.ink})`,
+            aspectRatio: '4/3',
+            maxHeight: '55vh',
+            minHeight: '200px'
+          }}>
           {/* Spotlight glow */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-50"
@@ -2782,13 +2793,13 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
           </div>
           {imageSrc && (
             <img src={imageSrc} alt={product.name}
-              className="relative z-[1] max-h-full max-w-full object-contain p-8 anim-float"
-              style={{ filter: `drop-shadow(0 40px 80px ${accent}88) drop-shadow(0 0 100px ${accent}44)` }}
+              className="relative z-[1] max-h-full max-w-full object-contain p-6 sm:p-10 anim-float"
+              style={{ filter: `drop-shadow(0 30px 60px ${accent}88) drop-shadow(0 0 80px ${accent}44)` }}
               onError={(e) => { e.target.style.display = 'none'; }} />
           )}
           {/* Tag */}
           {product.tag && (
-            <span className="absolute top-4 left-4 text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md font-medium z-[2]"
+            <span className="absolute top-3 right-3 sm:top-4 sm:right-4 text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md font-medium z-[2]"
               style={{ background: theme.cream + 'EE', color: theme.ink }}>
               {product.tag}
             </span>
@@ -2796,18 +2807,18 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
         </div>
 
         {/* Content area */}
-        <div className="p-6 sm:p-10">
+        <div className="px-5 sm:px-10 py-6 sm:py-8 flex-1">
           {/* Category */}
           {product.cat && (
-            <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+            <p className="text-[10px] sm:text-[11px] tracking-[0.35em] uppercase mb-3 font-medium" style={{ color: theme.gold }}>
               {product.cat}
             </p>
           )}
 
           {/* Title */}
-          <h2 className="font-display leading-[1.05] mb-5"
+          <h2 className="font-display leading-[1.1] mb-4"
             style={{
-              fontSize: 'clamp(1.75rem, 4vw, 2.75rem)',
+              fontSize: 'clamp(1.5rem, 6vw, 2.5rem)',
               color: theme.cream,
               letterSpacing: '-0.01em'
             }}>
@@ -2815,41 +2826,41 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
           </h2>
 
           {/* Price + ID row */}
-          <div className="flex items-center gap-5 mb-8 flex-wrap">
-            <p className="font-display text-3xl sm:text-4xl" style={{ color: accent }}>
+          <div className="flex items-center gap-4 mb-6 flex-wrap">
+            <p className="font-display" style={{ color: accent, fontSize: 'clamp(1.5rem, 7vw, 2.25rem)' }}>
               {product.price ? `${product.price} ₾` : ''}
             </p>
-            <span className="text-[10px] tracking-[0.3em] uppercase opacity-60 font-mono">
+            <span className="text-[10px] tracking-[0.25em] uppercase opacity-60 font-mono">
               ID #{product.id}
             </span>
           </div>
 
           {/* Hairline */}
-          <div className="h-px mb-8" style={{ background: theme.cream + '15' }} />
+          <div className="h-px mb-6" style={{ background: theme.cream + '15' }} />
 
           {/* Full description — rendered as paragraphs and bullets */}
           {descSections.length > 0 && (
-            <div className="mb-8">
-              <p className="font-display-lat italic text-sm tracking-[0.2em] uppercase mb-5" style={{ color: theme.gold }}>
+            <div className="mb-7">
+              <p className="font-display-lat italic text-xs sm:text-sm tracking-[0.2em] uppercase mb-4" style={{ color: theme.gold }}>
                 ✦ აღწერილობა
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {descSections.map((section, idx) => {
                   if (section.type === 'bullet') {
                     return (
                       <div key={idx} className="flex gap-3 items-start">
-                        <div className="flex-shrink-0 mt-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+                        <div className="flex-shrink-0 mt-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center"
                           style={{ background: accent + '22', color: accent }}>
-                          <Ic name="sparkles" className="w-3 h-3" />
+                          <Ic name="sparkles" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         </div>
-                        <p className="flex-1 text-base leading-[1.7]" style={{ color: theme.cream + 'CC' }}>
+                        <p className="flex-1 text-sm sm:text-base leading-[1.7]" style={{ color: theme.cream + 'CC' }}>
                           {section.text}
                         </p>
                       </div>
                     );
                   }
                   return (
-                    <p key={idx} className="text-base leading-[1.75]" style={{ color: theme.cream + 'CC' }}>
+                    <p key={idx} className="text-sm sm:text-base leading-[1.75]" style={{ color: theme.cream + 'CC' }}>
                       {section.text}
                     </p>
                   );
@@ -2861,7 +2872,7 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
           {/* WhatsApp CTA */}
           {repWhatsapp && (
             <a href={waLink} target="_blank" rel="noreferrer"
-              className="group flex items-center justify-center gap-3 px-8 py-4 rounded-full font-medium text-xs tracking-[0.2em] uppercase transition hover:scale-[1.01] hover:gap-4"
+              className="group flex items-center justify-center gap-2 sm:gap-3 px-6 py-3.5 sm:py-4 rounded-full font-medium text-xs tracking-[0.2em] uppercase transition hover:scale-[1.01] hover:gap-4"
               style={{ background: '#25D366', color: '#fff', boxShadow: `0 20px 50px -15px #25D36677` }}>
               <SocialIcon name="whatsapp" className="w-4 h-4" />
               შეუკვეთე ან გაიგე მეტი
@@ -4213,27 +4224,117 @@ function FaqItem({ q, a, mono }) {
 
 function ChatModal({ rep, onClose, product }) {
   const [msg, setMsg] = useState(product ? `გამარჯობა, "${product.name}"-ს შესახებ მაინტერესებს...` : '');
-  const [sent, setSent] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  // Build socials list — same logic as PublicPage
-  const socials = [
-    rep.instagram && { icon: 'instagram', label: 'Instagram', href: rep.instagram.startsWith('http') ? rep.instagram : `https://instagram.com/${rep.instagram.replace('@','')}` },
-    rep.facebook  && { icon: 'facebook',  label: 'Facebook',  href: rep.facebook.startsWith('http') ? rep.facebook : `https://facebook.com/${rep.facebook}` },
-    rep.tiktok    && { icon: 'tiktok',    label: 'TikTok',    href: rep.tiktok.startsWith('http') ? rep.tiktok : `https://tiktok.com/${rep.tiktok.startsWith('@') ? rep.tiktok : '@'+rep.tiktok}` },
-    rep.youtube   && { icon: 'youtube',   label: 'YouTube',   href: rep.youtube.startsWith('http') ? rep.youtube : `https://youtube.com/${rep.youtube}` },
-    rep.telegram  && { icon: 'telegram',  label: 'Telegram',  href: rep.telegram.startsWith('http') ? rep.telegram : `https://t.me/${rep.telegram.replace('@','')}` },
-  ].filter(Boolean);
-
-  const send = () => {
-    if (!msg.trim()) return;
-    setSent(true);
-    setTimeout(() => { onClose(); setSent(false); setMsg(''); }, 2000);
+  // Helper: extract username from URL or raw value
+  const extractUsername = (val, domain) => {
+    if (!val) return '';
+    let v = val.replace('@', '').trim();
+    if (v.startsWith('http')) {
+      try {
+        const u = new URL(v);
+        v = u.pathname.split('/').filter(Boolean)[0] || '';
+      } catch {}
+    }
+    return v;
   };
+
+  // Build available channels with URL builders
+  // autoFill=true means platform pre-fills text via URL (only WhatsApp & Telegram bot supports this)
+  const channels = [];
+
+  if (rep.whatsapp) {
+    channels.push({
+      type: 'whatsapp',
+      label: 'WhatsApp',
+      color: '#25D366',
+      autoFill: true,
+      primary: true,
+      build: (m) => `https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(m)}`
+    });
+  }
+
+  if (rep.telegram) {
+    const tgUser = extractUsername(rep.telegram);
+    channels.push({
+      type: 'telegram',
+      label: 'Telegram',
+      color: '#0088CC',
+      autoFill: false, // browsers don't pre-fill DMs
+      build: () => `https://t.me/${tgUser}`
+    });
+  }
+
+  if (rep.facebook) {
+    const fbUser = extractUsername(rep.facebook);
+    channels.push({
+      type: 'facebook',
+      label: 'Messenger',
+      color: '#0084FF',
+      autoFill: false,
+      build: () => `https://m.me/${fbUser}`
+    });
+  }
+
+  if (rep.instagram) {
+    const igUser = extractUsername(rep.instagram);
+    channels.push({
+      type: 'instagram',
+      label: 'Instagram',
+      color: '#E4405F',
+      autoFill: false,
+      build: () => `https://instagram.com/${igUser}`
+    });
+  }
+
+  if (rep.tiktok) {
+    let ttUser = extractUsername(rep.tiktok);
+    if (!ttUser.startsWith('@')) ttUser = '@' + ttUser;
+    channels.push({
+      type: 'tiktok',
+      label: 'TikTok',
+      color: '#000000',
+      autoFill: false,
+      build: () => `https://tiktok.com/${ttUser}`
+    });
+  }
+
+  // Separate primary (WhatsApp - direct fill) from secondary (need clipboard copy)
+  const primary = channels.find(c => c.primary);
+  const secondary = channels.filter(c => !c.primary);
+
+  const showToast = (text, isError = false) => {
+    setToast({ text, isError });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const sendVia = async (channel) => {
+    if (!msg.trim()) {
+      showToast('⚠️ ჯერ ჩაწერე მესიჯი', true);
+      return;
+    }
+
+    const url = channel.build(msg);
+
+    if (!channel.autoFill) {
+      try {
+        await navigator.clipboard.writeText(msg);
+        showToast('✓ მესიჯი დაკოპირდა — ჩატში დააჭირე Ctrl+V (ან long-press → Paste)');
+      } catch (err) {
+        // Fallback for older browsers / restricted contexts
+        showToast('⚠️ ხელით დააკოპირე ტექსტი და ჩასვი ჩატში', true);
+      }
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-10"
       style={{ background: 'rgba(35,23,18,0.6)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
-      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 anim-fadeup"
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 anim-fadeup relative"
         style={{ background: theme.ivory }} onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div>
             <p className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>მომწერე</p>
@@ -4244,68 +4345,73 @@ function ChatModal({ rep, onClose, product }) {
             <Ic name="x" className="w-4 h-4" />
           </button>
         </div>
-        {sent ? (
-          <div className="py-10 text-center">
-            <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center"
-              style={{ background: theme.gold + '22', color: theme.gold }}>
-              <Ic name="check" className="w-6 h-6" />
-            </div>
-            <p className="font-display text-lg" style={{ color: theme.ink }}>გაიგზავნა!</p>
-            <p className="text-xs mt-1" style={{ color: theme.ink + '99' }}>მალე გიპასუხებ ✨</p>
-          </div>
-        ) : (
+
+        {/* Message textarea */}
+        <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={4}
+          placeholder="გამარჯობა! მაინტერესებს..."
+          className="w-full p-3 rounded-xl outline-none text-sm resize-none"
+          style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+
+        {/* Primary channel — WhatsApp (direct fill) */}
+        {primary && (
+          <button onClick={() => sendVia(primary)}
+            className="w-full mt-4 py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition hover:scale-[1.01]"
+            style={{ background: primary.color, color: '#fff', boxShadow: `0 10px 25px -10px ${primary.color}99` }}>
+            <SocialIcon name="whatsapp" className="w-4 h-4" />
+            {primary.label}-ზე გაგზავნა
+            <span className="text-[10px] opacity-80 ml-1">✨ პირდაპირ ჩავარდება</span>
+          </button>
+        )}
+
+        {/* Secondary channels — copy + redirect */}
+        {secondary.length > 0 && (
           <>
-            <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={4}
-              placeholder="გამარჯობა! მაინტერესებს..."
-              className="w-full p-3 rounded-xl outline-none text-sm resize-none"
-              style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
-            <div className="flex gap-2 mt-4">
-              {rep.whatsapp && (
-                <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(msg)}`}
-                  target="_blank" rel="noreferrer"
-                  className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium"
-                  style={{ background: '#25D366', color: '#fff' }}>
-                  <SocialIcon name="whatsapp" className="w-4 h-4" /> WhatsApp
-                </a>
-              )}
-              <button onClick={send}
-                className="flex-1 py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium"
-                style={{ background: theme.wine, color: theme.cream }}>
-                <Ic name="send" className="w-4 h-4" /> გაგზავნა
-              </button>
+            <div className="flex items-center gap-3 mt-5 mb-3">
+              <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
+              <p className="text-[9px] tracking-[0.3em] uppercase" style={{ color: theme.ink + '77' }}>
+                ან აირჩიე სხვა არხი
+              </p>
+              <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
             </div>
 
-            {/* Phone */}
-            {rep.phone && (
-              <p className="text-[10px] mt-3 text-center" style={{ color: theme.ink + '77' }}>
-                ან დარეკე: <a href={`tel:${rep.phone}`} className="underline" style={{ color: theme.wine }}>{rep.phone}</a>
-              </p>
-            )}
+            <div className={`grid gap-2 ${secondary.length === 1 ? 'grid-cols-1' : secondary.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-' + Math.min(secondary.length, 4)}`}>
+              {secondary.map((ch) => (
+                <button key={ch.type} onClick={() => sendVia(ch)}
+                  className="py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-medium transition hover:scale-[1.02]"
+                  style={{
+                    background: '#fff',
+                    color: ch.color,
+                    border: `1.5px solid ${ch.color}33`
+                  }}>
+                  <SocialIcon name={ch.type} className="w-4 h-4" />
+                  {ch.label}
+                </button>
+              ))}
+            </div>
 
-            {/* Social links — editorial divider */}
-            {socials.length > 0 && (
-              <>
-                <div className="flex items-center gap-3 mt-5 mb-4">
-                  <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
-                  <p className="text-[9px] tracking-[0.3em] uppercase" style={{ color: theme.ink + '77' }}>
-                    ან მომყევი
-                  </p>
-                  <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
-                </div>
-
-                <div className="flex flex-wrap justify-center gap-2">
-                  {socials.map((s, i) => (
-                    <a key={i} href={s.href} target="_blank" rel="noreferrer"
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-full text-[10px] tracking-[0.15em] uppercase transition hover:scale-105"
-                      style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>
-                      <SocialIcon name={s.icon} className="w-3.5 h-3.5" style={{ color: theme.wine }} />
-                      {s.label}
-                    </a>
-                  ))}
-                </div>
-              </>
-            )}
+            <p className="text-[10px] mt-2.5 text-center" style={{ color: theme.ink + '66' }}>
+              ↑ ტექსტი ავტომატურად დაკოპირდება — ჩასვი ჩატში
+            </p>
           </>
+        )}
+
+        {/* Phone */}
+        {rep.phone && (
+          <p className="text-[10px] mt-4 text-center" style={{ color: theme.ink + '77' }}>
+            ან დარეკე: <a href={`tel:${rep.phone}`} className="underline font-medium" style={{ color: theme.wine }}>{rep.phone}</a>
+          </p>
+        )}
+
+        {/* Toast notification */}
+        {toast && (
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-16 px-4 py-3 rounded-xl shadow-2xl text-xs font-medium max-w-[90%] text-center anim-fadeup"
+            style={{
+              background: toast.isError ? '#DC2626' : theme.ink,
+              color: '#fff',
+              boxShadow: '0 20px 50px -15px rgba(0,0,0,0.5)'
+            }}>
+            {toast.text}
+          </div>
         )}
       </div>
     </div>
