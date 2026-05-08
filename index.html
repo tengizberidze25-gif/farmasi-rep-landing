@@ -2,8 +2,27 @@
 <html lang="ka">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0F0F0F" />
 <title>FARMASI · წარმომადგენლის Portfolio</title>
+<meta name="description" content="FARMASI-ის წარმომადგენლის პორტფოლიო — პროდუქტების კატალოგი, კონსულტაცია და შეკვეთა WhatsApp-ით." />
+
+<!-- Open Graph / Facebook / WhatsApp -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="FARMASI · წარმომადგენლის Portfolio" />
+<meta property="og:description" content="აღმოაჩინე პროდუქტები, რომლებიც დაგეხმარება. გამიჭერი WhatsApp-ი — დაგეხმარები აირჩევა." />
+<meta property="og:image" content="https://farmasi-rep-landing.vercel.app/og-image.png" />
+<meta property="og:locale" content="ka_GE" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="FARMASI · წარმომადგენლის Portfolio" />
+<meta name="twitter:description" content="აღმოაჩინე პროდუქტები, რომლებიც დაგეხმარება." />
+
+<!-- Favicon (inline SVG — works without external file) -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23E50571'/%3E%3Ctext x='50' y='65' font-family='Georgia, serif' font-size='52' font-weight='700' text-anchor='middle' fill='white'%3EF%3C/text%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23E50571'/%3E%3Ctext x='50' y='65' font-family='Georgia, serif' font-size='52' font-weight='700' text-anchor='middle' fill='white'%3EF%3C/text%3E%3C/svg%3E" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;500;600;700;800;900&family=FiraGO:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
@@ -14,7 +33,18 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
   * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-  body { font-family: 'FiraGO', 'Noto Serif Georgian', system-ui, sans-serif; margin: 0; background: #FFFFFF; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'FiraGO', 'Noto Serif Georgian', system-ui, sans-serif; margin: 0; background: #FFFFFF; overscroll-behavior-y: none; }
+
+  /* Reduced motion accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
   .font-display { font-family: 'Noto Serif Georgian', 'Cormorant Garamond', Georgia, serif; font-weight: 600; letter-spacing: -0.015em; }
   .font-display-lat { font-family: 'Cormorant Garamond', Georgia, serif; font-style: italic; }
   .grain { position: relative; }
@@ -743,11 +773,62 @@ function App() {
 
 function LoadingScreen() {
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.cream }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ width: 60, height: 60, border: `4px solid ${theme.blush}`, borderTop: `4px solid ${theme.wine}`, borderRadius: '50%', margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
-        <p style={{ color: theme.ink, fontSize: 14, letterSpacing: '0.2em', textTransform: 'uppercase' }}>ვტვირთავ...</p>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `linear-gradient(135deg, ${theme.cream} 0%, ${theme.ivory} 100%)`,
+      padding: '20px'
+    }}>
+      {/* Animated FARMASI logo */}
+      <div style={{ position: 'relative', width: 80, height: 80, marginBottom: 28 }}>
+        {/* Outer ring */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          border: `2px solid ${theme.gold}33`,
+          borderRadius: '50%'
+        }} />
+        {/* Spinning ring */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          border: '2px solid transparent',
+          borderTopColor: theme.wine,
+          borderRightColor: theme.wine + '88',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        {/* F mark in center */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'Cormorant Garamond, Georgia, serif',
+          fontSize: 32,
+          fontWeight: 600,
+          color: theme.wine,
+          fontStyle: 'italic'
+        }}>F</div>
       </div>
+
+      {/* Brand mark */}
+      <p style={{
+        fontFamily: 'Noto Serif Georgian, serif',
+        fontSize: 18,
+        color: theme.ink,
+        marginBottom: 6,
+        letterSpacing: '-0.01em'
+      }}>FARMASI</p>
+
+      {/* Loading text */}
+      <p style={{
+        color: theme.ink + '88',
+        fontSize: 11,
+        letterSpacing: '0.3em',
+        textTransform: 'uppercase',
+        fontWeight: 500
+      }}>ვტვირთავ...</p>
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -1710,6 +1791,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const expandedRef = useRef(null);
   const heroPhotoTiltRef = useRef(null);
   const heroPhotoContainerRef = useRef(null);
@@ -1747,6 +1829,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       const total = document.documentElement.scrollHeight - window.innerHeight;
       const progress = total > 0 ? (window.scrollY / total) * 100 : 0;
       setScrollProgress(Math.min(100, Math.max(0, progress)));
+      // Show floating scroll-to-top button after scrolling 600px
+      setShowScrollTop(window.scrollY > 600);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
@@ -2301,6 +2385,19 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           <span className="text-sm font-medium hidden sm:inline">WhatsApp</span>
         </a>
       )}
+
+      {/* Floating scroll-to-top button — appears after scrolling 600px */}
+      <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-20 sm:bottom-20 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+        style={{
+          background: theme.cream,
+          color: theme.ink,
+          border: `1px solid ${theme.gold}33`,
+          boxShadow: '0 8px 24px -8px rgba(0,0,0,0.25)'
+        }}
+        title="ზემოთ დაბრუნება">
+        <Ic name="arrow-up" className="w-4 h-4" />
+      </button>
 
       {chatOpen && <ChatModal rep={rep} onClose={() => setChatOpen(false)} />}
 
@@ -2897,10 +2994,10 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
 }
 
 // ProductImage — smart image component that removes white background from external URLs
-// (e.g., FARMASI photos with white bg) using Canvas pixel processing.
-// For local images (transparent PNGs), uses them as-is without processing.
+// Uses Canvas pixel processing (best result) with CSS mix-blend-mode fallback if CORS blocks Canvas.
 function ProductImage({ src, alt, className, style, onError }) {
   const [processedSrc, setProcessedSrc] = useState(src);
+  const [needsBlendMode, setNeedsBlendMode] = useState(false);
 
   useEffect(() => {
     if (!src) return;
@@ -2908,14 +3005,11 @@ function ProductImage({ src, alt, className, style, onError }) {
     // Local images (no http://) — use as-is, they're already transparent
     if (!src.startsWith('http')) {
       setProcessedSrc(src);
+      setNeedsBlendMode(false);
       return;
     }
 
-    // External images (FARMASI, etc.) — proxy through images.weserv.nl
-    // to bypass CORS, then strip white background via canvas.
-    const proxiedSrc = 'https://images.weserv.nl/?output=png&url=' +
-      encodeURIComponent(src.replace(/^https?:\/\//, ''));
-
+    // External images (FARMASI, etc.) — try Canvas-based bg removal first
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
@@ -2929,18 +3023,14 @@ function ProductImage({ src, alt, className, style, onError }) {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imgData.data;
 
-        // Iterate every pixel — remove pure white, soften near-white edges
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i];
           const g = data[i + 1];
           const b = data[i + 2];
 
-          // Pure white (or near pure) — fully transparent
           if (r > 245 && g > 245 && b > 245) {
             data[i + 3] = 0;
-          }
-          // Light gray edges — semi-transparent for smooth blend
-          else if (r > 225 && g > 225 && b > 225) {
+          } else if (r > 225 && g > 225 && b > 225) {
             const minChannel = Math.min(r, g, b);
             data[i + 3] = Math.max(0, Math.min(255, (255 - minChannel) * 8));
           }
@@ -2948,19 +3038,35 @@ function ProductImage({ src, alt, className, style, onError }) {
 
         ctx.putImageData(imgData, 0, 0);
         setProcessedSrc(canvas.toDataURL('image/png'));
+        setNeedsBlendMode(false);
       } catch (err) {
-        // Should not happen now (proxy adds CORS), but just in case —
-        // show the proxied image (no bg removal) instead of failing.
-        console.warn('Canvas processing failed:', err);
-        setProcessedSrc(proxiedSrc);
+        // CORS blocked Canvas — use CSS mix-blend-mode fallback
+        // This visually "removes" white bg without pixel access
+        console.warn('Canvas CORS blocked, using CSS blend mode fallback');
+        setProcessedSrc(src);
+        setNeedsBlendMode(true);
       }
     };
-    img.onerror = () => setProcessedSrc(src);
-    img.src = proxiedSrc;
+    img.onerror = () => {
+      setProcessedSrc(src);
+      setNeedsBlendMode(false);
+    };
+    img.src = src;
   }, [src]);
 
   if (!processedSrc) return null;
-  return <img src={processedSrc} alt={alt} className={className} style={style} onError={onError} />;
+
+  // If Canvas failed (CORS), apply mix-blend-mode multiply to "remove" white visually
+  // brightness/contrast filter helps maintain product visibility on dark bg
+  const finalStyle = needsBlendMode
+    ? {
+        ...style,
+        mixBlendMode: 'multiply',
+        filter: (style?.filter ? style.filter + ' ' : '') + 'brightness(1.15) contrast(1.05)'
+      }
+    : style;
+
+  return <img src={processedSrc} alt={alt} className={className} style={finalStyle} onError={onError} loading="lazy" decoding="async" />;
 }
 
 // Single product card for ProblemProductShowcase — with 3D tilt
