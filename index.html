@@ -3068,7 +3068,7 @@ function ProductImage({ src, alt, className, style, onError }) {
       }
     : style;
 
-  return <img src={processedSrc} alt={alt} className={className} style={finalStyle} onError={onError} loading="lazy" decoding="async" />;
+  return <img src={processedSrc} alt={alt} className={className} style={finalStyle} onError={onError} decoding="async" />;
 }
 
 // Single product card for ProblemProductShowcase — with 3D tilt
