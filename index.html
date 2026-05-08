@@ -37,6 +37,13 @@
   .anim-float { animation: float 4s ease-in-out infinite; }
   .anim-float-big { animation: floatBig 5s ease-in-out infinite; }
   .anim-float-bundle { animation: floatBundle 6s ease-in-out infinite; }
+
+  /* Smooth photo rendering — preserves natural product shots */
+  img {
+    image-rendering: auto;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
   /* Scroll-reveal — triggered when 'is-visible' class added by IntersectionObserver */
   .reveal-up, .reveal-left, .reveal-right, .reveal-scale { opacity: 0; will-change: opacity, transform; }
   .reveal-up.is-visible { animation: revealUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -2659,7 +2666,9 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp }) {
 // ProductDetailModal — Full-screen product detail with long description
 function ProductDetailModal({ product, onClose, repWhatsapp }) {
   const accent = product.accent || theme.wine;
-  const imageSrc = product.image ? `/${product.image}` : null;
+  const imageSrc = product.image
+    ? (product.image.startsWith('http') ? product.image : `/${product.image}`)
+    : null;
   const productMessage = `გამარჯობა! მაინტერესებს ${product.name} (#${product.id}) — ${product.price} ₾`;
   const waLink = repWhatsapp
     ? `https://wa.me/${repWhatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(productMessage)}`
@@ -2905,8 +2914,12 @@ function ProblemProductCard({ product, index, accent, onClick }) {
     if (tiltRef.current) tiltRef.current.style.transform = '';
   };
 
-  // Build absolute path — images at root of GitHub repo (matches vitalizing convention)
-  const imageSrc = product.image ? `/${product.image}` : null;
+  // Build absolute path — supports both:
+  // 1. Filename (image at GitHub root): "calendula-cream.png" → "/calendula-cream.png"
+  // 2. Full URL (FARMASI CDN, etc): "https://farmasi.ge/..." → use as-is
+  const imageSrc = product.image
+    ? (product.image.startsWith('http') ? product.image : `/${product.image}`)
+    : null;
 
   return (
     <div className="reveal-up" style={{ animationDelay: `${index * 80}ms` }}>
