@@ -2913,7 +2913,7 @@ function ProductImage({ src, alt, className, style, onError }) {
 
     // External images (FARMASI, etc.) — proxy through images.weserv.nl
     // to bypass CORS, then strip white background via canvas.
-    const proxiedSrc = 'https://images.weserv.nl/?url=' +
+    const proxiedSrc = 'https://images.weserv.nl/?output=png&url=' +
       encodeURIComponent(src.replace(/^https?:\/\//, ''));
 
     const img = new Image();
