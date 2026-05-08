@@ -2790,26 +2790,26 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
         {/* Image area — responsive: square on portrait mobile, wider on landscape, capped height */}
         <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0"
           style={{
-            background: `linear-gradient(135deg, #ffffff, #f5f0e8)`,
+            background: `linear-gradient(135deg, ${accent}22, ${theme.ink})`,
             aspectRatio: '4/3',
             maxHeight: '55vh',
             minHeight: '200px'
           }}>
-          {/* Soft accent glow — subtle on light bg */}
+          {/* Spotlight glow */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-25"
+            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-50"
               style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }} />
           </div>
           {imageSrc && (
-            <img src={imageSrc} alt={product.name}
+            <ProductImage src={imageSrc} alt={product.name}
               className="relative z-[1] max-h-full max-w-full object-contain p-6 sm:p-10 anim-float"
-              style={{ filter: `drop-shadow(0 25px 45px rgba(0,0,0,0.15))` }}
+              style={{ filter: `drop-shadow(0 30px 60px ${accent}88) drop-shadow(0 0 80px ${accent}44)` }}
               onError={(e) => { e.target.style.display = 'none'; }} />
           )}
           {/* Tag */}
           {product.tag && (
             <span className="absolute top-3 right-3 sm:top-4 sm:right-4 text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md font-medium z-[2]"
-              style={{ background: theme.ink + 'EE', color: theme.cream }}>
+              style={{ background: theme.cream + 'EE', color: theme.ink }}>
               {product.tag}
             </span>
           )}
@@ -2896,6 +2896,69 @@ function ProductDetailModal({ product, onClose, repWhatsapp }) {
   return ReactDOM.createPortal(modalContent, document.body);
 }
 
+// ProductImage — smart image component that removes white background from external URLs
+// (e.g., FARMASI photos with white bg) using Canvas pixel processing.
+// For local images (transparent PNGs), uses them as-is without processing.
+function ProductImage({ src, alt, className, style, onError }) {
+  const [processedSrc, setProcessedSrc] = useState(src);
+
+  useEffect(() => {
+    if (!src) return;
+
+    // Local images (no http://) — use as-is, they're already transparent
+    if (!src.startsWith('http')) {
+      setProcessedSrc(src);
+      return;
+    }
+
+    // External images (FARMASI, etc.) — try to remove white background via canvas
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+
+        // Iterate every pixel — remove pure white, soften near-white edges
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+
+          // Pure white (or near pure) — fully transparent
+          if (r > 245 && g > 245 && b > 245) {
+            data[i + 3] = 0;
+          }
+          // Light gray edges — semi-transparent for smooth blend
+          else if (r > 225 && g > 225 && b > 225) {
+            // The whiter the pixel, the more transparent
+            const minChannel = Math.min(r, g, b);
+            data[i + 3] = Math.max(0, Math.min(255, (255 - minChannel) * 8));
+          }
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        setProcessedSrc(canvas.toDataURL('image/png'));
+      } catch (err) {
+        // CORS issue or other — fall back to original image
+        console.warn('Canvas processing failed:', err);
+        setProcessedSrc(src);
+      }
+    };
+    img.onerror = () => setProcessedSrc(src);
+    img.src = src;
+  }, [src]);
+
+  if (!processedSrc) return null;
+  return <img src={processedSrc} alt={alt} className={className} style={style} onError={onError} />;
+}
+
 // Single product card for ProblemProductShowcase — with 3D tilt
 function ProblemProductCard({ product, index, accent, onClick }) {
   const tiltRef = useRef(null);
@@ -2932,30 +2995,27 @@ function ProblemProductCard({ product, index, accent, onClick }) {
         {/* Image area */}
         <div ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
           className="relative aspect-[4/5] flex items-center justify-center overflow-hidden"
-          style={{
-            perspective: '1200px',
-            background: `linear-gradient(135deg, #ffffff, #f5f0e8)`
-          }}>
-          {/* Soft accent glow — subtle on light bg */}
+          style={{ perspective: '1200px' }}>
+          {/* Spotlight glow */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-20"
+            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-40"
               style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }} />
           </div>
           {/* Tilt container with image */}
           <div ref={tiltRef} className="product-tilt-3d relative z-10 w-full h-full flex items-center justify-center anim-float p-8">
             {imageSrc ? (
-              <img src={imageSrc} alt={product.name}
+              <ProductImage src={imageSrc} alt={product.name}
                 className="max-w-full max-h-full object-contain"
-                style={{ filter: `drop-shadow(0 20px 35px rgba(0,0,0,0.12))` }}
+                style={{ filter: `drop-shadow(0 30px 50px ${accent}66)` }}
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
             ) : (
               <div className="text-center opacity-60">
                 <div className="w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center"
-                  style={{ background: theme.ink + '11' }}>
-                  <Ic name="image" className="w-8 h-8" style={{ color: theme.ink + '66' }} />
+                  style={{ background: theme.cream + '11' }}>
+                  <Ic name="image" className="w-8 h-8" style={{ color: theme.cream }} />
                 </div>
-                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '88' }}>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.cream + '88' }}>
                   ფოტო მალე
                 </p>
               </div>
