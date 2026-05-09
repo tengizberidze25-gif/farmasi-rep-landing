@@ -518,7 +518,7 @@ const PROBLEMS = [
         'მაგრამ მოისმინე — ეს დაბრუნდება. ნელ-ნელა, რიტუალით, საკუთარი თავის მზრუნველობით.',
       ],
       stat: 'ყოველ მე-3 ქალს საქართველოში თმის ცვენის პრობლემა აქვს. შენ მარტო არ ხარ.',
-      repNote: 'მე გავიარე ეს გზა — შენც გაივლი.',
+      repNote: 'ბევრს დავეხმარე ამ გზის გავლაში — შენც გვერდში გაგიდექი.',
       cta: 'ნახე შენი რიტუალი',
     }
   },
@@ -2238,8 +2238,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 </div>
               )}
 
-              {/* Rep personal note — humanizing touch */}
-              {rep.name && selectedProblem.bridge?.repNote && (
+              {/* Rep personal note — humanizing touch (advisory, not personal-claim) */}
+              {rep.name && selectedProblem.bridge && (
                 <div className="max-w-md mx-auto flex items-center gap-4 p-5 rounded-3xl mb-14 reveal-up"
                   style={{
                     background: theme.cream,
@@ -2268,7 +2268,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                       {rep.name.split(' ')[0]} ამბობს
                     </p>
                     <p className="text-sm sm:text-base italic font-display-lat leading-snug" style={{ color: theme.ink }}>
-                      "{selectedProblem.bridge.repNote}"
+                      "{selectedProblem.bridge.repNote || 'ბევრს დავეხმარე ამ გზის გავლაში — შენც გვერდში გაგიდექი.'}"
                     </p>
                   </div>
                 </div>
