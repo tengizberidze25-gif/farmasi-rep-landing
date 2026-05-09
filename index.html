@@ -520,6 +520,10 @@ const PROBLEMS = [
       stat: 'ყოველ მე-3 ქალს საქართველოში თმის ცვენის პრობლემა აქვს. შენ მარტო არ ხარ.',
       repNote: 'ბევრს დავეხმარე ამ გზის გავლაში — შენც გვერდში გაგიდექი.',
       cta: 'ნახე შენი რიტუალი',
+      science: 'თმა ცოცხალი ორგანოა — სიგნალს გვაძლევს, როცა სხეულში რაღაც არ არის წონასწორობაში. ყოველი ადამიანი ნორმალურად დღეში ~50-100 ღერს კარგავს. პრობლემა მაშინ ხდება, როცა ცვილდება მნიშვნელოვნად მეტი — სავარცხელი დავსებულია, ბალიშზე გროვები რჩება, ცხენი მცირდება.\n\nხშირი მიზეზები: ჰორმონული ცვლილებები (ორსულობის ან მენოპაუზის შემდეგ), რკინის ან D ვიტამინის დეფიციტი, ხანგრძლივი სტრესი, ფარისებრი ჯირკვლის პრობლემა, ან მკაცრი დიეტა. ცვენა — სიმპტომია, არა ცალკე ავადმყოფობა. სანამ კოსმეტიკას ცდი, ჯერ ღირს იცოდე რა იწვევს.',
+      tipsDo: '✦ სკალპის მასაჟი — დღეში 4 წუთი, თითის ბურთულებით, წრიული მოძრაობით. სტიმულირებს სისხლის მიმოქცევას ფოლიკულებში. ✦ ცილოვანი საუზმე — კვერცხი, ხაჭო, ლობიო. თმა 95% კერატინია (ცილა). ✦ წყალი დღეში 1.5 ლიტრი — დეჰიდრატაცია პირდაპირ მოქმედებს ფოლიკულზე. ✦ ძილი 7-8 საათი — ღამით ხდება უჯრედული აღდგენა. ✦ ლაბორატორია — რკინა, ფერიტინი, D ვიტამინი, TSH. ბევრი ქალისთვის ფარული მიზეზი აქ ცხადდება.',
+      tipsAvoid: '✦ სველი თმის ვარცხნა — ყველაზე მტვრევადია. ჯერ პირსახოცით გაიწურე. ✦ ცხელი წყალი თავის დაბანისას — ფოლიკულის ყელი იხსნება. შენელებული წყალი უკეთესია. ✦ ყოველდღიური ფენი/უტიუგი — ცილოვანი სტრუქტურა იშლება. ✦ მჭიდრო ცული, კვანძები — იწვევს traction alopecia-ს. ✦ მკაცრი დიეტა — სწრაფი წონის დაკლება იწვევს ცვენას 2-3 თვეში.',
+      doctor: '✦ ცვენა უცებ დაიწყო, განსაკუთრებით კონკრეტული ადგილები ცარიელდება (alopecia areata). ✦ თავ-კანი ქავა, წითლდება ან აქვს ბუშტუკები. ✦ თან აქვს გვერდითი სიმპტომები: სიცხე, წონის ცვლილება, დაუსრულებელი დაღლილობა (ფარისებრი ჯირკვალი). ✦ ცვენა 6+ თვე გაუთავებელია. ✦ ფეხმძიმობის ან მენოპაუზის ფაზაში ხარ.',
     }
   },
   { id: 'oily-scalp',    label: 'ცხიმიანი სკალპი',    icon: 'droplets',     productId: null, accent: '#0EA5E9' },
@@ -2295,8 +2299,259 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           </section>
 
           {/* ╔═══════════════════════════════════════════════════════════════╗ */}
-          {/* ║ ACT IV — CUSTOMER STORIES (now BEFORE products)                ║ */}
-          {/* ║ Trust is built through stories first, then product fits in.   ║ */}
+          {/* ║ ACT IV — SCIENCE: WHAT'S ACTUALLY HAPPENING                    ║ */}
+          {/* ║ Free knowledge before any product mention. Trust through      ║ */}
+          {/* ║ understanding, not emotional manipulation.                    ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          {selectedProblem.bridge?.science && (
+            <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+              style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
+              {/* Atmospheric knowledge glow — cool tone */}
+              <div className="absolute -top-20 right-1/4 w-[500px] h-[400px] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+                style={{ background: '#0EA5E9' }} />
+              <div className="absolute bottom-0 left-1/4 w-[400px] h-[300px] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
+                style={{ background: theme.gold }} />
+
+              <div className="relative max-w-3xl mx-auto">
+                {/* Editorial chapter marker — IV. გაცნობიერება */}
+                <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+                  <span className="font-display-lat italic text-2xl" style={{ color: theme.ink }}>IV.</span>
+                  <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                  <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                    გაცნობიერება
+                  </span>
+                </div>
+
+                <div className="text-center mb-14 reveal-up">
+                  <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                    ✦ რა ხდება სინამდვილეში
+                  </p>
+                  <h2 className="font-display leading-[0.95] mb-4"
+                    style={{
+                      fontSize: 'clamp(2rem, 5.5vw, 3.75rem)',
+                      color: theme.ink,
+                      letterSpacing: '-0.02em'
+                    }}>
+                    ცოდნა <span className="font-display-lat italic font-normal" style={{ color: theme.ink + '66' }}>&gt;</span> იმპულსი
+                  </h2>
+                  <p className="font-display-lat italic text-base sm:text-lg max-w-lg mx-auto" style={{ color: theme.ink + 'AA' }}>
+                    სანამ კოსმეტიკას ცდი — გასაგები რატომ.
+                  </p>
+                </div>
+
+                {/* Science paragraphs */}
+                <div className="space-y-6 max-w-2xl mx-auto">
+                  {selectedProblem.bridge.science.split(/\n\n+/).map((para, i) => (
+                    <p key={i} className="text-base sm:text-lg leading-[1.8] reveal-up"
+                      style={{
+                        color: theme.ink + 'D0',
+                        animationDelay: `${i * 120}ms`
+                      }}>
+                      {para}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT V — TRY THIS TODAY (free, no purchase)                     ║ */}
+          {/* ║ Genuine value delivered before any product mention.           ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          {(selectedProblem.bridge?.tipsDo || selectedProblem.bridge?.tipsAvoid) && (
+            <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+              style={{ background: `linear-gradient(180deg, ${theme.ivory}, ${theme.cream})` }}>
+              {/* Dual-tone atmospheric glow — green for DO, red for AVOID */}
+              <div className="absolute top-1/3 left-0 w-[500px] h-[500px] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
+                style={{ background: '#10B981' }} />
+              <div className="absolute bottom-0 right-0 w-[450px] h-[450px] rounded-full opacity-[0.07] blur-3xl pointer-events-none"
+                style={{ background: '#EF4444' }} />
+
+              <div className="relative max-w-5xl mx-auto">
+                {/* Editorial chapter marker — V. რჩევა */}
+                <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+                  <span className="font-display-lat italic text-2xl" style={{ color: '#10B981' }}>V.</span>
+                  <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                  <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                    რჩევა
+                  </span>
+                </div>
+
+                <div className="text-center mb-14 reveal-up">
+                  <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                    ✦ უფასო — დღესვე შესასრულებელი
+                  </p>
+                  <h2 className="font-display leading-[0.95] mb-4"
+                    style={{
+                      fontSize: 'clamp(2.25rem, 6vw, 4rem)',
+                      color: theme.ink,
+                      letterSpacing: '-0.02em'
+                    }}>
+                    ცადე ეს — <span className="font-display-lat italic font-normal" style={{ color: theme.gold }}>დღესვე</span>
+                  </h2>
+                  <p className="font-display-lat italic text-base sm:text-lg max-w-lg mx-auto" style={{ color: theme.ink + 'AA' }}>
+                    ფასი არ აქვს. პროდუქტი არ ჭირდება. ერთი კვირა სცადე და ნახე.
+                  </p>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-6 sm:gap-7">
+                  {/* DO column — green accent */}
+                  {selectedProblem.bridge?.tipsDo && (
+                    <div className="reveal-up rounded-3xl p-7 sm:p-8"
+                      style={{
+                        background: theme.cream,
+                        border: `1px solid #10B98144`,
+                        boxShadow: `0 16px 40px -16px #10B98133, 0 2px 8px ${theme.ink}08`
+                      }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center"
+                          style={{ background: '#10B98115', boxShadow: `0 4px 12px #10B98133` }}>
+                          <Ic name="check" className="w-5 h-5" style={{ color: '#10B981' }} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] tracking-[0.3em] uppercase mb-0.5" style={{ color: '#10B981' }}>
+                            გააკეთე
+                          </p>
+                          <h3 className="font-display text-xl sm:text-2xl" style={{ color: theme.ink, lineHeight: 1.1 }}>
+                            ეს გააკეთე
+                          </h3>
+                        </div>
+                      </div>
+                      <ul className="space-y-3.5">
+                        {selectedProblem.bridge.tipsDo.split('✦').map(t => t.trim()).filter(Boolean).map((tip, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm sm:text-[15px] leading-relaxed"
+                            style={{ color: theme.ink + 'CC' }}>
+                            <span className="flex-shrink-0 w-1.5 h-1.5 mt-2.5 rounded-full" style={{ background: '#10B981' }} />
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* AVOID column — red accent */}
+                  {selectedProblem.bridge?.tipsAvoid && (
+                    <div className="reveal-up rounded-3xl p-7 sm:p-8"
+                      style={{
+                        background: theme.cream,
+                        border: `1px solid #EF444444`,
+                        boxShadow: `0 16px 40px -16px #EF444433, 0 2px 8px ${theme.ink}08`,
+                        animationDelay: '120ms'
+                      }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center"
+                          style={{ background: '#EF444415', boxShadow: `0 4px 12px #EF444433` }}>
+                          <Ic name="x" className="w-5 h-5" style={{ color: '#EF4444' }} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] tracking-[0.3em] uppercase mb-0.5" style={{ color: '#EF4444' }}>
+                            მოერიდე
+                          </p>
+                          <h3 className="font-display text-xl sm:text-2xl" style={{ color: theme.ink, lineHeight: 1.1 }}>
+                            ამას მოერიდე
+                          </h3>
+                        </div>
+                      </div>
+                      <ul className="space-y-3.5">
+                        {selectedProblem.bridge.tipsAvoid.split('✦').map(t => t.trim()).filter(Boolean).map((tip, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm sm:text-[15px] leading-relaxed"
+                            style={{ color: theme.ink + 'CC' }}>
+                            <span className="flex-shrink-0 w-1.5 h-1.5 mt-2.5 rounded-full" style={{ background: '#EF4444' }} />
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT VI — WHEN THIS ISN'T A COSMETIC ISSUE                      ║ */}
+          {/* ║ Honesty about limits. Strongest trust signal possible.        ║ */}
+          {/* ║ A rep who says "see a doctor" earns 10x more credibility.     ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          {selectedProblem.bridge?.doctor && (
+            <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+              style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.mist} 50%, ${theme.cream})` }}>
+              {/* Honesty glow — wine tone */}
+              <div className="absolute -top-20 left-1/3 w-[500px] h-[400px] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+                style={{ background: theme.wine }} />
+
+              <div className="relative max-w-3xl mx-auto">
+                {/* Editorial chapter marker — VI. გულახდილობა */}
+                <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+                  <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>VI.</span>
+                  <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                  <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                    გულახდილობა
+                  </span>
+                </div>
+
+                <div className="text-center mb-12 reveal-up">
+                  <div className="inline-flex w-14 h-14 rounded-full items-center justify-center mb-5"
+                    style={{
+                      background: theme.wine + '15',
+                      boxShadow: `0 8px 24px ${theme.wine}33`
+                    }}>
+                    <Ic name="shield" className="w-6 h-6" style={{ color: theme.wine }} />
+                  </div>
+                  <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                    ✦ მე გულახდილი ვარ
+                  </p>
+                  <h2 className="font-display leading-[0.95] mb-4"
+                    style={{
+                      fontSize: 'clamp(2rem, 5.5vw, 3.75rem)',
+                      color: theme.ink,
+                      letterSpacing: '-0.02em'
+                    }}>
+                    ზოგ შემთხვევაში — <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ექიმთან</span>
+                  </h2>
+                </div>
+
+                <div className="rounded-3xl p-7 sm:p-10 reveal-up"
+                  style={{
+                    background: theme.cream,
+                    border: `1px solid ${theme.wine}33`,
+                    boxShadow: `0 20px 50px -20px ${theme.wine}33, 0 4px 16px ${theme.ink}08`
+                  }}>
+                  <p className="font-display-lat italic text-base sm:text-lg leading-[1.7] mb-7 text-center" style={{ color: theme.ink + 'CC' }}>
+                    {rep.name && rep.name.split(' ')[0]
+                      ? `${rep.name.split(' ')[0]}-ის სიტყვა: `
+                      : ''}
+                    "ჩემი პროდუქტი ცილოვანი დახმარებაა, არა მედიცინა. თუ ქვემოთ ჩამოთვლილი რომელიმე ემთხვევა — ფასიც კი არ ღირს კოსმეტიკის ცდა, სანამ ექიმი არ მოიკითხავს."
+                  </p>
+                  <ul className="space-y-4">
+                    {selectedProblem.bridge.doctor.split('✦').map(t => t.trim()).filter(Boolean).map((sign, i) => (
+                      <li key={i} className="flex items-start gap-3.5 text-sm sm:text-[15px] leading-relaxed reveal-up"
+                        style={{
+                          color: theme.ink + 'CC',
+                          animationDelay: `${i * 80}ms`
+                        }}>
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
+                          style={{ background: theme.wine + '12' }}>
+                          <Ic name="alert-triangle" className="w-3.5 h-3.5" style={{ color: theme.wine }} />
+                        </span>
+                        <span>{sign}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-8 pt-6 border-t text-center" style={{ borderColor: theme.ink + '11' }}>
+                    <p className="text-sm sm:text-base font-display-lat italic" style={{ color: theme.ink + 'AA' }}>
+                      ჯერ მიზეზი დავადგინოთ — მერე გავაკეთოთ რიტუალი.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT VII — CUSTOMER STORIES (after empathy + education)         ║ */}
+          {/* ║ Trust is built through stories, after real value delivered.   ║ */}
           {/* ╚═══════════════════════════════════════════════════════════════╝ */}
           {(() => {
             const allVideos = rep.customerVideos || [];
@@ -2310,9 +2565,9 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                   style={{ background: theme.blush }} />
 
                 <div className="relative max-w-6xl mx-auto">
-                  {/* Editorial chapter marker — IV. ისტორიები */}
+                  {/* Editorial chapter marker — VII. ისტორიები */}
                   <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
-                    <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>IV.</span>
+                    <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>VII.</span>
                     <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
                     <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
                       ისტორიები
@@ -2400,8 +2655,9 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           })()}
 
           {/* ╔═══════════════════════════════════════════════════════════════╗ */}
-          {/* ║ ACT V — THE RITUAL (products, finally)                         ║ */}
-          {/* ║ Now that empathy and stories landed, products feel earned.    ║ */}
+          {/* ║ ACT VIII — THE RITUAL (products, finally)                      ║ */}
+          {/* ║ Empathy + education + honesty + stories already delivered.    ║ */}
+          {/* ║ Now products are EARNED — not pushed.                         ║ */}
           {/* ╚═══════════════════════════════════════════════════════════════╝ */}
           <ProblemProductShowcase
             products={dynamicProducts.filter(p => p.problemId === selectedProblem.id && p.active)}
