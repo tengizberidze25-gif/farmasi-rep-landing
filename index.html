@@ -632,11 +632,20 @@ function apiUpload(params) {
   });
 }
 
-// Extract PID from URL: /?pid=153205 or /?pid=153205&edit=1 or /?pid=153205&problem=hair-loss
+// Extract URL identifiers:
+//   /?pid=153205         → pid lookup
+//   /?pid=153205&edit=1  → pid + edit mode
+//   /mariami             → slug lookup (resolves to PID server-side)
+//   /mariami?edit=1      → slug + edit mode
+// Assets (paths with dots like /og-image.png) are NOT treated as slugs.
 function getUrlParams() {
   const params = new URLSearchParams(window.location.search);
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const firstPart = pathParts[0] || '';
+  const slug = (firstPart && !firstPart.includes('.')) ? firstPart : '';
   return {
     pid: params.get('pid'),
+    slug: slug,
     edit: params.get('edit') === '1',
     problem: params.get('problem'),
   };
@@ -646,7 +655,7 @@ function getUrlParams() {
 
 function App() {
   const urlParams = getUrlParams();
-  const [view, setView] = useState(urlParams.pid ? 'loading' : 'login');
+  const [view, setView] = useState((urlParams.pid || urlParams.slug) ? 'loading' : 'login');
   const [repCode, setRepCode] = useState(urlParams.pid || '');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
@@ -719,13 +728,21 @@ function App() {
       .catch(() => {/* silent — page will use hardcoded defaults */});
   }, []);
 
-  // Load rep data from API on mount if PID is in URL
+  // Load rep data from API on mount — supports both PID and slug lookups
   useEffect(() => {
-    if (!urlParams.pid) return;
+    if (!urlParams.pid && !urlParams.slug) return;
 
-    api({ action: 'get_rep', pid: urlParams.pid })
+    // Dispatch: PID → direct lookup, slug → resolve+fetch in one call
+    const action = urlParams.pid ? 'get_rep' : 'get_rep_by_slug';
+    const payload = urlParams.pid ? { pid: urlParams.pid } : { slug: urlParams.slug };
+
+    api({ action, ...payload })
       .then(data => {
         if (data.ok && data.rep) {
+          // For slug flow, repCode wasn't in URL — set it from API response
+          const resolvedPid = String(data.rep.pid || '').trim();
+          if (resolvedPid) setRepCode(resolvedPid);
+
           // Map API response to UI state
           setRep({
             name: data.rep.name || '',
@@ -764,8 +781,8 @@ function App() {
             setView('public');
           }
           // Log visit if not in edit mode
-          if (!urlParams.edit) {
-            api({ action: 'log_visit', pid: urlParams.pid }).catch(() => {});
+          if (!urlParams.edit && resolvedPid) {
+            api({ action: 'log_visit', pid: resolvedPid }).catch(() => {});
           }
         } else {
           setLoadError(data.error || 'წარმომადგენელი ვერ მოიძებნა');
@@ -784,9 +801,9 @@ function App() {
 
   return (
     <div style={{ background: theme.cream, minHeight: '100vh' }}>
-      {/* Admin nav — only visible when in edit mode OR when no PID is in URL (login flow).
-          Hides for customers visiting `?pid=...` directly. */}
-      {(urlParams.edit || !urlParams.pid) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
+      {/* Admin nav — only visible when in edit mode OR when no rep identifier is in URL (login flow).
+          Hides for customers visiting `?pid=...` or `/slug` directly. */}
+      {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
       {view === 'loading' && <LoadingScreen />}
       {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} />}
       {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} />}
