@@ -2362,17 +2362,31 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                   </p>
                 </div>
 
-                {/* Science paragraphs */}
-                <div className="space-y-6 max-w-2xl mx-auto">
-                  {selectedProblem.bridge.science.split(/\n+/).map((para, i) => (
-                    <p key={i} className="text-base sm:text-lg leading-[1.8] reveal-up"
-                      style={{
-                        color: theme.ink + 'D0',
-                        animationDelay: `${i * 120}ms`
-                      }}>
-                      {para}
-                    </p>
-                  ))}
+                {/* Science paragraphs — each with a decorative marker icon */}
+                <div className="space-y-7 max-w-2xl mx-auto">
+                  {selectedProblem.bridge.science.split(/\n+/).filter(Boolean).map((para, i) => {
+                    const cycleIcons = ['sparkles', 'lightbulb', 'compass'];
+                    const iconName = cycleIcons[i % cycleIcons.length];
+                    return (
+                      <div key={i} className="flex gap-4 sm:gap-5 reveal-up"
+                        style={{ animationDelay: `${i * 120}ms` }}>
+                        <div className="flex-shrink-0">
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mt-1"
+                            style={{
+                              background: theme.gold + '12',
+                              border: `1px solid ${theme.gold}33`,
+                              boxShadow: `0 4px 12px ${theme.gold}22`
+                            }}>
+                            <Ic name={iconName} className="w-4 h-4 sm:w-[18px] sm:h-[18px]" style={{ color: theme.gold }} />
+                          </div>
+                        </div>
+                        <p className="flex-1 text-base sm:text-lg leading-[1.8] pt-1.5"
+                          style={{ color: theme.ink + 'D0' }}>
+                          {para}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </section>
