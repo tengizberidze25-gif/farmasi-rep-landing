@@ -784,7 +784,9 @@ function App() {
 
   return (
     <div style={{ background: theme.cream, minHeight: '100vh' }}>
-      <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />
+      {/* Admin nav — only visible when in edit mode OR when no PID is in URL (login flow).
+          Hides for customers visiting `?pid=...` directly. */}
+      {(urlParams.edit || !urlParams.pid) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
       {view === 'loading' && <LoadingScreen />}
       {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} />}
       {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} />}
