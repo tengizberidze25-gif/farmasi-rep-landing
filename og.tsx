@@ -32,6 +32,25 @@ async function getFont(): Promise<ArrayBuffer> {
   return fontDataCache;
 }
 
+// Cache logo as base64 data URL — Satori loads images more reliably from data URLs
+// than from external HTTP URLs (no silent fetch failures).
+let logoDataUrlCache: string | null = null;
+async function getLogoDataUrl(origin: string): Promise<string | null> {
+  if (logoDataUrlCache) return logoDataUrlCache;
+  try {
+    const res = await fetch(`${origin}/farmasi-logo.png`);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    logoDataUrlCache = `data:image/png;base64,${btoa(binary)}`;
+    return logoDataUrlCache;
+  } catch {
+    return null;
+  }
+}
+
 // Apps Script returns JSONP-wrapped data: `cb({...})`. Strip the wrapper.
 async function fetchRep(
   action: string,
@@ -65,14 +84,15 @@ export default async function handler(req: Request) {
   const slug = searchParams.get('slug');
   const origin = new URL(req.url).origin;
 
-  // Fetch rep + font in parallel for speed
-  const [rep, font] = await Promise.all([
+  // Fetch rep + font + logo in parallel for speed
+  const [rep, font, logoUrl] = await Promise.all([
     pid
       ? fetchRep('get_rep', { pid })
       : slug
       ? fetchRep('get_rep_by_slug', { slug })
       : Promise.resolve(null),
     getFont(),
+    getLogoDataUrl(origin),
   ]);
 
   const name = (rep?.name as string) || 'FARMASI';
@@ -80,8 +100,6 @@ export default async function handler(req: Request) {
   const photoUrl = (rep?.photo_url as string) || '';
   // Only use http(s) photo URLs (safety: never embed arbitrary protocols)
   const photo = /^https?:\/\//i.test(photoUrl) ? photoUrl : '';
-  // FARMASI logo hosted in repo root, served as static asset
-  const logoUrl = `${origin}/farmasi-logo.png`;
 
   return new ImageResponse(
     (
@@ -140,7 +158,11 @@ export default async function handler(req: Request) {
               padding: 60,
             }}
           >
-            <img src={logoUrl} width={300} height={126} style={{ objectFit: 'contain' }} />
+            {logoUrl ? (
+              <img src={logoUrl} width={300} height={126} style={{ objectFit: 'contain' }} />
+            ) : (
+              <div style={{ fontSize: 180, color: '#E50571', fontWeight: 700, display: 'flex' }}>F</div>
+            )}
           </div>
         )}
 
@@ -154,12 +176,26 @@ export default async function handler(req: Request) {
           }}
         >
           {/* FARMASI logo (real brand mark, replaces text label) */}
-          <img
-            src={logoUrl}
-            width={200}
-            height={84}
-            style={{ objectFit: 'contain', marginBottom: 8 }}
-          />
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              width={200}
+              height={84}
+              style={{ objectFit: 'contain', marginBottom: 8 }}
+            />
+          ) : (
+            <div
+              style={{
+                fontSize: 22,
+                color: '#BE185D',
+                letterSpacing: 6,
+                textTransform: 'uppercase',
+                fontWeight: 700,
+              }}
+            >
+              FARMASI · OFFICIAL
+            </div>
+          )}
 
           <div
             style={{
