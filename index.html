@@ -2863,10 +2863,13 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       </footer>
 
       <button onClick={() => setChatOpen(true)}
-        className="fixed bottom-5 left-5 z-40 w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110"
-        style={{ background: theme.ink, color: theme.cream, boxShadow: `0 10px 30px -8px rgba(0,0,0,0.4)` }}
+        className="fixed bottom-5 left-5 z-40 flex items-center justify-center gap-2 px-5 py-3 sm:gap-0 sm:px-0 sm:py-0 sm:w-12 sm:h-12 rounded-full transition hover:scale-105 active:scale-95"
+        style={{ background: theme.ink, color: theme.cream, boxShadow: '0 10px 30px -8px rgba(0,0,0,0.4)' }}
         title={t('chat_button_tooltip', 'მესიჯი')}>
         <Ic name="message-square" className="w-5 h-5" />
+        <span className="text-sm font-medium tracking-wide sm:hidden">
+          {t('chat_button_label', 'კონსულტაცია')}
+        </span>
       </button>
 
       {rep.whatsapp && (
@@ -2939,23 +2942,6 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           </div>
         );
       })()}
-
-      {/* ─── Sticky mobile WhatsApp CTA — always visible on small screens ─── */}
-      {rep.whatsapp && (
-        <a
-          href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა${rep.name ? ', ' + rep.name : ''}! მინდა უფასო კონსულტაცია.`)}`}
-          target="_blank" rel="noreferrer"
-          className="fixed bottom-4 left-4 right-4 lg:hidden z-40 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-medium text-sm transition active:scale-[0.98]"
-          style={{
-            background: '#25D366',
-            color: '#fff',
-            boxShadow: '0 10px 40px -10px rgba(37, 211, 102, 0.7), 0 2px 12px rgba(0,0,0,0.1)'
-          }}>
-          <SocialIcon name="whatsapp" className="w-5 h-5" />
-          <span className="tracking-wide">უფასო კონსულტაცია</span>
-          <Ic name="arrow-right" className="w-4 h-4" />
-        </a>
-      )}
     </div>
   );
 }
