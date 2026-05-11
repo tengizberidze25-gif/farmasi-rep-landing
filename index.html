@@ -565,6 +565,33 @@ const PROBLEMS = [
 ];
 
 // ════════════════════════════════════════════════════════════════════════════
+// BEAUTIFUL SLUG GENERATOR — FARMASI brand-coherent word pool
+// Combines an adjective + noun for unique, anonymous, memorable slugs
+// e.g. "velvet-bloom", "golden-petal", "rose-aurora"
+// ════════════════════════════════════════════════════════════════════════════
+const SLUG_ADJECTIVES = [
+  'velvet', 'silk', 'golden', 'rose', 'pearl', 'crimson', 'royal', 'radiant',
+  'glowing', 'soft', 'pure', 'bright', 'glam', 'chic', 'ruby', 'amber', 'coral',
+  'blush', 'ivory', 'pink', 'lush', 'sweet', 'fresh', 'tender', 'dreamy', 'silky'
+];
+const SLUG_NOUNS = [
+  'bloom', 'petal', 'orchid', 'jasmine', 'lily', 'rose', 'lotus', 'tulip',
+  'aurora', 'flame', 'glow', 'sparkle', 'dawn', 'pearl', 'gem', 'mist', 'dew',
+  'magnolia', 'iris', 'peony', 'velvet', 'star', 'moon', 'satin', 'silk', 'flora'
+];
+
+function generateBeautifulSlug() {
+  const adj = SLUG_ADJECTIVES[Math.floor(Math.random() * SLUG_ADJECTIVES.length)];
+  const noun = SLUG_NOUNS[Math.floor(Math.random() * SLUG_NOUNS.length)];
+  return `${adj}-${noun}`;
+}
+
+function isValidSlug(slug) {
+  if (!slug || typeof slug !== 'string') return false;
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) && slug.length >= 3 && slug.length <= 30;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // API CONFIG + JSONP UTILITY
 // ════════════════════════════════════════════════════════════════════════════
 const API_URL = 'https://script.google.com/macros/s/AKfycby0BJOvqZZz4eK5zHyep36R3vcPvweNk8ob-sOcCEokNoGto9m1BrfBxNlBcBB81pJ5/exec';
@@ -1032,10 +1059,32 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems }) {
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   // Prefer slug-based URL when present (rep opened /<slug>/edit) — cleaner for sharing
   const { slug: dashboardSlug } = getUrlParams();
-  const shareUrl = dashboardSlug
-    ? `${window.location.host}/${dashboardSlug}`
-    : `${window.location.host}/?pid=${repCode}`;
+  // Slug state — uses rep.slug from backend if set, else URL slug, else auto-generates a beautiful one
+  const [slug, setSlug] = useState(() => rep.slug || dashboardSlug || generateBeautifulSlug());
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugDraft, setSlugDraft] = useState(slug);
+  const [slugError, setSlugError] = useState('');
+  const shareUrl = `${window.location.host}/${slug}`;
   const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
+
+  const regenerateSlug = () => {
+    const newSlug = generateBeautifulSlug();
+    setSlug(newSlug);
+    setSlugDraft(newSlug);
+    setSlugError('');
+  };
+
+  const applySlugEdit = () => {
+    const cleaned = slugDraft.trim().toLowerCase();
+    if (!isValidSlug(cleaned)) {
+      setSlugError('მცირე ასოები, ციფრები ან დეფისი (3-30 ანბანი). მაგ: rose-bloom, beautymood, ana-23');
+      return;
+    }
+    setSlug(cleaned);
+    setSlugDraft(cleaned);
+    setEditingSlug(false);
+    setSlugError('');
+  };
 
   // Load visit stats
   useEffect(() => {
@@ -1320,6 +1369,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems }) {
         action: 'save_rep',
         pid: repCode,
         name: rep.name,
+        slug: slug,
         bio: rep.bio,
         city: rep.city,
         phone: rep.phone,
@@ -1377,15 +1427,64 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems }) {
               <Ic name="eye" className="w-3 h-3" /> ნახე
             </button>
           </div>
-          <div className="flex items-center gap-2 p-3 rounded-xl"
-            style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
-            <span className="text-sm flex-1 truncate font-mono" style={{ color: theme.wine }}>{shareUrl}</span>
-            <button onClick={copyUrl}
-              className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
-              style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
-              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დააკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
-            </button>
-          </div>
+
+          {!editingSlug ? (
+            // ─── VIEW mode: show URL + copy + edit buttons ───
+            <>
+              <div className="flex items-center gap-2 p-3 rounded-xl"
+                style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
+                <span className="text-sm flex-1 truncate font-mono" style={{ color: theme.wine }}>{shareUrl}</span>
+                <button onClick={() => { setSlugDraft(slug); setEditingSlug(true); setSlugError(''); }}
+                  className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition hover:scale-105"
+                  style={{ background: theme.ink + '22', color: theme.ink }}
+                  title="slug-ის შეცვლა">
+                  <Ic name="edit-3" className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={copyUrl}
+                  className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
+                  style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
+                  {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დააკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+                </button>
+              </div>
+              <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
+                💡 slug ავტომატურად მოგენიჭა — შეგიძლია შეცვალო ან ახალი დაგენერირო
+              </p>
+            </>
+          ) : (
+            // ─── EDIT mode: input + regenerate + save/cancel ───
+            <div className="p-3 rounded-xl" style={{ background: theme.cream, border: `1.5px solid ${theme.wine}55` }}>
+              <p className="text-[10px] tracking-widest uppercase mb-2" style={{ color: theme.gold }}>slug-ის შეცვლა</p>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-mono" style={{ color: theme.ink + '99' }}>{window.location.host}/</span>
+                <input type="text" value={slugDraft}
+                  onChange={(e) => { setSlugDraft(e.target.value.toLowerCase()); setSlugError(''); }}
+                  placeholder="rose-bloom"
+                  className="flex-1 px-3 py-2 rounded-lg outline-none text-sm font-mono"
+                  style={{ background: theme.ivory, border: `1px solid ${slugError ? theme.rose : theme.gold + '55'}`, color: theme.ink }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applySlugEdit(); if (e.key === 'Escape') setEditingSlug(false); }}
+                  autoFocus />
+              </div>
+              {slugError && <p className="text-[10px] mb-2" style={{ color: theme.rose }}>{slugError}</p>}
+              <div className="flex items-center gap-2">
+                <button onClick={regenerateSlug}
+                  className="flex-1 px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-[11px] tracking-wide transition hover:scale-[1.02]"
+                  style={{ background: theme.ink + '11', color: theme.ink, border: `1px solid ${theme.gold}44` }}
+                  title="ახალი დაგენერირება">
+                  <Ic name="refresh-cw" className="w-3 h-3" /> ახალი ვარიანტი
+                </button>
+                <button onClick={() => { setEditingSlug(false); setSlugDraft(slug); setSlugError(''); }}
+                  className="px-3 py-2 rounded-lg text-[11px] tracking-wide"
+                  style={{ background: theme.ink + '11', color: theme.ink + 'AA' }}>
+                  გაუქმება
+                </button>
+                <button onClick={applySlugEdit}
+                  className="px-4 py-2 rounded-lg flex items-center gap-1.5 text-[11px] tracking-wide transition hover:scale-105"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  <Ic name="check" className="w-3 h-3" /> შენახვა
+                </button>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Visits Analytics Card */}
