@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/:slug/edit",
+      "destination": "/"
+    },
+    {
       "source": "/:slug",
       "destination": "/"
     }
