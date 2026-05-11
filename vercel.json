@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/:slug/edit",
-      "destination": "/"
+      "destination": "/api/page?slug=:slug&edit=1"
     },
     {
       "source": "/:slug",
-      "destination": "/"
+      "destination": "/api/page?slug=:slug"
     }
   ]
 }
