@@ -1016,7 +1016,11 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems }) {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
-  const shareUrl = `${window.location.host}/?pid=${repCode}`;
+  // Prefer slug-based URL when present (rep opened /<slug>/edit) — cleaner for sharing
+  const { slug: dashboardSlug } = getUrlParams();
+  const shareUrl = dashboardSlug
+    ? `${window.location.host}/${dashboardSlug}`
+    : `${window.location.host}/?pid=${repCode}`;
   const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
 
   // Load visit stats
