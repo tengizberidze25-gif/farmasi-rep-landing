@@ -539,24 +539,24 @@ const PROBLEMS = [
       doctor: '✦ ცვენა უცებ დაიწყო, განსაკუთრებით კონკრეტული ადგილები ცარიელდება (alopecia areata). ✦ თავ-კანი ქავა, წითლდება ან აქვს ბუშტუკები. ✦ თან აქვს გვერდითი სიმპტომები: სიცხე, წონის ცვლილება, დაუსრულებელი დაღლილობა (ფარისებრი ჯირკვალი). ✦ ცვენა 6+ თვე გაუთავებელია. ✦ ფეხმძიმობის ან მენოპაუზის ფაზაში ხარ.',
     }
   },
-  { id: 'oily-scalp',    label: 'ცხიმიანი სკალპი',    icon: 'droplets',     productId: null, accent: '#0EA5E9' },
-  { id: 'dull-hair',     label: 'უსიცოცხლო თმა',      icon: 'cloud-off',    productId: null, accent: '#A78BFA' },
-  { id: 'graying',       label: 'გათეთრება',           icon: 'snowflake',    productId: null, accent: '#94A3B8' },
+  { id: 'oily-scalp',    label: 'ცხიმიანი სკალპი',    icon: 'droplets',     productId: null, accent: '#BE185D' },
+  { id: 'dull-hair',     label: 'უსიცოცხლო თმა',      icon: 'cloud-off',    productId: null, accent: '#FB7185' },
+  { id: 'graying',       label: 'გათეთრება',           icon: 'snowflake',    productId: null, accent: '#D4A960' },
   // სახის მოვლა (5)
-  { id: 'acne',          label: 'აკნე',                icon: 'circle-dot',   productId: null, accent: '#EF4444' },
-  { id: 'wrinkles',      label: 'ნაოჭები',            icon: 'clock',        productId: null, accent: '#D97706' },
-  { id: 'pigmentation',  label: 'პიგმენტი',            icon: 'circle',       productId: null, accent: '#92400E' },
-  { id: 'dry-skin',      label: 'მშრალი კანი',         icon: 'sun',          productId: null, accent: '#FB923C' },
-  { id: 'oily-skin',     label: 'ცხიმიანი კანი',       icon: 'droplet',      productId: null, accent: '#06B6D4' },
+  { id: 'acne',          label: 'აკნე',                icon: 'circle-dot',   productId: null, accent: '#EC4899' },
+  { id: 'wrinkles',      label: 'ნაოჭები',            icon: 'clock',        productId: null, accent: '#D4A960' },
+  { id: 'pigmentation',  label: 'პიგმენტი',            icon: 'circle',       productId: null, accent: '#BE185D' },
+  { id: 'dry-skin',      label: 'მშრალი კანი',         icon: 'sun',          productId: null, accent: '#F472B6' },
+  { id: 'oily-skin',     label: 'ცხიმიანი კანი',       icon: 'droplet',      productId: null, accent: '#E50571' },
   // თვალები (1)
-  { id: 'puffy-eyes',    label: 'თვალის შეშუპება',    icon: 'eye-off',      productId: null, accent: '#7C3AED' },
+  { id: 'puffy-eyes',    label: 'თვალის შეშუპება',    icon: 'eye-off',      productId: null, accent: '#BE185D' },
   // სხეული (2)
   { id: 'cellulite',     label: 'ცელულიტი',           icon: 'activity',     productId: null, accent: '#EC4899' },
   { id: 'rough-body',    label: 'გაუხეშებული სხეული', icon: 'feather',      productId: null, accent: '#F472B6' },
   // ჯანმრთელობა (3)
-  { id: 'fatigue',       label: 'დაღლილობა',           icon: 'battery-low',  productId: null, accent: '#FBBF24' },
-  { id: 'sleep',         label: 'ძილის პრობლემა',     icon: 'moon',         productId: null, accent: '#6366F1' },
-  { id: 'nails',         label: 'ფრჩხილების სისუსტე', icon: 'gem',          productId: null, accent: '#10B981' },
+  { id: 'fatigue',       label: 'დაღლილობა',           icon: 'battery-low',  productId: null, accent: '#D4A960' },
+  { id: 'sleep',         label: 'ძილის პრობლემა',     icon: 'moon',         productId: null, accent: '#BE185D' },
+  { id: 'nails',         label: 'ფრჩხილების სისუსტე', icon: 'gem',          productId: null, accent: '#FB7185' },
 ];
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -2871,7 +2871,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       </footer>
 
       <button onClick={() => setChatOpen(true)}
-        className="fixed bottom-5 left-5 z-40 flex items-center justify-center gap-2 px-5 py-3 sm:gap-0 sm:px-0 sm:py-0 sm:w-12 sm:h-12 rounded-full transition hover:scale-105 active:scale-95 anim-chat-glow"
+        className={`fixed bottom-5 left-5 z-40 flex items-center justify-center gap-2 px-5 py-3 sm:gap-0 sm:px-0 sm:py-0 sm:w-12 sm:h-12 rounded-full transition-all duration-500 hover:scale-105 active:scale-95 anim-chat-glow ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         style={{ background: theme.ink, color: theme.cream }}
         title={t('chat_button_tooltip', 'მესიჯი')}>
         <Ic name="message-square" className="w-5 h-5" />
