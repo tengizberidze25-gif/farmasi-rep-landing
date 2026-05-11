@@ -1856,12 +1856,26 @@ function SectionLabel({ n, t }) {
 
 function Input({ label, value, onChange, placeholder, icon, iconType, small, green }) {
   const IconComp = iconType === 'social' ? SocialIcon : Ic;
+  // Brand colors for social media icons — applied when iconType === 'social'
+  const SOCIAL_BRAND_COLORS = {
+    instagram: '#E4405F',  // Instagram pink/magenta
+    facebook:  '#1877F2',  // Facebook blue
+    tiktok:    '#000000',  // TikTok black
+    youtube:   '#FF0000',  // YouTube red
+    telegram:  '#229ED9',  // Telegram sky blue
+    whatsapp:  '#25D366',  // WhatsApp green
+  };
+  const iconColor = green
+    ? '#25D366'
+    : (iconType === 'social' && SOCIAL_BRAND_COLORS[icon])
+      ? SOCIAL_BRAND_COLORS[icon]
+      : theme.gold;
   return (
     <div>
       <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{label}</label>
       <div className="relative">
         {icon && <IconComp name={icon} className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: green ? '#25D366' : theme.gold }} />}
+          style={{ color: iconColor }} />}
         <input type="text" value={value} onChange={onChange} placeholder={placeholder}
           className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 ${small ? 'py-2' : 'py-2.5'} rounded-xl outline-none text-sm`}
           style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
