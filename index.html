@@ -2020,17 +2020,24 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 </blockquote>
               )}
 
-              {/* Meta row — location + verified */}
-              <div className="flex items-center gap-5 text-[10px] tracking-[0.25em] uppercase pt-3"
-                style={{ color: theme.ink + '88' }}>
+              {/* Trust signals — pill badges with brand credibility */}
+              <div className="flex flex-wrap items-center gap-2 pt-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium"
+                  style={{ background: theme.wine + '15', border: `1px solid ${theme.wine}55`, color: theme.wine }}>
+                  <Ic name="check-circle" className="w-3 h-3" />
+                  {t('hero_verified', 'ვერიფიცირებული FARMASI')}
+                </span>
                 {rep.city && (
-                  <span className="flex items-center gap-1.5">
-                    <Ic name="map-pin" className="w-3 h-3" /> {rep.city}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium"
+                    style={{ background: theme.gold + '15', border: `1px solid ${theme.gold}55`, color: theme.ink + 'AA' }}>
+                    <Ic name="map-pin" className="w-3 h-3" />
+                    {rep.city}
                   </span>
                 )}
-                <span className="flex items-center gap-1.5">
-                  <Ic name="check-circle" className="w-3 h-3" style={{ color: theme.wine }} />
-                  {t('hero_verified', 'ვერიფიცირებული')}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] tracking-[0.2em] uppercase font-medium"
+                  style={{ background: '#25D36615', border: '1px solid #25D36655', color: '#0F7A3C' }}>
+                  <Ic name="message-circle" className="w-3 h-3" />
+                  {t('hero_response_time', 'პასუხი სწრაფად')}
                 </span>
               </div>
 
@@ -2044,11 +2051,12 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                   <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
                 </button>
                 {rep.whatsapp && (
-                  <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`} target="_blank" rel="noreferrer"
-                    className="py-4 px-5 rounded-full flex items-center justify-center gap-2 transition hover:scale-[1.02] text-xs tracking-[0.2em] uppercase"
-                    style={{ border: `1.5px solid ${theme.ink}33`, color: theme.ink }} title="WhatsApp">
-                    <SocialIcon name="whatsapp" className="w-5 h-5" style={{ color: '#25D366' }} />
-                    <span>{t('hero_cta_whatsapp', 'WhatsApp')}</span>
+                  <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა${rep.name ? ', ' + rep.name : ''}! მინდა უფასო კონსულტაცია — გადავწყვიტო, რომელი პროდუქტი მიხდება.`)}`} target="_blank" rel="noreferrer"
+                    className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.01]"
+                    style={{ background: '#25D366', color: '#fff', boxShadow: '0 20px 50px -15px #25D36699' }}>
+                    <SocialIcon name="whatsapp" className="w-4 h-4" />
+                    {t('hero_cta_consultation', 'უფასო კონსულტაცია')}
+                    <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
                   </a>
                 )}
               </div>
@@ -2195,7 +2203,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {/* ═══ PAIN QUIZ — Pain → Solution Engine entry point (Sprint 6) ═══ */}
       <div id="pain-quiz-section">
-        <PainQuiz onSelect={handleProblemSelect} selectedId={selectedProblem?.id} problems={problems} t={t} />
+        <PainQuiz onSelect={handleProblemSelect} selectedId={selectedProblem?.id} problems={problems} rep={rep} t={t} />
       </div>
 
       {/* ═══ EXPANDED CONTENT — only shown when user clicks a problem ═══ */}
@@ -2931,11 +2939,28 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           </div>
         );
       })()}
+
+      {/* ─── Sticky mobile WhatsApp CTA — always visible on small screens ─── */}
+      {rep.whatsapp && (
+        <a
+          href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა${rep.name ? ', ' + rep.name : ''}! მინდა უფასო კონსულტაცია.`)}`}
+          target="_blank" rel="noreferrer"
+          className="fixed bottom-4 left-4 right-4 lg:hidden z-40 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-medium text-sm transition active:scale-[0.98]"
+          style={{
+            background: '#25D366',
+            color: '#fff',
+            boxShadow: '0 10px 40px -10px rgba(37, 211, 102, 0.7), 0 2px 12px rgba(0,0,0,0.1)'
+          }}>
+          <SocialIcon name="whatsapp" className="w-5 h-5" />
+          <span className="tracking-wide">უფასო კონსულტაცია</span>
+          <Ic name="arrow-right" className="w-4 h-4" />
+        </a>
+      )}
     </div>
   );
 }
 
-function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, t = (k, fb) => fb }) {
+function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, rep = {}, t = (k, fb) => fb }) {
   const handleClick = (problem) => {
     onSelect(problem);
   };
@@ -2986,9 +3011,10 @@ function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, t = (k, fb) => fb
         {/* Grid — only active problems shown. Layout adapts to count */}
         {(() => {
           const activeProblems = problems.filter(p => p.productId);
-          const gridClass = activeProblems.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
-                            activeProblems.length === 2 ? 'grid-cols-2 max-w-md mx-auto' :
-                            activeProblems.length === 3 ? 'grid-cols-3 max-w-2xl mx-auto' :
+          const totalCards = activeProblems.length + 1; // +1 for "other" consultation card
+          const gridClass = totalCards === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
+                            totalCards === 2 ? 'grid-cols-2 max-w-md mx-auto' :
+                            totalCards === 3 ? 'grid-cols-3 max-w-2xl mx-auto' :
                             'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-4xl mx-auto';
           return (
         <div className={`grid gap-3 sm:gap-4 ${gridClass}`}>
@@ -3034,6 +3060,40 @@ function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, t = (k, fb) => fb
               </button>
             );
           })}
+          {/* "Other problem" card — direct WhatsApp consultation for visitors with un-listed concerns */}
+          {rep.whatsapp && (
+            <a
+              href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა${rep.name ? ', ' + rep.name : ''}! მინდა უფასო კონსულტაცია — ვერ ვირჩევ რომელი პუნქტი მერგება. დამეხმარე? 🌹`)}`}
+              target="_blank" rel="noreferrer"
+              className="relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition group hover:scale-105 hover:shadow-xl cursor-pointer"
+              style={{
+                background: `linear-gradient(135deg, ${theme.wine}15, ${theme.cream})`,
+                border: `1px dashed ${theme.wine}88`,
+                boxShadow: `0 4px 20px -8px ${theme.wine}44`
+              }}>
+              {/* Hover glow */}
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition pointer-events-none"
+                style={{ background: `radial-gradient(circle at center, ${theme.wine}22, transparent 70%)` }} />
+
+              {/* Icon */}
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                style={{ background: theme.wine + '22' }}>
+                <Ic name="message-circle" className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.wine }} />
+              </div>
+
+              {/* Label */}
+              <p className="relative text-[10px] sm:text-xs text-center leading-tight font-medium px-1"
+                style={{ color: theme.ink }}>
+                {t('quiz_other_label', 'სხვა — მომწერე')}
+              </p>
+
+              {/* "Free" badge */}
+              <span className="absolute top-2 right-2 text-[8px] tracking-[0.15em] uppercase font-medium px-1.5 py-0.5 rounded-full"
+                style={{ background: theme.wine, color: theme.cream }}>
+                {t('quiz_other_badge', 'უფასო')}
+              </span>
+            </a>
+          )}
         </div>
           );
         })()}
