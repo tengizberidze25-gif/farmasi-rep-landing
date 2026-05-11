@@ -951,13 +951,11 @@ function Login({ onLogin, initialError }) {
         style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
       <div className="relative w-full max-w-md anim-fadeup">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6"
-            style={{ background: `${theme.wine}11`, border: `1px solid ${theme.wine}22` }}>
-            <Ic name="sparkles" className="w-3.5 h-3.5" style={{ color: theme.wine }} />
-            <span className="text-xs tracking-widest uppercase" style={{ color: theme.wine }}>FARMASI Georgia</span>
-          </div>
-          <h1 className="font-display text-5xl mb-2" style={{ color: theme.ink }}>წარმომადგენლის</h1>
-          <p className="font-display-lat text-3xl" style={{ color: theme.wine }}>portfolio</p>
+          <img src="/farmasi-logo.png" alt="FARMASI"
+            className="mx-auto mb-6"
+            style={{ height: 56, width: 'auto', objectFit: 'contain' }} />
+          <h1 className="font-display text-3xl sm:text-4xl mb-2 leading-tight" style={{ color: theme.ink }}>თქვენი მეგზური</h1>
+          <p className="font-display-lat text-2xl sm:text-3xl italic" style={{ color: theme.wine }}>Farmasi-ს სამყაროში</p>
         </div>
         <div className="rounded-2xl p-8 backdrop-blur-sm shadow-2xl"
           style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
@@ -968,7 +966,7 @@ function Login({ onLogin, initialError }) {
                 <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
               </div>
               <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>შენი farmasi.ge ლინკი</h2>
-              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>ჩასვი სრული ლინკი</label>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>ჩასვი რეფერალური ლინკი</label>
               <div className="relative">
                 <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(''); }}
                   placeholder="https://farmasi.ge/ka/signup153205"
@@ -1014,7 +1012,7 @@ function Login({ onLogin, initialError }) {
           )}
         </div>
         <p className="text-center text-xs mt-6" style={{ color: theme.ink + '77' }}>
-          © FARMASI Georgia · Tantalize Cosmetics ოფიციალური წარმომადგენელი
+          © FARMASI Georgia ოფიციალური წარმომადგენელი საქართველოში
         </p>
       </div>
     </div>
