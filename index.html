@@ -61,12 +61,22 @@
   @keyframes floatBig { 0%, 100% { transform: translateY(0) scale(1.35); } 50% { transform: translateY(-22px) scale(1.35); } }
   @keyframes floatBundle { 0%, 100% { transform: translateY(0) scale(1.15); } 50% { transform: translateY(-14px) scale(1.15); } }
   @keyframes pulseSoft { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-4px); opacity: 0.85; } }
+  @keyframes chatGlowPulse {
+    0%, 100% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.4), 0 0 0 0 rgba(229, 5, 113, 0.35); }
+    50% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.4), 0 0 0 14px rgba(229, 5, 113, 0); }
+  }
+  @keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
   @keyframes revealUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes revealLeft { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes revealRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes revealScale { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
   .anim-fadeup { animation: fadeUp 0.6s ease-out both; }
   .anim-pulse-soft { animation: pulseSoft 2s ease-in-out infinite; }
+  .anim-chat-glow { animation: chatGlowPulse 2.5s ease-out infinite; }
+  .anim-badge-pulse { animation: badgePulse 1.8s ease-in-out infinite; }
   .anim-float { animation: float 4s ease-in-out infinite; }
   .anim-float-big { animation: floatBig 5s ease-in-out infinite; }
   .anim-float-bundle { animation: floatBundle 6s ease-in-out infinite; }
@@ -2861,8 +2871,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       </footer>
 
       <button onClick={() => setChatOpen(true)}
-        className="fixed bottom-5 left-5 z-40 flex items-center justify-center gap-2 px-5 py-3 sm:gap-0 sm:px-0 sm:py-0 sm:w-12 sm:h-12 rounded-full transition hover:scale-105 active:scale-95"
-        style={{ background: theme.ink, color: theme.cream, boxShadow: '0 10px 30px -8px rgba(0,0,0,0.4)' }}
+        className="fixed bottom-5 left-5 z-40 flex items-center justify-center gap-2 px-5 py-3 sm:gap-0 sm:px-0 sm:py-0 sm:w-12 sm:h-12 rounded-full transition hover:scale-105 active:scale-95 anim-chat-glow"
+        style={{ background: theme.ink, color: theme.cream }}
         title={t('chat_button_tooltip', 'მესიჯი')}>
         <Ic name="message-square" className="w-5 h-5" />
         <span className="text-sm font-medium tracking-wide sm:hidden">
@@ -3072,7 +3082,7 @@ function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, rep = {}, t = (k,
               </p>
 
               {/* "Free" badge */}
-              <span className="absolute top-2 right-2 text-[8px] tracking-[0.15em] uppercase font-medium px-1.5 py-0.5 rounded-full"
+              <span className="absolute top-2 right-2 text-[8px] tracking-[0.15em] uppercase font-medium px-1.5 py-0.5 rounded-full anim-badge-pulse"
                 style={{ background: theme.wine, color: theme.cream }}>
                 {t('quiz_other_badge', 'უფასო')}
               </span>
