@@ -63,6 +63,7 @@ export default async function handler(req: Request) {
   const { searchParams } = new URL(req.url);
   const pid = searchParams.get('pid');
   const slug = searchParams.get('slug');
+  const origin = new URL(req.url).origin;
 
   // Fetch rep + font in parallel for speed
   const [rep, font] = await Promise.all([
@@ -79,6 +80,8 @@ export default async function handler(req: Request) {
   const photoUrl = (rep?.photo_url as string) || '';
   // Only use http(s) photo URLs (safety: never embed arbitrary protocols)
   const photo = /^https?:\/\//i.test(photoUrl) ? photoUrl : '';
+  // FARMASI logo hosted in repo root, served as static asset
+  const logoUrl = `${origin}/farmasi-logo.png`;
 
   return new ImageResponse(
     (
@@ -110,7 +113,7 @@ export default async function handler(req: Request) {
           }}
         />
 
-        {/* LEFT — rep photo or pink fallback panel */}
+        {/* LEFT — rep photo or FARMASI-branded fallback panel */}
         {photo ? (
           <img
             src={photo}
@@ -134,12 +137,10 @@ export default async function handler(req: Request) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 200,
-              color: '#E50571',
-              fontWeight: 700,
+              padding: 60,
             }}
           >
-            ✦
+            <img src={logoUrl} width={300} height={126} style={{ objectFit: 'contain' }} />
           </div>
         )}
 
@@ -152,17 +153,13 @@ export default async function handler(req: Request) {
             gap: 14,
           }}
         >
-          <div
-            style={{
-              fontSize: 22,
-              color: '#BE185D',
-              letterSpacing: 6,
-              textTransform: 'uppercase',
-              fontWeight: 700,
-            }}
-          >
-            FARMASI · OFFICIAL
-          </div>
+          {/* FARMASI logo (real brand mark, replaces text label) */}
+          <img
+            src={logoUrl}
+            width={200}
+            height={84}
+            style={{ objectFit: 'contain', marginBottom: 8 }}
+          />
 
           <div
             style={{
