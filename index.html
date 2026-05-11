@@ -101,6 +101,11 @@
     transform-style: preserve-3d;
   }
   .product-mockup { transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  /* iOS Safari safe-area bottom padding — prevents content from sitting under translucent toolbar */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 </style>
 </head>
 <body>
@@ -1977,7 +1982,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 65%)` }} />
 
         {/* Top editorial bar */}
-        <div className="relative px-5 sm:px-12 pt-7 flex items-center justify-between text-[10px] tracking-[0.3em] uppercase"
+        <div className="relative px-5 sm:px-12 pt-20 sm:pt-7 flex items-center justify-between text-[10px] tracking-[0.3em] uppercase"
           style={{ color: theme.ink + '77' }}>
           <div className="flex items-center gap-2">
             <span className="text-base" style={{ color: theme.wine }}>✦</span>
