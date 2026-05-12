@@ -1285,6 +1285,10 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   const [saveError, setSaveError] = useState('');
   const [visits, setVisits] = useState(null);
   const [leads, setLeads] = useState(null); // null = not loaded yet, array = loaded
+  const [myProducts, setMyProducts] = useState(null); // rep's curated products
+  const [allProducts, setAllProducts] = useState([]); // full catalog for picker
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState(null); // {row, currentNote}
   const [cardGenerating, setCardGenerating] = useState(false);
   const [cardError, setCardError] = useState('');
   const fileRef = useRef(null);
@@ -1376,6 +1380,66 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
       }
     } catch (err) {
       console.error('Failed to update lead status', err);
+    }
+  };
+
+  // Load rep's curated products
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_rep_products', pid: repCode })
+      .then(data => { if (data.ok && Array.isArray(data.products)) setMyProducts(data.products); })
+      .catch(() => {});
+  }, [repCode]);
+
+  // Load full product catalog (lazy — only when picker opens)
+  const openProductPicker = async () => {
+    if (allProducts.length === 0) {
+      try {
+        const data = await api({ action: 'get_products' });
+        if (data.ok && Array.isArray(data.products)) setAllProducts(data.products);
+      } catch (err) {
+        console.error('Failed to load products', err);
+      }
+    }
+    setPickerOpen(true);
+  };
+
+  // Add product to rep's selection
+  const addProductToSelection = async (productId, note = '') => {
+    try {
+      const res = await api({ action: 'add_rep_product', pid: repCode, product_id: productId, note: note });
+      if (res.ok) {
+        // Reload list
+        const data = await api({ action: 'get_rep_products', pid: repCode });
+        if (data.ok && Array.isArray(data.products)) setMyProducts(data.products);
+      }
+    } catch (err) {
+      console.error('Failed to add product', err);
+    }
+  };
+
+  // Remove from selection
+  const removeProductFromSelection = async (row) => {
+    try {
+      const res = await api({ action: 'remove_rep_product', row: row });
+      if (res.ok && myProducts) {
+        setMyProducts(myProducts.filter(p => p.row !== row));
+      }
+    } catch (err) {
+      console.error('Failed to remove product', err);
+    }
+  };
+
+  // Save product note
+  const saveProductNote = async (row, note) => {
+    try {
+      const res = await api({ action: 'update_rep_product', row: row, note: note });
+      if (res.ok && myProducts) {
+        setMyProducts(myProducts.map(p => p.row === row ? { ...p, note: note } : p));
+      }
+      setEditingNote(null);
+    } catch (err) {
+      console.error('Failed to update note', err);
     }
   };
 
@@ -1943,6 +2007,180 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
           </Card>
         )}
 
+        {/* ─── My Curated Products — Rep's favorite picks ─── */}
+        {myProducts !== null && (
+          <Card>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex-1">
+                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
+                  {L('myprods_eyebrow', '✦ ჩემი არჩევანი')}
+                </p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>
+                  {L('myprods_title', 'რჩეული პროდუქტები')}
+                </p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.ink + '99' }}>
+                  {L('myprods_subtitle', 'მონიშნე შენი ფავორიტი 5-6 პროდუქტი — ვიზიტორებს გამოეჩვენებათ შენი არჩევანი მთავარი კატალოგის ნაცვლად')}
+                </p>
+              </div>
+            </div>
+
+            {myProducts.length === 0 ? (
+              <div className="text-center py-8 px-4">
+                <p className="text-sm mb-4" style={{ color: theme.ink + '99' }}>
+                  {L('myprods_empty', 'ჯერ არჩეული პროდუქტი არ გაქვს')}
+                </p>
+                <button onClick={openProductPicker}
+                  className="px-6 py-3 rounded-xl text-sm tracking-wider uppercase font-medium hover:scale-[1.02] transition"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  + {L('myprods_button_add', 'პროდუქტის დამატება')}
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {myProducts.map(p => (
+                    <div key={p.row} className="rounded-xl p-3 sm:p-4 flex gap-3"
+                      style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+                      {p.image && (
+                        <img src={p.image} alt={p.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0"
+                          style={{ background: theme.cream }} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-display text-sm sm:text-base truncate" style={{ color: theme.ink }}>
+                          {p.name}
+                        </p>
+                        <p className="text-xs mb-2" style={{ color: theme.wine }}>
+                          {p.price} ₾
+                        </p>
+                        {editingNote && editingNote.row === p.row ? (
+                          <div>
+                            <textarea
+                              value={editingNote.currentNote}
+                              onChange={(e) => setEditingNote({ ...editingNote, currentNote: e.target.value })}
+                              placeholder={L('myprods_note_placeholder', 'მაგ: ეს სერუმი ნამდვილად მუშაობს...')}
+                              rows={2}
+                              className="w-full text-xs px-2 py-1.5 rounded outline-none resize-none"
+                              style={{ background: theme.cream, border: `1px solid ${theme.gold}44`, color: theme.ink }} />
+                            <div className="flex gap-2 mt-2">
+                              <button onClick={() => saveProductNote(p.row, editingNote.currentNote)}
+                                className="text-[10px] px-3 py-1 rounded"
+                                style={{ background: theme.wine, color: theme.cream }}>
+                                {L('myprods_note_save', 'შენახვა')}
+                              </button>
+                              <button onClick={() => setEditingNote(null)}
+                                className="text-[10px] px-3 py-1 rounded"
+                                style={{ background: theme.ink + '11', color: theme.ink }}>
+                                {L('myprods_note_cancel', 'უარყოფა')}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {p.note ? (
+                              <p className="text-xs italic leading-relaxed mb-2" style={{ color: theme.ink + 'AA' }}>
+                                "{p.note}"
+                              </p>
+                            ) : (
+                              <p className="text-xs italic mb-2" style={{ color: theme.ink + '66' }}>
+                                {L('myprods_no_note', 'ჯერ კომენტარი არ დაგიწერია')}
+                              </p>
+                            )}
+                            <div className="flex gap-2">
+                              <button onClick={() => setEditingNote({ row: p.row, currentNote: p.note || '' })}
+                                className="text-[10px] px-3 py-1 rounded transition hover:scale-105"
+                                style={{ background: theme.gold + '22', color: theme.gold }}>
+                                ✎ {L('myprods_button_edit', 'კომენტარი')}
+                              </button>
+                              <button onClick={() => removeProductFromSelection(p.row)}
+                                className="text-[10px] px-3 py-1 rounded transition hover:scale-105"
+                                style={{ background: theme.rose + '22', color: theme.rose }}>
+                                × {L('myprods_button_remove', 'წაშლა')}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {myProducts.length < 6 && (
+                  <button onClick={openProductPicker}
+                    className="w-full mt-4 py-3 rounded-xl text-sm tracking-wider uppercase font-medium hover:scale-[1.01] transition"
+                    style={{ background: theme.wine + '11', color: theme.wine, border: `1.5px dashed ${theme.wine}55` }}>
+                    + {L('myprods_button_add_more', 'მეტი პროდუქტი')}
+                  </button>
+                )}
+              </>
+            )}
+          </Card>
+        )}
+
+        {/* ─── Product Picker Modal ─── */}
+        {pickerOpen && (
+          <div onClick={() => setPickerOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(35,23,18,0.85)', backdropFilter: 'blur(8px)' }}>
+            <div onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col"
+              style={{ background: theme.cream }}>
+              <div className="px-6 py-4 flex items-center justify-between border-b"
+                style={{ borderColor: theme.gold + '33' }}>
+                <div>
+                  <p className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                    {L('myprods_picker_eyebrow', 'კატალოგი')}
+                  </p>
+                  <p className="font-display text-lg" style={{ color: theme.ink }}>
+                    {L('myprods_picker_title', 'აარჩიე პროდუქტი')}
+                  </p>
+                </div>
+                <button onClick={() => setPickerOpen(false)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110"
+                  style={{ background: theme.ink + '11', color: theme.ink }}>
+                  <Ic name="x" className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="overflow-y-auto p-4 space-y-2">
+                {allProducts.length === 0 ? (
+                  <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
+                    {L('myprods_picker_loading', 'იტვირთება...')}
+                  </p>
+                ) : (
+                  allProducts
+                    .filter(p => !myProducts.some(mp => String(mp.id) === String(p.id)))
+                    .map(p => (
+                      <button key={p.id}
+                        onClick={() => { addProductToSelection(p.id); setPickerOpen(false); }}
+                        className="w-full rounded-xl p-3 flex gap-3 items-center transition hover:scale-[1.01] text-left"
+                        style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                        {p.image && (
+                          <img src={p.image} alt={p.name}
+                            className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                            style={{ background: theme.cream }} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-display text-sm truncate" style={{ color: theme.ink }}>
+                            {p.name}
+                          </p>
+                          <p className="text-xs" style={{ color: theme.wine }}>
+                            {p.price} ₾
+                          </p>
+                        </div>
+                        <Ic name="plus" className="w-4 h-4" style={{ color: theme.wine }} />
+                      </button>
+                    ))
+                )}
+                {allProducts.length > 0 && allProducts.filter(p => !myProducts.some(mp => String(mp.id) === String(p.id))).length === 0 && (
+                  <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
+                    {L('myprods_picker_all_added', 'ყველა პროდუქტი უკვე დამატებულია')}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── Personal Card Download ─── */}
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -2435,6 +2673,16 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [leadSending, setLeadSending] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadError, setLeadError] = useState('');
+  // Rep's curated products (Sheet: RepProducts) — shown as "rep's pick" section
+  const [repPicks, setRepPicks] = useState([]);
+
+  // Fetch rep's curated products on mount
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_rep_products', pid: repCode })
+      .then(data => { if (data.ok && Array.isArray(data.products)) setRepPicks(data.products); })
+      .catch(() => {});
+  }, [repCode]);
   const expandedRef = useRef(null);
   const heroPhotoTiltRef = useRef(null);
   const heroPhotoContainerRef = useRef(null);
@@ -3347,6 +3595,63 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>
               {t('no_problem_subtitle', 'ზემოთ მონიშნე რა გაწუხებს — გამოგიჩვენებ კონკრეტულ პროდუქტებს, შედეგებსა და ვიდეო-რეცენზიებს, რომლებიც სწორედ შენი პრობლემისთვისაა.')}
             </p>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ REP'S CURATED PICKS — Personal favorite products ═══ */}
+      {repPicks.length > 0 && (
+        <section className="px-5 py-16 sm:py-20" style={{ background: theme.cream }}>
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
+                {t('picks_eyebrow', '✦ ჩემი არჩევანი ✦')}
+              </p>
+              <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
+                {rep.name ? `${rep.name.split(' ')[0]}${t('picks_title_suffix', '-ს რჩეული')}` : t('picks_title_fallback', 'რჩეული პროდუქტები')}
+              </h2>
+              <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
+                {t('picks_subtitle', 'ის პროდუქტები რომელიც პირადად ვცადე და ვრეკომენდირებ — ნამდვილ შედეგზე გადამოწმებული')}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {repPicks.map(p => (
+                <div key={p.row || p.id}
+                  className="rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, boxShadow: '0 8px 30px -12px rgba(0,0,0,0.15)' }}
+                  onClick={() => onProduct(p)}>
+                  {p.image && (
+                    <div className="aspect-[4/3] overflow-hidden" style={{ background: theme.cream }}>
+                      <img src={p.image} alt={p.name}
+                        className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <p className="font-display text-lg mb-1 leading-tight" style={{ color: theme.ink }}>
+                      {p.name}
+                    </p>
+                    <p className="text-sm mb-3" style={{ color: theme.wine }}>
+                      {p.price} ₾
+                    </p>
+                    {p.note && (
+                      <div className="rounded-lg p-3 mb-3" style={{ background: theme.gold + '11', borderLeft: `3px solid ${theme.gold}` }}>
+                        <p className="text-xs italic leading-relaxed" style={{ color: theme.ink + 'CC' }}>
+                          "{p.note}"
+                          <span className="block mt-1 not-italic text-[10px]" style={{ color: theme.gold }}>
+                            — {rep.name ? rep.name.split(' ')[0] : t('picks_author_fallback', 'რეპი')}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                    <button className="text-xs tracking-wider uppercase flex items-center gap-2"
+                      style={{ color: theme.wine }}>
+                      {t('picks_button_view', 'დაწვრილებით')} <Ic name="arrow-right" className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
