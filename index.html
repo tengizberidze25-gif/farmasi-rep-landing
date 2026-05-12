@@ -1086,7 +1086,7 @@ function App() {
       {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} labels={labels} />}
       {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} labels={labels} />}
       {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} />}
-      {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} />}
+      {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} />}
     </div>
   );
 }
@@ -1848,7 +1848,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>📊 ანალიტიკა</p>
-                <p className="font-display text-lg" style={{ color: theme.ink }}>შენი გვერდის ვიზიტები</p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>{L('visits_title', 'შენი გვერდის ვიზიტები')}</p>
               </div>
             </div>
 
@@ -1856,23 +1856,23 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
               <div className="text-center p-4 rounded-2xl"
                 style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
                 <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.today}</p>
-                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>დღეს</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>{L('visits_today', 'დღეს')}</p>
               </div>
               <div className="text-center p-4 rounded-2xl"
                 style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
                 <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.week}</p>
-                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>7 დღე</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>{L('visits_7days', '7 დღე')}</p>
               </div>
               <div className="text-center p-4 rounded-2xl"
                 style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
                 <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.total}</p>
-                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>სულ</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>{L('visits_total', 'სულ')}</p>
               </div>
             </div>
 
             {visits.days && visits.days.length > 0 && (
               <div>
-                <p className="text-[10px] tracking-widest uppercase mb-3" style={{ color: theme.ink + '77' }}>ბოლო 7 დღე</p>
+                <p className="text-[10px] tracking-widest uppercase mb-3" style={{ color: theme.ink + '77' }}>{L('visits_period_label', 'ბოლო 7 დღე')}</p>
                 <div className="flex items-end gap-1.5 h-24">
                   {visits.days.map((d, i) => {
                     const maxCount = Math.max(...visits.days.map(x => x.count), 1);
@@ -1906,7 +1906,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
 
             {visits.total === 0 && (
               <p className="text-xs text-center mt-4 italic" style={{ color: theme.ink + '77' }}>
-                ჯერ ვიზიტები არ არის — გააზიარე შენი ლინკი! 🚀
+                {L('visits_empty', 'ჯერ ვიზიტები არ არის — გააზიარე შენი ლინკი! 🚀')}
               </p>
             )}
           </Card>
@@ -2276,9 +2276,9 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
             </div>
           </div>
           <div className="mt-4">
-            <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>მოკლე ბიო</label>
+            <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{L('profile_bio_label', 'მოკლე ბიო')}</label>
             <textarea value={rep.bio} onChange={upd('bio')} rows={3} maxLength={200}
-              placeholder="რას გთავაზობ? რატომ შენ?"
+              placeholder={L('profile_bio_placeholder', 'რას გთავაზობ? რატომ შენ?')}
               className="w-full px-3 py-2.5 rounded-xl outline-none text-sm resize-none"
               style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
             <p className="text-[10px] mt-1 text-right" style={{ color: theme.ink + '66' }}>{rep.bio.length}/200</p>
@@ -2343,13 +2343,13 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
                     ლინკი ცნობილია — ({parseVideoUrl(rep.videoUrl).type})
                   </span>
                   <button onClick={() => setRep(r => ({ ...r, videoUrl: '' }))}
-                    className="text-[10px] underline opacity-70 hover:opacity-100">წაშლა</button>
+                    className="text-[10px] underline opacity-70 hover:opacity-100">{L('profile_delete', 'წაშლა')}</button>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
                   style={{ background: theme.rose + '22', color: theme.wine, border: `1px solid ${theme.rose}55` }}>
                   <Ic name="alert-circle" className="w-3.5 h-3.5" />
-                  <span>ლინკი არ მესმის — სცადე YouTube, Instagram, TikTok, Facebook ან Vimeo</span>
+                  <span>{L('profile_link_error', 'ლინკი არ მესმის — სცადე YouTube, Instagram, TikTok, Facebook ან Vimeo')}</span>
                 </div>
               )}
             </div>
@@ -2472,14 +2472,14 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
 
               <div className="flex items-center gap-2 my-2">
                 <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
-                <span className="text-[9px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>ან ლინკი</span>
+                <span className="text-[9px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>{L('profile_or_link', 'ან ლინკი')}</span>
                 <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
               </div>
 
               <div className="flex gap-2">
                 <input type="url" value={newCustomerUrl}
                   onChange={(e) => setNewCustomerUrl(e.target.value)}
-                  placeholder="ლინკი ნებისმიერი პლატფორმიდან..."
+                  placeholder={L('profile_link_placeholder', 'ლინკი ნებისმიერი პლატფორმიდან...')}
                   className="flex-1 px-3 py-2 rounded-xl outline-none text-sm"
                   style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
                 <button onClick={addCustomerVideoFromUrl} disabled={!newCustomerUrl.trim()}
@@ -2525,7 +2525,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full flex items-center gap-2 z-50 anim-fadeup"
             style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.5)' }}>
             <Ic name="check-circle" className="w-4 h-4" />
-            <span className="text-sm font-medium">შენახულია</span>
+            <span className="text-sm font-medium">{L('profile_saved', 'შენახულია')}</span>
           </div>
         )}
       </main>
@@ -2779,7 +2779,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             border: `1px solid ${theme.gold}55`
           }}>
           <Ic name="arrow-left" className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">სხვა პრობლემა</span>
+          <span className="hidden sm:inline">{L('other_problem', 'სხვა პრობლემა')}</span>
           <span className="sm:hidden">უკან</span>
         </button>
       )}
@@ -4742,7 +4742,8 @@ function ProductCard({ p, onClick, featured }) {
 // ═══════════════════════════════════════════════════════════
 //   PRODUCT PAGE — individual product landing
 // ═══════════════════════════════════════════════════════════
-function ProductPage({ rep, repCode, product, onBack, onProduct }) {
+function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) {
+  const t = (key, fallback = '') => (labels && labels[key]) || fallback;
   const [chatOpen, setChatOpen] = useState(false);
   const [qty, setQty] = useState(1);
   const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
@@ -4866,7 +4867,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
 
             {/* Quantity */}
             <div className="flex items-center gap-4 mb-6">
-              <span className="text-xs tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>რაოდენობა</span>
+              <span className="text-xs tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>{t('prod_quantity_label', 'რაოდენობა')}</span>
               <div className="flex items-center rounded-full overflow-hidden" style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
                 <button onClick={() => setQty(Math.max(1, qty - 1))}
                   className="w-9 h-9 flex items-center justify-center" style={{ color: theme.ink }}>
@@ -4923,7 +4924,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
 
           <div className="relative max-w-5xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>თქვენი ისტორია</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_story_label', 'თქვენი ისტორია')}</p>
               <h2 className="font-display text-3xl sm:text-5xl mb-3 leading-tight" style={{ color: theme.ink }}>
                 {product.problems.headline}
               </h2>
@@ -4953,7 +4954,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
 
             <div className="text-center mt-10">
               <p className="font-display text-2xl sm:text-3xl leading-tight max-w-xl mx-auto" style={{ color: theme.ink }}>
-                ეს გრძნობა <span className="font-display-lat italic" style={{ color: theme.wine }}>დასრულდება</span> — დავიწყოთ ერთად.
+                ეს გრძნობა <span className="font-display-lat italic" style={{ color: theme.wine }}>{t('prod_complete_label', 'დასრულდება')}</span> — დავიწყოთ ერთად.
               </p>
               <button onClick={goShop}
                 className="mt-6 py-4 px-8 rounded-2xl inline-flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
@@ -4968,7 +4969,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
       {/* FEATURES strip */}
       <section className="px-5 py-10" style={{ background: theme.ivory }}>
         <div className="max-w-5xl mx-auto">
-          <p className="text-xs tracking-widest uppercase mb-6 text-center" style={{ color: theme.gold }}>მახასიათებლები</p>
+          <p className="text-xs tracking-widest uppercase mb-6 text-center" style={{ color: theme.gold }}>{t('prod_features_title', 'მახასიათებლები')}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {features.map((f, i) => (
               <div key={i} className="text-center p-4 rounded-2xl"
@@ -4989,9 +4990,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
         <section className="px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>რატომ ეს პროდუქტი</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_why_title', 'რატომ ეს პროდუქტი')}</p>
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
-                ოთხი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>მთავარი</span> უპირატესობა
+                ოთხი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_main_label', 'მთავარი')}</span> უპირატესობა
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -5023,7 +5024,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
                 <Ic name="check-circle" className="w-3 h-3" /> ნამდვილი შედეგები
               </div>
               <h2 className="font-display text-3xl sm:text-4xl mb-3" style={{ color: theme.ink }}>
-                შედეგები რომ <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ლაპარაკობენ</span>
+                შედეგები რომ <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_speak_label', 'ლაპარაკობენ')}</span>
               </h2>
               <p className="text-base max-w-xl mx-auto" style={{ color: theme.ink + '99' }}>
                 რეალური მომხმარებლების ფოტოები — გამოყენების ციკლის შემდეგ
@@ -5078,9 +5079,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
         <section className="px-5 py-16" style={{ background: theme.ivory }}>
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>ვიდეო პრეზენტაცია</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_video_title', 'ვიდეო პრეზენტაცია')}</p>
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
-                ნახე <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>მოქმედებაში</span>
+                ნახე <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_action_label', 'მოქმედებაში')}</span>
               </h2>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -5101,9 +5102,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
 
           <div className="relative max-w-5xl mx-auto">
             <div className="text-center mb-12">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>როგორ მუშაობს ფორმულა</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_how_title', 'როგორ მუშაობს ფორმულა')}</p>
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.cream }}>
-                სამი <span className="font-display-lat italic font-normal" style={{ color: theme.gold }}>ფაზა</span> — ერთი შედეგი
+                სამი <span className="font-display-lat italic font-normal" style={{ color: theme.gold }}>{t('prod_phase_label', 'ფაზა')}</span> — ერთი შედეგი
               </h2>
             </div>
 
@@ -5138,9 +5139,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
         <section className="px-5 py-16">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>აქტიური კომპონენტები</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_ingredients_title', 'აქტიური კომპონენტები')}</p>
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
-                რა <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ამუშავებს</span>
+                რა <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_works_label', 'ამუშავებს')}</span>
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -5167,9 +5168,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
         <section className="px-5 py-16" style={{ background: theme.ivory }}>
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>გამოყენების წესი</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_howto_title', 'გამოყენების წესი')}</p>
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
-                სამი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>მარტივი</span> ნაბიჯი
+                სამი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_simple_label', 'მარტივი')}</span> ნაბიჯი
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
@@ -5198,7 +5199,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
           <div className="max-w-3xl mx-auto rounded-3xl p-6 sm:p-10"
             style={{ background: `linear-gradient(135deg, ${product.bg[0]}, ${product.bg[1]})`,
                      border: `1px solid ${theme.gold}22` }}>
-            <p className="text-xs tracking-widest uppercase mb-3" style={{ color: theme.gold }}>ვისთვის გამოდგება</p>
+            <p className="text-xs tracking-widest uppercase mb-3" style={{ color: theme.gold }}>{t('prod_audience_title', 'ვისთვის გამოდგება')}</p>
             <h2 className="font-display text-2xl sm:text-3xl mb-6" style={{ color: theme.ink }}>
               იდეალურია <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>თუ</span>
             </h2>
@@ -5320,7 +5321,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
                       </div>
                       <h3 className="font-display text-3xl sm:text-4xl lg:text-5xl mb-4 leading-tight">
                         სამივე ერთად <span className="font-display-lat italic" style={{ color: theme.gold }}>·</span><br/>
-                        <span className="font-display-lat italic" style={{ color: theme.gold }}>ერთი ფასი</span>
+                        <span className="font-display-lat italic" style={{ color: theme.gold }}>{t('prod_single_price_label', 'ერთი ფასი')}</span>
                       </h3>
 
                       <div className="flex items-center gap-3 mb-6 flex-wrap">
@@ -5400,9 +5401,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
           <div className="max-w-5xl mx-auto">
             <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
               <div>
-                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>შეფასებები</p>
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_reviews_title', 'შეფასებები')}</p>
                 <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
-                  რას <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>ამბობენ</span>
+                  რას <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_say_label', 'ამბობენ')}</span>
                 </h2>
               </div>
               {product.rating && (
@@ -5449,7 +5450,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
         <section className="px-5 py-16">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-10">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>ხშირი კითხვები</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_faq_title', 'ხშირი კითხვები')}</p>
               <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
                 FAQ
               </h2>
@@ -5536,7 +5537,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.gold }}>გყიდის</p>
+            <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{t('prod_sells_label', 'გყიდის')}</p>
             <p className="font-display text-xl truncate" style={{ color: theme.ink }}>{rep.name}</p>
             {rep.city && (
               <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: theme.ink + '88' }}>
@@ -5561,7 +5562,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct }) {
               მთლიანი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>Vitalizing</span> რიტუალი
             </h2>
             <p className="text-sm sm:text-base max-w-xl mx-auto leading-relaxed" style={{ color: theme.ink + 'AA' }}>
-              ცალცალკე პროდუქტები ნაწილობრივ მუშაობს. <span style={{ color: theme.wine, fontWeight: 600 }}>სრული ეფექტისთვის სასურველია კომბინაცია</span> — შამპუნი ყოველდღიურ მოვლას უზრუნველყოფს, საპონი ღრმა გაწმენდას, FORTE კი გაძლიერებულ ფორმულას მძიმე შემთხვევებში.
+              ცალცალკე პროდუქტები ნაწილობრივ მუშაობს. <span style={{ color: theme.wine, fontWeight: 600 }}>{t('prod_combo_hint', 'სრული ეფექტისთვის სასურველია კომბინაცია')}</span> — შამპუნი ყოველდღიურ მოვლას უზრუნველყოფს, საპონი ღრმა გაწმენდას, FORTE კი გაძლიერებულ ფორმულას მძიმე შემთხვევებში.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -5649,7 +5650,7 @@ function BrandVideo({ videoId, thumbnail }) {
           <div className="absolute bottom-0 left-0 right-0 p-5"
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
             <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.cream + 'CC' }}>FARMASI ისტორია</p>
-            <p className="font-display text-lg" style={{ color: theme.cream }}>გაიცანი ჩვენი მსოფლიო</p>
+            <p className="font-display text-lg" style={{ color: theme.cream }}>{t('prod_world_label', 'გაიცანი ჩვენი მსოფლიო')}</p>
           </div>
         </>
       )}
@@ -5830,7 +5831,7 @@ function CinematicAct({ item, index, reverse, onShop }) {
           {/* CTA + price row */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>ფასი</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>{t('prod_price_label', 'ფასი')}</p>
               <p className="font-display" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', color: '#F8F6F1' }}>
                 {item.price} ₾
               </p>
