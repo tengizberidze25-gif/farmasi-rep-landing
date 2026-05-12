@@ -643,27 +643,64 @@ let _libsLoadedPromise = null;
 function ensurePersonalCardLibs() {
   if (!_libsLoadedPromise) {
     _libsLoadedPromise = Promise.all([
-      loadScript('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js'),
-      loadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'),
+      // qrcodejs from cdnjs — battle-tested, exposes window.QRCode constructor
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'),
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
     ]);
   }
   return _libsLoadedPromise;
+}
+
+// Generate QR code as data URL using qrcodejs library
+// (different API than node-qrcode — creates element then extracts canvas)
+async function generateQrDataUrl(text, size) {
+  const tempDiv = document.createElement('div');
+  tempDiv.style.cssText = 'position:fixed; left:-9999px; top:0;';
+  document.body.appendChild(tempDiv);
+
+  // eslint-disable-next-line no-new
+  new window.QRCode(tempDiv, {
+    text: text,
+    width: size,
+    height: size,
+    colorDark: '#231712',
+    colorLight: '#FFFFFF',
+    correctLevel: window.QRCode.CorrectLevel.H, // High — survives logo overlay
+  });
+
+  // qrcodejs renders synchronously via canvas, but give one tick for safety
+  await new Promise(r => setTimeout(r, 50));
+
+  // Extract canvas → data URL
+  const canvas = tempDiv.querySelector('canvas');
+  if (!canvas) {
+    document.body.removeChild(tempDiv);
+    throw new Error('QR canvas not generated');
+  }
+  const dataUrl = canvas.toDataURL('image/png');
+  document.body.removeChild(tempDiv);
+  return dataUrl;
 }
 
 // Generate Personal Card PNG and trigger download
 async function downloadPersonalCard({ name, city, slug }) {
   await ensurePersonalCardLibs();
 
+  // Sanity check — libs loaded?
+  if (typeof window.QRCode === 'undefined') {
+    throw new Error('QRCode library failed to load. Check internet connection.');
+  }
+  if (typeof window.html2canvas === 'undefined') {
+    throw new Error('html2canvas library failed to load. Check internet connection.');
+  }
+
   // 1. Generate QR code as data URL (high error correction so logo overlay still scans)
   const qrUrl = `https://my.farmasi.ge/${slug}`;
-  const qrDataUrl = await window.QRCode.toDataURL(qrUrl, {
-    width: 600,
-    margin: 1,
-    errorCorrectionLevel: 'H',
-    color: { dark: '#231712', light: '#FFFFFF' },
-  });
+  const qrDataUrl = await generateQrDataUrl(qrUrl, 600);
 
   // 2. Build the card HTML in an off-screen div (A5 ratio 800x1131)
+  //    NOTE: no `crossorigin` on same-origin images — that attribute causes
+  //          images to fail loading if the server doesn't return CORS headers.
   const card = document.createElement('div');
   card.style.cssText = `
     position: fixed; left: -9999px; top: 0; width: 800px; height: 1131px;
@@ -672,8 +709,8 @@ async function downloadPersonalCard({ name, city, slug }) {
     display: flex; flex-direction: column; align-items: center; text-align: center;
   `;
   card.innerHTML = `
-    <!-- FARMASI logo -->
-    <img src="/farmasi-logo.png" style="height: 56px; width: auto; margin-bottom: 16px;" crossorigin="anonymous" />
+    <!-- FARMASI logo (same-origin, no crossorigin needed) -->
+    <img id="card-logo" src="/farmasi-logo.png" style="height: 56px; width: auto; margin-bottom: 16px;" />
     <!-- Wine divider -->
     <div style="width: 100%; height: 2px; background: #E50571; margin-bottom: 36px;"></div>
     <!-- Chapter marker -->
@@ -694,11 +731,11 @@ async function downloadPersonalCard({ name, city, slug }) {
     </p>
     <!-- QR + flame overlay -->
     <div style="position: relative; width: 340px; height: 340px; margin-bottom: 20px;">
-      <img src="${qrDataUrl}" style="width: 100%; height: 100%;" />
+      <img id="card-qr" src="${qrDataUrl}" style="width: 100%; height: 100%;" />
       <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
                   background: white; padding: 12px 16px; border-radius: 14px;
                   display: flex; align-items: center; justify-content: center;">
-        <img src="${FARMASI_ICON_DATA_URL}" style="width: 50px; height: auto;" />
+        <img id="card-icon" src="${FARMASI_ICON_DATA_URL}" style="width: 50px; height: auto;" />
       </div>
     </div>
     <!-- CTA -->
@@ -724,24 +761,48 @@ async function downloadPersonalCard({ name, city, slug }) {
   `;
   document.body.appendChild(card);
 
-  // 3. Wait for images to load before capture
-  await new Promise(r => setTimeout(r, 400));
+  // 3. WAIT for all images to actually load (not just timeout — proper image.onload)
+  const images = card.querySelectorAll('img');
+  await Promise.all(Array.from(images).map(img => {
+    if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+    return new Promise(resolve => {
+      img.onload = () => resolve();
+      img.onerror = () => resolve(); // continue even if logo fails
+      // Safety timeout — don't hang forever
+      setTimeout(resolve, 3000);
+    });
+  }));
 
   // 4. Capture as canvas, then export as PNG
-  const canvas = await window.html2canvas(card, {
-    scale: 2,           // 2x resolution = ~190 DPI (print-quality)
-    backgroundColor: '#FFFFFF',
-    useCORS: true,
-    logging: false,
-  });
+  //    allowTaint: true → continue even if an image is cross-origin
+  //    useCORS: true   → request CORS headers for external images
+  let canvas;
+  try {
+    canvas = await window.html2canvas(card, {
+      scale: 2,           // 2x resolution = ~190 DPI (print-quality)
+      backgroundColor: '#FFFFFF',
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+    });
+  } catch (err) {
+    document.body.removeChild(card);
+    throw new Error('Capture failed: ' + (err.message || err));
+  }
 
   // 5. Cleanup
   document.body.removeChild(card);
 
   // 6. Trigger download
+  let dataUrl;
+  try {
+    dataUrl = canvas.toDataURL('image/png', 1.0);
+  } catch (err) {
+    throw new Error('PNG export failed (canvas tainted): ' + (err.message || err));
+  }
   const a = document.createElement('a');
   a.download = `farmasi-${slug}-card.png`;
-  a.href = canvas.toDataURL('image/png', 1.0);
+  a.href = dataUrl;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -1813,7 +1874,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
                 });
               } catch (err) {
                 console.error('Card generation failed', err);
-                setCardError(L('card_error_generic', 'ვერ შეიქმნა — სცადე ხელახლა'));
+                setCardError((err && err.message) ? err.message : L('card_error_generic', 'ვერ შეიქმნა — სცადე ხელახლა'));
               } finally {
                 setCardGenerating(false);
               }
