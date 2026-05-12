@@ -683,7 +683,10 @@ async function generateQrDataUrl(text, size) {
 }
 
 // Generate Personal Card PNG and trigger download
-async function downloadPersonalCard({ name, city, slug }) {
+async function downloadPersonalCard({ name, city, slug, labels = {} }) {
+  // Helper to get label with fallback (Sheet edits override these defaults)
+  const L = (key, fallback) => labels[key] || fallback;
+
   await ensurePersonalCardLibs();
 
   // Sanity check — libs loaded?
@@ -715,7 +718,7 @@ async function downloadPersonalCard({ name, city, slug }) {
     <div style="width: 100%; height: 2px; background: #E50571; margin-bottom: 36px;"></div>
     <!-- Chapter marker -->
     <p style="font-size: 14px; letter-spacing: 4px; color: #D4A960; margin: 0 0 16px; font-family: 'Sylfaen', serif;">
-      ✦  PERSONAL CARD  ✦
+      ${L('card_design_chapter', '✦  PERSONAL CARD  ✦')}
     </p>
     <!-- Big name -->
     <h1 style="font-size: 56px; font-weight: 600; color: #231712; margin: 0 0 12px; line-height: 1.15; font-family: 'Sylfaen', serif;">
@@ -723,7 +726,7 @@ async function downloadPersonalCard({ name, city, slug }) {
     </h1>
     <!-- Italic subtitle -->
     <p style="font-size: 20px; font-style: italic; color: #E50571; margin: 0 0 8px; font-family: 'Sylfaen', serif;">
-      FARMASI · ოფიციალური წარმომადგენელი
+      ${L('card_design_subtitle', 'FARMASI · ოფიციალური წარმომადგენელი')}
     </p>
     <!-- City -->
     <p style="font-size: 18px; color: #231712; margin: 0 0 36px; font-family: 'Sylfaen', serif;">
@@ -740,10 +743,10 @@ async function downloadPersonalCard({ name, city, slug }) {
     </div>
     <!-- CTA -->
     <p style="font-size: 30px; font-weight: 700; color: #E50571; margin: 8px 0 4px; font-family: 'Sylfaen', serif;">
-      დაასკანერე
+      ${L('card_design_cta_main', 'დაასკანერე')}
     </p>
     <p style="font-size: 20px; color: #231712; margin: 0 0 18px; font-family: 'Sylfaen', serif;">
-      და მიიღე უფასო კონსულტაცია
+      ${L('card_design_cta_sub', 'და მიიღე უფასო კონსულტაცია')}
     </p>
     <!-- URL pill -->
     <p style="font-size: 19px; font-family: 'Courier New', monospace; color: #BE185D;
@@ -752,11 +755,11 @@ async function downloadPersonalCard({ name, city, slug }) {
     </p>
     <!-- Footer -->
     <p style="font-size: 16px; font-style: italic; color: #D4A960; margin: auto 0 6px; font-family: 'Sylfaen', serif;">
-      ნამდვილი პროდუქცია · უფასო კონსულტაცია
+      ${L('card_design_tagline', 'ნამდვილი პროდუქცია · უფასო კონსულტაცია')}
     </p>
     <div style="width: 100%; height: 2px; background: #E50571; margin-top: 12px;"></div>
     <p style="font-size: 13px; color: #231712; margin: 8px 0 0; font-family: 'Sylfaen', serif;">
-      © FARMASI Georgia
+      ${L('card_design_copyright', '© FARMASI Georgia')}
     </p>
   `;
   document.body.appendChild(card);
@@ -1281,6 +1284,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [visits, setVisits] = useState(null);
+  const [leads, setLeads] = useState(null); // null = not loaded yet, array = loaded
   const [cardGenerating, setCardGenerating] = useState(false);
   const [cardError, setCardError] = useState('');
   const fileRef = useRef(null);
@@ -1354,6 +1358,26 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
       .then(data => { if (data.ok) setVisits(data); })
       .catch(() => {});
   }, [repCode]);
+
+  // Load leads (contact form submissions)
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_leads', pid: repCode })
+      .then(data => { if (data.ok && Array.isArray(data.leads)) setLeads(data.leads); })
+      .catch(() => {});
+  }, [repCode]);
+
+  // Update a lead's status (new → contacted → closed)
+  const updateLeadStatus = async (leadRow, newStatus) => {
+    try {
+      const res = await api({ action: 'update_lead_status', row: leadRow, status: newStatus });
+      if (res.ok && leads) {
+        setLeads(leads.map(l => l.row === leadRow ? { ...l, status: newStatus } : l));
+      }
+    } catch (err) {
+      console.error('Failed to update lead status', err);
+    }
+  };
 
   const onPhoto = async (e) => {
     const f = e.target.files?.[0];
@@ -1824,6 +1848,101 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
           </Card>
         )}
 
+        {/* ─── Leads — Contact form submissions ─── */}
+        {leads && (
+          <Card>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
+                  {L('leads_eyebrow', '📬 კონტაქტები')}
+                </p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>
+                  {L('leads_title', 'შემოსული შეტყობინებები')}
+                </p>
+              </div>
+              {leads.length > 0 && (
+                <span className="text-xs px-3 py-1 rounded-full"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  {leads.filter(l => l.status === 'new').length} {L('leads_new_badge', 'ახალი')}
+                </span>
+              )}
+            </div>
+
+            {leads.length === 0 ? (
+              <p className="text-xs text-center py-6 italic" style={{ color: theme.ink + '77' }}>
+                {L('leads_empty', 'ჯერ კონტაქტი არ მიგიღია — გააზიარე შენი ლინკი და დაელოდე 🌹')}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {leads.map(lead => {
+                  const statusColors = {
+                    new:       { bg: theme.wine + '15', border: theme.wine + '55', dot: theme.wine },
+                    contacted: { bg: theme.gold + '15', border: theme.gold + '55', dot: theme.gold },
+                    closed:    { bg: theme.ink + '11',  border: theme.ink + '33',  dot: theme.ink + '88' },
+                  };
+                  const c = statusColors[lead.status] || statusColors.new;
+                  const date = lead.timestamp ? new Date(lead.timestamp).toLocaleString('ka-GE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  }) : '';
+                  return (
+                    <div key={lead.row} className="rounded-xl p-4"
+                      style={{ background: c.bg, border: `1px solid ${c.border}` }}>
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="w-2 h-2 rounded-full" style={{ background: c.dot }} />
+                            <p className="font-display text-base truncate" style={{ color: theme.ink }}>
+                              {lead.name}
+                            </p>
+                          </div>
+                          <a href={`tel:${lead.phone}`} className="text-xs font-mono hover:underline"
+                            style={{ color: theme.wine }}>
+                            📞 {lead.phone}
+                          </a>
+                          {lead.message && (
+                            <p className="text-xs mt-2 leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+                              💬 {lead.message}
+                            </p>
+                          )}
+                          <p className="text-[10px] mt-2" style={{ color: theme.ink + '77' }}>
+                            🕐 {date}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status update buttons */}
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {lead.status !== 'contacted' && lead.status !== 'closed' && (
+                          <button onClick={() => updateLeadStatus(lead.row, 'contacted')}
+                            className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105"
+                            style={{ background: theme.gold + '33', color: theme.gold, border: `1px solid ${theme.gold}66` }}>
+                            ✓ {L('leads_button_contacted', 'დაკავშირებული')}
+                          </button>
+                        )}
+                        {lead.status !== 'closed' && (
+                          <button onClick={() => updateLeadStatus(lead.row, 'closed')}
+                            className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105"
+                            style={{ background: theme.ink + '11', color: theme.ink + '99', border: `1px solid ${theme.ink}33` }}>
+                            🔒 {L('leads_button_closed', 'დახურული')}
+                          </button>
+                        )}
+                        {lead.status === 'closed' && (
+                          <button onClick={() => updateLeadStatus(lead.row, 'new')}
+                            className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105"
+                            style={{ background: theme.wine + '11', color: theme.wine, border: `1px solid ${theme.wine}33` }}>
+                            ↻ {L('leads_button_reopen', 'ხელახლა გახსნა')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        )}
+
         {/* ─── Personal Card Download ─── */}
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -1871,6 +1990,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
                   name: rep.name,
                   city: rep.city || '',
                   slug: slug,
+                  labels: labels,
                 });
               } catch (err) {
                 console.error('Card generation failed', err);
@@ -2308,6 +2428,13 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  // Lead capture form state
+  const [leadName, setLeadName] = useState('');
+  const [leadPhone, setLeadPhone] = useState('');
+  const [leadMessage, setLeadMessage] = useState('');
+  const [leadSending, setLeadSending] = useState(false);
+  const [leadSent, setLeadSent] = useState(false);
+  const [leadError, setLeadError] = useState('');
   const expandedRef = useRef(null);
   const heroPhotoTiltRef = useRef(null);
   const heroPhotoContainerRef = useRef(null);
@@ -3223,6 +3350,111 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           </div>
         </section>
       )}
+
+      {/* ═══ CONTACT FORM — Lead capture ═══ */}
+      <section className="px-5 py-16 sm:py-20" style={{ background: theme.ivory }}>
+        <div className="max-w-xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
+              {t('lead_form_eyebrow', '✦  დაგვიკავშირდი  ✦')}
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
+              {t('lead_form_title', 'დატოვე კონტაქტი')}
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+              {t('lead_form_subtitle', 'შეავსე ფორმა — დაგიკავშირდები მოკლე დროში და უფასოდ გავცემ რჩევას')}
+            </p>
+          </div>
+
+          {leadSent ? (
+            // ─── Success state ───
+            <div className="rounded-2xl p-8 text-center anim-fadeup"
+              style={{ background: theme.cream, border: `1px solid ${theme.gold}55` }}>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                style={{ background: theme.gold + '22' }}>
+                <Ic name="check" className="w-8 h-8" style={{ color: theme.gold }} />
+              </div>
+              <h3 className="font-display text-2xl mb-2" style={{ color: theme.ink }}>
+                {t('lead_form_success_title', 'გმადლობთ!')}
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_success_message', 'მივიღე შენი შეტყობინება — დაგიკავშირდები მალე 🌹')}
+              </p>
+            </div>
+          ) : (
+            // ─── Form ───
+            <div className="rounded-2xl p-6 sm:p-8"
+              style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, boxShadow: '0 10px 40px -20px rgba(0,0,0,0.15)' }}>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_name_label', 'სახელი')}
+              </label>
+              <input type="text" value={leadName} onChange={(e) => { setLeadName(e.target.value); setLeadError(''); }}
+                placeholder={t('lead_form_name_placeholder', 'შენი სახელი')}
+                className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-4"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_phone_label', 'ტელეფონი')}
+              </label>
+              <input type="tel" value={leadPhone} onChange={(e) => { setLeadPhone(e.target.value); setLeadError(''); }}
+                placeholder={t('lead_form_phone_placeholder', '+995 5XX XX XX XX')}
+                className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-4"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_message_label', 'შეტყობინება (სურვილისამებრ)')}
+              </label>
+              <textarea value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)}
+                placeholder={t('lead_form_message_placeholder', 'მაგ: მაინტერესებს თმის სერუმი...')}
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-2 resize-none"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+              {leadError && (
+                <p className="text-xs mt-2 mb-2" style={{ color: theme.rose }}>{leadError}</p>
+              )}
+
+              <button
+                onClick={async () => {
+                  setLeadError('');
+                  if (!leadName.trim()) { setLeadError(t('lead_form_error_no_name', 'გთხოვ შეავსე სახელი')); return; }
+                  if (!leadPhone.trim()) { setLeadError(t('lead_form_error_no_phone', 'გთხოვ შეავსე ტელეფონი')); return; }
+                  setLeadSending(true);
+                  try {
+                    const res = await api({
+                      action: 'submit_lead',
+                      pid: repCode,
+                      visitor_name: leadName.trim(),
+                      visitor_phone: leadPhone.trim(),
+                      message: leadMessage.trim(),
+                      product_id: selectedProblem && selectedProblem.productId ? selectedProblem.productId : '',
+                    });
+                    if (res.ok) {
+                      setLeadSent(true);
+                    } else {
+                      setLeadError(t('lead_form_error_generic', 'შეცდომა — სცადე ხელახლა'));
+                    }
+                  } catch (err) {
+                    setLeadError(t('lead_form_error_generic', 'შეცდომა — სცადე ხელახლა'));
+                  } finally {
+                    setLeadSending(false);
+                  }
+                }}
+                disabled={leadSending}
+                className="w-full mt-4 px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm tracking-wider uppercase font-medium transition hover:scale-[1.01] disabled:opacity-60"
+                style={{ background: theme.wine, color: theme.cream }}>
+                {leadSending
+                  ? <><Ic name="loader" className="w-4 h-4 animate-spin" /> {t('lead_form_button_sending', 'იგზავნება...')}</>
+                  : <>{t('lead_form_button_submit', 'გაგზავნა')} <Ic name="arrow-right" className="w-4 h-4" /></>}
+              </button>
+
+              <p className="text-[10px] text-center mt-4 leading-relaxed" style={{ color: theme.ink + '77' }}>
+                {t('lead_form_privacy', '🔒 შენი მონაცემები მხოლოდ რეპს გადაეცემა — არ გავაზიარებთ მესამე მხარისთვის')}
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* ═══ FOOTER — Editorial Sign-off ═══ */}
       <footer className="relative overflow-hidden" style={{ background: theme.ink, color: theme.cream }}>
