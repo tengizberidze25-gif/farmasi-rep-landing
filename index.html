@@ -1012,7 +1012,7 @@ function App() {
           Hides for customers visiting `?pid=...` or `/slug` directly. */}
       {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
       {view === 'loading' && <LoadingScreen />}
-      {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} />}
+      {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} labels={labels} />}
       {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} labels={labels} />}
       {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} />}
       {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} />}
@@ -1101,7 +1101,8 @@ function ViewSwitcher({ view, setView, hasRep }) {
   );
 }
 
-function Login({ onLogin, initialError }) {
+function Login({ onLogin, initialError, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [step, setStep] = useState(1);
@@ -1115,7 +1116,7 @@ function Login({ onLogin, initialError }) {
 
   const handleNext = async () => {
     const c = extractCode(code.trim());
-    if (!c) { setErr('გთხოვთ ჩასვათ თქვენი farmasi.ge რეგისტრაციის ლინკი'); return; }
+    if (!c) { setErr(L('welcome_error_invalid_link', 'გთხოვთ ჩასვათ თქვენი farmasi.ge რეგისტრაციის ლინკი')); return; }
 
     setLoading(true);
     setErr('');
@@ -1123,7 +1124,7 @@ function Login({ onLogin, initialError }) {
       // Redirect to URL with PID + edit mode → triggers auto-load in App
       window.location.href = `?pid=${c}&edit=1`;
     } catch (e) {
-      setErr('კავშირის შეცდომა: ' + e.message);
+      setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
       setLoading(false);
     }
   };
@@ -1139,22 +1140,22 @@ function Login({ onLogin, initialError }) {
           <img src="/farmasi-logo.png" alt="FARMASI"
             className="mx-auto mb-6"
             style={{ height: 56, width: 'auto', objectFit: 'contain' }} />
-          <h1 className="font-display text-3xl sm:text-4xl mb-2 leading-tight" style={{ color: theme.ink }}>თქვენი მეგზური</h1>
-          <p className="font-display-lat text-2xl sm:text-3xl italic" style={{ color: theme.wine }}>Farmasi-ს სამყაროში</p>
+          <h1 className="font-display text-3xl sm:text-4xl mb-2 leading-tight" style={{ color: theme.ink }}>{L('welcome_hero_title', 'თქვენი მეგზური')}</h1>
+          <p className="font-display-lat text-2xl sm:text-3xl italic" style={{ color: theme.wine }}>{L('welcome_hero_subtitle', 'Farmasi-ს სამყაროში')}</p>
         </div>
         <div className="rounded-2xl p-8 backdrop-blur-sm shadow-2xl"
           style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
           {step === 1 ? (
             <>
               <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
-                <span>ნაბიჯი 01 / 02</span>
+                <span>{L('welcome_step_1_label', 'ნაბიჯი 01 / 02')}</span>
                 <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
               </div>
-              <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>შენი farmasi.ge ლინკი</h2>
-              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>ჩასვი რეფერალური ლინკი</label>
+              <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_step_1_title', 'შენი farmasi.ge ლინკი')}</h2>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_link_label', 'ჩასვი რეფერალური ლინკი')}</label>
               <div className="relative">
                 <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(''); }}
-                  placeholder="https://farmasi.ge/ka/signup153205"
+                  placeholder={L('welcome_link_placeholder', 'https://farmasi.ge/ka/signup153205')}
                   className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
                   style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
                   onKeyDown={(e) => e.key === 'Enter' && handleNext()} />
@@ -1162,42 +1163,42 @@ function Login({ onLogin, initialError }) {
               </div>
               {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
               <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
-                💡 ლინკი იპოვი farmasi.ge-ზე — შენი პროფილი → "მოიწვიე მეგობარი"
+                {L('welcome_link_hint', '💡 ლინკი იპოვი farmasi.ge-ზე — შენი პროფილი → "მოიწვიე მეგობარი"')}
               </p>
               <button onClick={handleNext} disabled={loading}
                 className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50"
                 style={{ background: theme.ink, color: theme.cream }}>
-                {loading ? 'ვამოწმებ...' : <>გაგრძელება <Ic name="arrow-right" className="w-4 h-4" /></>}
+                {loading ? L('welcome_button_loading', 'ვამოწმებ...') : <>{L('welcome_button_continue', 'გაგრძელება')} <Ic name="arrow-right" className="w-4 h-4" /></>}
               </button>
             </>
           ) : (
             <>
               <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
-                <span>ნაბიჯი 02 / 02</span>
+                <span>{L('welcome_step_2_label', 'ნაბიჯი 02 / 02')}</span>
                 <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
               </div>
-              <h2 className="font-display text-2xl mb-2 mt-3" style={{ color: theme.ink }}>შენი სახელი</h2>
+              <h2 className="font-display text-2xl mb-2 mt-3" style={{ color: theme.ink }}>{L('welcome_step_2_title', 'შენი სახელი')}</h2>
               <p className="text-sm mb-6" style={{ color: theme.ink + '99' }}>
-                კოდი დადასტურდა: <span className="font-mono" style={{ color: theme.wine }}>{code}</span>
+                {L('welcome_code_confirmed', 'კოდი დადასტურდა:')} <span className="font-mono" style={{ color: theme.wine }}>{code}</span>
               </p>
-              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>სახელი და გვარი</label>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_name_label', 'სახელი და გვარი')}</label>
               <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-                placeholder="მაგ: ნინო ცინცაძე"
+                placeholder={L('welcome_name_placeholder', 'მაგ: ნინო ცინცაძე')}
                 className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
                 style={{ background: theme.cream, border: `1.5px solid ${theme.gold}44`, color: theme.ink }}
                 onKeyDown={(e) => e.key === 'Enter' && name && onLogin(code, name)} />
               <button disabled={!name.trim()} onClick={() => onLogin(code, name.trim())}
                 className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 disabled:opacity-40 hover:scale-[1.01]"
                 style={{ background: theme.wine, color: theme.cream }}>
-                პანელში შესვლა <Ic name="arrow-right" className="w-4 h-4" />
+                {L('welcome_button_login', 'პანელში შესვლა')} <Ic name="arrow-right" className="w-4 h-4" />
               </button>
               <button onClick={() => setStep(1)} className="w-full mt-3 text-xs tracking-widest uppercase py-2"
-                style={{ color: theme.ink + '88' }}>← უკან</button>
+                style={{ color: theme.ink + '88' }}>{L('welcome_button_back', '← უკან')}</button>
             </>
           )}
         </div>
         <p className="text-center text-xs mt-6" style={{ color: theme.ink + '77' }}>
-          © FARMASI Georgia ოფიციალური წარმომადგენელი საქართველოში
+          {L('welcome_footer', '© FARMASI Georgia ოფიციალური წარმომადგენელი საქართველოში')}
         </p>
       </div>
     </div>
