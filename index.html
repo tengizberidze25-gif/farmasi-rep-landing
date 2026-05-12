@@ -875,6 +875,13 @@ function App() {
     instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
   });
 
+  // ─── Auto-scroll to top on every navigation ───
+  // Triggers whenever view changes (login → dashboard → public → product)
+  // OR when user clicks a problem/product within a page.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [view, selectedProblem, selectedProduct]);
+
   // Load problems from Sheet on mount — cached in localStorage for instant render
   useEffect(() => {
     // 1. Try cached version first (instant render)
