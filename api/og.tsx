@@ -127,19 +127,19 @@ export default async function handler(req: Request) {
           }}
         />
 
-        {/* FARMASI logo — top-right corner */}
+        {/* FARMASI logo — top-left corner */}
         <div
           style={{
             position: 'absolute',
-            top: 40,
-            right: 70,
+            top: 25,
+            left: 60,
             display: 'flex',
           }}
         >
           <img
             src={LOGO_DATA_URL}
-            width={220}
-            height={94}
+            width={130}
+            height={55}
             style={{ objectFit: 'contain' }}
           />
         </div>
