@@ -2651,7 +2651,7 @@ function VideoIntro({ url }) {
   return (
     <iframe
       src={parsed.embedUrl}
-      title={t('video_iframe_title', 'წარმომადგენლის ვიდეო მიმართვა')}
+      title="წარმომადგენლის ვიდეო მიმართვა"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
       className="w-full h-full"
@@ -5652,7 +5652,7 @@ function BrandVideo({ videoId, thumbnail }) {
           <div className="absolute bottom-0 left-0 right-0 p-5"
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
             <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.cream + 'CC' }}>FARMASI ისტორია</p>
-            <p className="font-display text-lg" style={{ color: theme.cream }}>{t('prod_world_label', 'გაიცანი ჩვენი მსოფლიო')}</p>
+            <p className="font-display text-lg" style={{ color: theme.cream }}>გაიცანი ჩვენი მსოფლიო</p>
           </div>
         </>
       )}
@@ -5833,7 +5833,7 @@ function CinematicAct({ item, index, reverse, onShop }) {
           {/* CTA + price row */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>{t('prod_price_label', 'ფასი')}</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>ფასი</p>
               <p className="font-display" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', color: '#F8F6F1' }}>
                 {item.price} ₾
               </p>
