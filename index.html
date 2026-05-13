@@ -2648,14 +2648,35 @@ function VideoIntro({ url }) {
     );
   }
 
+  // Hide platform chrome (username, caption, controls bar) by oversizing iframe
+  // and shifting it so only the video portion is visible within the clipped container.
+  // The parent modal already has overflow-hidden, so the cropped parts are invisible.
+  // Tune percentages per platform — measured empirically for typical embed layouts.
+  const cropStyles = {
+    instagram: { top: '-12%', height: '155%' },  // hide top username bar + bottom caption/likes
+    tiktok:    { top: '-6%',  height: '125%' },  // hide bottom info strip + watermark
+    facebook:  { top: '-4%',  height: '115%' },  // minor trim
+    drive:     { top: '-7%',  height: '116%' },  // hide Drive file title bar
+    youtube:   { top: '0',    height: '100%' },  // already minimal with rel=0
+    vimeo:     { top: '0',    height: '100%' },
+  };
+  const crop = cropStyles[parsed.type] || { top: '0', height: '100%' };
+
   return (
     <iframe
       src={parsed.embedUrl}
       title="წარმომადგენლის ვიდეო მიმართვა"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
-      className="w-full h-full"
-      style={{ border: 0, background: theme.ink }} />
+      style={{
+        position: 'absolute',
+        top: crop.top,
+        left: 0,
+        width: '100%',
+        height: crop.height,
+        border: 0,
+        background: theme.ink,
+      }} />
   );
 }
 
