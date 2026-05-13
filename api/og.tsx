@@ -127,12 +127,12 @@ export default async function handler(req: Request) {
           }}
         />
 
-        {/* FARMASI logo — top-left corner */}
+        {/* FARMASI logo — top-right corner */}
         <div
           style={{
             position: 'absolute',
             top: 25,
-            left: 60,
+            right: 60,
             display: 'flex',
           }}
         >
