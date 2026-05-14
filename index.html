@@ -1295,6 +1295,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [missingFieldsModal, setMissingFieldsModal] = useState(null);
+  const [validationAttempted, setValidationAttempted] = useState(false);
   const [visits, setVisits] = useState(null);
   const [leads, setLeads] = useState(null); // null = not loaded yet, array = loaded
   const [myProducts, setMyProducts] = useState(null); // rep's curated products
@@ -1738,16 +1739,14 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
 
   const saveProfile = async () => {
     // VALIDATION — required fields before allowing save
+    setValidationAttempted(true);
     const missing = [];
     const _parts = (rep.name || '').trim().split(/\s+/).filter(Boolean);
     if (!_parts[0]) missing.push(L('validation_firstname', 'სახელი'));
     if (_parts.length < 2) missing.push(L('validation_lastname', 'გვარი'));
     if (!rep.city || !rep.city.trim()) missing.push(L('validation_city', 'ქალაქი'));
-    const hasContact = (rep.phone && rep.phone.trim()) ||
-                       (rep.whatsapp && rep.whatsapp.trim()) ||
-                       (rep.instagram && rep.instagram.trim()) ||
-                       (rep.facebook && rep.facebook.trim());
-    if (!hasContact) missing.push(L('validation_contact', 'მინიმუმ ერთი კონტაქტი — ტელეფონი, WhatsApp, Instagram ან Facebook'));
+    if (!rep.phone || !rep.phone.trim()) missing.push(L('validation_phone', 'ტელეფონის ნომერი'));
+    if (!rep.facebook || !rep.facebook.trim()) missing.push(L('validation_facebook', 'Facebook ლინკი'));
     if (missing.length > 0) {
       setMissingFieldsModal(missing);
       return;
@@ -2343,10 +2342,10 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
             <input ref={fileRef} type="file" accept="image/*" onChange={onPhoto} hidden />
             <div className="flex-1 space-y-2">
               <div className="grid grid-cols-2 gap-2">
-                <Input label={L('profile_firstname_label', 'სახელი')} value={firstName} onChange={updFirstName} placeholder={L('profile_firstname_placeholder', 'ნინო')} required />
-                <Input label={L('profile_lastname_label', 'გვარი')} value={lastName} onChange={updLastName} placeholder={L('profile_lastname_placeholder', 'ცინცაძე')} required />
+                <Input label={L('profile_firstname_label', 'სახელი')} value={firstName} onChange={updFirstName} placeholder={L('profile_firstname_placeholder', 'ნინო')} required hasError={validationAttempted && !firstName.trim()} />
+                <Input label={L('profile_lastname_label', 'გვარი')} value={lastName} onChange={updLastName} placeholder={L('profile_lastname_placeholder', 'ცინცაძე')} required hasError={validationAttempted && !lastName.trim()} />
               </div>
-              <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} small required />
+              <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} small required hasError={validationAttempted && !(rep.city || '').trim()} />
             </div>
           </div>
           <div className="mt-4">
@@ -2435,11 +2434,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
 
         <Card>
           <SectionLabel n="03" t={L('profile_section_3', 'პირდაპირი კონტაქტი')} />
-          <p className="text-xs mb-3" style={{ color: theme.wine }}>
-            <span style={{ fontWeight: 700 }}>*</span> {L('profile_contact_required_hint', 'მინიმუმ ერთი კონტაქტი აუცილებელია — ტელეფონი, WhatsApp, Instagram ან Facebook')}
-          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Input icon="phone" label={L('profile_phone_label', 'ტელეფონი')} value={rep.phone} onChange={upd('phone')} placeholder="+995 555 123456" />
+            <Input icon="phone" label={L('profile_phone_label', 'ტელეფონი')} value={rep.phone} onChange={upd('phone')} placeholder="+995 555 123456" required hasError={validationAttempted && !(rep.phone || '').trim()} />
             <Input icon="message-circle" label="WhatsApp" value={rep.whatsapp} onChange={upd('whatsapp')} placeholder="+995 555 123456" green />
           </div>
         </Card>
@@ -2447,7 +2443,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
           <SectionLabel n="04" t={L('profile_section_4', 'სოციალური ქსელები')} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input icon="instagram" iconType="social" label="Instagram" value={rep.instagram} onChange={upd('instagram')} placeholder="@yourhandle" />
-            <Input icon="facebook"  iconType="social" label="Facebook"  value={rep.facebook}  onChange={upd('facebook')}  placeholder="facebook.com/..." />
+            <Input icon="facebook"  iconType="social" label="Facebook"  value={rep.facebook}  onChange={upd('facebook')}  placeholder="facebook.com/..." required hasError={validationAttempted && !(rep.facebook || '').trim()} />
             <Input icon="tiktok"    iconType="social" label="TikTok"    value={rep.tiktok}    onChange={upd('tiktok')}    placeholder="@yourhandle" />
             <Input icon="youtube"   iconType="social" label="YouTube"   value={rep.youtube}   onChange={upd('youtube')}   placeholder="youtube.com/..." />
             <Input icon="telegram"  iconType="social" label="Telegram"  value={rep.telegram}  onChange={upd('telegram')}  placeholder="@yourhandle" />
@@ -2625,7 +2621,7 @@ function SectionLabel({ n, t }) {
   );
 }
 
-function Input({ label, value, onChange, placeholder, icon, iconType, small, green, required }) {
+function Input({ label, value, onChange, placeholder, icon, iconType, small, green, required, hasError }) {
   const IconComp = iconType === 'social' ? SocialIcon : Ic;
   // Brand colors for social media icons — applied when iconType === 'social'
   const SOCIAL_BRAND_COLORS = {
@@ -2648,9 +2644,14 @@ function Input({ label, value, onChange, placeholder, icon, iconType, small, gre
         {icon && <IconComp name={icon} className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
           style={{ color: iconColor }} />}
         <input type="text" value={value} onChange={onChange} placeholder={placeholder}
-          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 ${small ? 'py-2' : 'py-2.5'} rounded-xl outline-none text-sm`}
-          style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 ${small ? 'py-2' : 'py-2.5'} rounded-xl outline-none text-sm transition-colors`}
+          style={{ background: theme.cream, border: `1.5px solid ${hasError ? '#DC2626' : theme.gold + '33'}`, color: theme.ink }} />
       </div>
+      {hasError && (
+        <p className="text-[10px] mt-1" style={{ color: '#DC2626' }}>
+          ⚠ შეავსე ეს ველი
+        </p>
+      )}
     </div>
   );
 }
