@@ -79,7 +79,16 @@ export default async function handler(req: Request) {
   const name = (rep?.name as string) || 'FARMASI';
   const city = (rep?.city as string) || '';
   const photoUrl = (rep?.photo_url as string) || '';
-  const photo = /^https?:\/\//i.test(photoUrl) ? photoUrl : '';
+  // Cache-bust: force @vercel/og to bypass stale photo cache when rep changes photo.
+  // Uses rep.updated_at if present, else falls back to slug/pid for per-rep uniqueness.
+  const cacheVer =
+    (rep?.updated_at as string) ||
+    (rep?.photo_updated_at as string) ||
+    String(slug || pid || '1');
+  const versioned = photoUrl
+    ? `${photoUrl}${photoUrl.includes('?') ? '&' : '?'}v=${encodeURIComponent(cacheVer)}`
+    : '';
+  const photo = /^https?:\/\//i.test(photoUrl) ? versioned : '';
 
   return new ImageResponse(
     (
