@@ -1294,6 +1294,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [missingFieldsModal, setMissingFieldsModal] = useState(null);
   const [visits, setVisits] = useState(null);
   const [leads, setLeads] = useState(null); // null = not loaded yet, array = loaded
   const [myProducts, setMyProducts] = useState(null); // rep's curated products
@@ -1722,6 +1723,19 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   };
 
   const saveProfile = async () => {
+    // VALIDATION — required fields before allowing save
+    const missing = [];
+    if (!rep.name || !rep.name.trim()) missing.push(L('validation_name', 'სახელი და გვარი'));
+    if (!rep.city || !rep.city.trim()) missing.push(L('validation_city', 'ქალაქი'));
+    const hasContact = (rep.phone && rep.phone.trim()) ||
+                       (rep.whatsapp && rep.whatsapp.trim()) ||
+                       (rep.instagram && rep.instagram.trim()) ||
+                       (rep.facebook && rep.facebook.trim());
+    if (!hasContact) missing.push(L('validation_contact', 'მინიმუმ ერთი კონტაქტი — ტელეფონი, WhatsApp, Instagram ან Facebook'));
+    if (missing.length > 0) {
+      setMissingFieldsModal(missing);
+      return;
+    }
     setSaving(true);
     setSaveError('');
     try {
@@ -1762,6 +1776,36 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   };
   return (
     <div className="min-h-screen pb-20" style={{ background: theme.cream }}>
+      {missingFieldsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(15,15,15,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-2xl p-6 max-w-md w-full shadow-2xl" style={{ background: theme.cream, border: `1.5px solid ${theme.gold}44` }}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FEE2E2' }}>
+                <span style={{ color: '#DC2626', fontSize: '22px', fontWeight: 'bold', lineHeight: 1 }}>!</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-xl mb-1" style={{ color: theme.ink }}>
+                  {L('validation_modal_title', 'შეავსე სავალდებულო ველები')}
+                </h3>
+                <p className="text-xs" style={{ color: theme.ink + '99' }}>
+                  {L('validation_modal_subtitle', 'პროფილის შესანახად აუცილებელია:')}
+                </p>
+              </div>
+            </div>
+            <ul className="space-y-2 mb-5 pl-1">
+              {missingFieldsModal.map((field, i) => (
+                <li key={i} className="text-sm flex items-start gap-2" style={{ color: theme.ink }}>
+                  <span style={{ color: '#DC2626', fontWeight: 'bold' }}>•</span>
+                  <span>{field}</span>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setMissingFieldsModal(null)} className="w-full py-3 rounded-xl text-sm font-medium" style={{ background: theme.ink, color: theme.cream }}>
+              {L('validation_modal_ok', 'გავიგე, შევავსებ')}
+            </button>
+          </div>
+        </div>
+      )}
       <header className="px-5 pt-20 pb-6" style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}22` }}>
         <div className="max-w-3xl mx-auto">
           <span className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
@@ -2282,8 +2326,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
             </button>
             <input ref={fileRef} type="file" accept="image/*" onChange={onPhoto} hidden />
             <div className="flex-1 space-y-2">
-              <Input label={L('profile_name_label', 'სახელი')} value={rep.name} onChange={upd('name')} placeholder={L('profile_name_placeholder', 'ნინო ცინცაძე')} />
-              <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} small />
+              <Input label={L('profile_name_label', 'სახელი')} value={rep.name} onChange={upd('name')} placeholder={L('profile_name_placeholder', 'ნინო ცინცაძე')} required />
+              <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} small required />
             </div>
           </div>
           <div className="mt-4">
@@ -2372,6 +2416,9 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
 
         <Card>
           <SectionLabel n="03" t={L('profile_section_3', 'პირდაპირი კონტაქტი')} />
+          <p className="text-xs mb-3" style={{ color: theme.wine }}>
+            <span style={{ fontWeight: 700 }}>*</span> {L('profile_contact_required_hint', 'მინიმუმ ერთი კონტაქტი აუცილებელია — ტელეფონი, WhatsApp, Instagram ან Facebook')}
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input icon="phone" label={L('profile_phone_label', 'ტელეფონი')} value={rep.phone} onChange={upd('phone')} placeholder="+995 555 123456" />
             <Input icon="message-circle" label="WhatsApp" value={rep.whatsapp} onChange={upd('whatsapp')} placeholder="+995 555 123456" green />
@@ -2559,7 +2606,7 @@ function SectionLabel({ n, t }) {
   );
 }
 
-function Input({ label, value, onChange, placeholder, icon, iconType, small, green }) {
+function Input({ label, value, onChange, placeholder, icon, iconType, small, green, required }) {
   const IconComp = iconType === 'social' ? SocialIcon : Ic;
   // Brand colors for social media icons — applied when iconType === 'social'
   const SOCIAL_BRAND_COLORS = {
@@ -2577,7 +2624,7 @@ function Input({ label, value, onChange, placeholder, icon, iconType, small, gre
       : theme.gold;
   return (
     <div>
-      <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{label}</label>
+      <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{label}{required && <span style={{ color: '#DC2626', marginLeft: '4px', fontWeight: 700 }}>*</span>}</label>
       <div className="relative">
         {icon && <IconComp name={icon} className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
           style={{ color: iconColor }} />}
