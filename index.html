@@ -688,6 +688,15 @@ async function downloadPersonalCard({ name, city, slug, labels = {} }) {
   // Helper to get label with fallback (Sheet edits override these defaults)
   const L = (key, fallback) => labels[key] || fallback;
 
+  // XSS guard — escape HTML special chars before injecting into innerHTML.
+  // Prevents <script>, <img onerror=...>, etc. embedded in rep name/city/labels.
+  const esc = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   await ensurePersonalCardLibs();
 
   // Sanity check — libs loaded?
@@ -719,48 +728,48 @@ async function downloadPersonalCard({ name, city, slug, labels = {} }) {
     <div style="width: 100%; height: 2px; background: #E50571; margin-bottom: 36px;"></div>
     <!-- Chapter marker -->
     <p style="font-size: 14px; letter-spacing: 4px; color: #D4A960; margin: 0 0 16px; font-family: 'Sylfaen', serif;">
-      ${L('card_design_chapter', '✦  PERSONAL CARD  ✦')}
+      ${esc(L('card_design_chapter', '✦  PERSONAL CARD  ✦'))}
     </p>
     <!-- Big name -->
     <h1 style="font-size: 56px; font-weight: 600; color: #231712; margin: 0 0 12px; line-height: 1.15; font-family: 'Sylfaen', serif;">
-      ${name}
+      ${esc(name)}
     </h1>
     <!-- Italic subtitle -->
     <p style="font-size: 20px; font-style: italic; color: #E50571; margin: 0 0 8px; font-family: 'Sylfaen', serif;">
-      ${L('card_design_subtitle', 'FARMASI · ოფიციალური წარმომადგენელი')}
+      ${esc(L('card_design_subtitle', 'FARMASI · ოფიციალური წარმომადგენელი'))}
     </p>
     <!-- City -->
     <p style="font-size: 18px; color: #231712; margin: 0 0 36px; font-family: 'Sylfaen', serif;">
-      📍 ${city || ''}
+      📍 ${esc(city || '')}
     </p>
     <!-- QR + flame overlay -->
     <div style="position: relative; width: 340px; height: 340px; margin-bottom: 20px;">
-      <img id="card-qr" src="${qrDataUrl}" style="width: 100%; height: 100%;" />
+      <img id="card-qr" src="${esc(qrDataUrl)}" style="width: 100%; height: 100%;" />
       <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
                   background: white; padding: 12px 16px; border-radius: 14px;
                   display: flex; align-items: center; justify-content: center;">
-        <img id="card-icon" src="${FARMASI_ICON_DATA_URL}" style="width: 50px; height: auto;" />
+        <img id="card-icon" src="${esc(FARMASI_ICON_DATA_URL)}" style="width: 50px; height: auto;" />
       </div>
     </div>
     <!-- CTA -->
     <p style="font-size: 30px; font-weight: 700; color: #E50571; margin: 8px 0 4px; font-family: 'Sylfaen', serif;">
-      ${L('card_design_cta_main', 'დაასკანერე')}
+      ${esc(L('card_design_cta_main', 'დაასკანერე'))}
     </p>
     <p style="font-size: 20px; color: #231712; margin: 0 0 18px; font-family: 'Sylfaen', serif;">
-      ${L('card_design_cta_sub', 'და მიიღე უფასო კონსულტაცია')}
+      ${esc(L('card_design_cta_sub', 'და მიიღე უფასო კონსულტაცია'))}
     </p>
     <!-- URL pill -->
     <p style="font-size: 19px; font-family: 'Courier New', monospace; color: #BE185D;
               background: #FFF4F8; padding: 8px 20px; border-radius: 8px; margin: 0 0 30px;">
-      my.farmasi.ge/${slug}
+      my.farmasi.ge/${esc(slug)}
     </p>
     <!-- Footer -->
     <p style="font-size: 16px; font-style: italic; color: #D4A960; margin: auto 0 6px; font-family: 'Sylfaen', serif;">
-      ${L('card_design_tagline', 'ნამდვილი პროდუქცია · უფასო კონსულტაცია')}
+      ${esc(L('card_design_tagline', 'ნამდვილი პროდუქცია · უფასო კონსულტაცია'))}
     </p>
     <div style="width: 100%; height: 2px; background: #E50571; margin-top: 12px;"></div>
     <p style="font-size: 13px; color: #231712; margin: 8px 0 0; font-family: 'Sylfaen', serif;">
-      ${L('card_design_copyright', '© FARMASI Georgia')}
+      ${esc(L('card_design_copyright', '© FARMASI Georgia'))}
     </p>
   `;
   document.body.appendChild(card);
