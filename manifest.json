@@ -1,0 +1,33 @@
+{
+  "name": "FARMASI Georgia",
+  "short_name": "FARMASI",
+  "description": "FARMASI წარმომადგენლის პანელი — შენი პროფილი და კატალოგი",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#0F0F0F",
+  "orientation": "portrait-primary",
+  "lang": "ka-GE",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/farmasi-icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/farmasi-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/farmasi-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
