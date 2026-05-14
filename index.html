@@ -1334,6 +1334,20 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   const shareUrl = `${window.location.host}/${slug}`;
   const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
 
+  // Split rep.name into firstName / lastName for separate inputs.
+  // Source of truth is rep.name (single Sheet column); we just slice on whitespace.
+  const _nameParts = (rep.name || '').trim().split(/\s+/);
+  const firstName = _nameParts[0] || '';
+  const lastName = _nameParts.slice(1).join(' ') || '';
+  const updFirstName = (e) => {
+    const v = e.target.value;
+    setRep(r => ({ ...r, name: (v + (lastName ? ' ' + lastName : '')).trimStart() }));
+  };
+  const updLastName = (e) => {
+    const v = e.target.value;
+    setRep(r => ({ ...r, name: (firstName + (v ? ' ' + v : '')).trimEnd() }));
+  };
+
   const regenerateSlug = () => {
     const newSlug = generateBeautifulSlug();
     setSlug(newSlug);
@@ -1725,7 +1739,9 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   const saveProfile = async () => {
     // VALIDATION — required fields before allowing save
     const missing = [];
-    if (!rep.name || !rep.name.trim()) missing.push(L('validation_name', 'სახელი და გვარი'));
+    const _parts = (rep.name || '').trim().split(/\s+/).filter(Boolean);
+    if (!_parts[0]) missing.push(L('validation_firstname', 'სახელი'));
+    if (_parts.length < 2) missing.push(L('validation_lastname', 'გვარი'));
     if (!rep.city || !rep.city.trim()) missing.push(L('validation_city', 'ქალაქი'));
     const hasContact = (rep.phone && rep.phone.trim()) ||
                        (rep.whatsapp && rep.whatsapp.trim()) ||
@@ -2326,7 +2342,10 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
             </button>
             <input ref={fileRef} type="file" accept="image/*" onChange={onPhoto} hidden />
             <div className="flex-1 space-y-2">
-              <Input label={L('profile_name_label', 'სახელი')} value={rep.name} onChange={upd('name')} placeholder={L('profile_name_placeholder', 'ნინო ცინცაძე')} required />
+              <div className="grid grid-cols-2 gap-2">
+                <Input label={L('profile_firstname_label', 'სახელი')} value={firstName} onChange={updFirstName} placeholder={L('profile_firstname_placeholder', 'ნინო')} required />
+                <Input label={L('profile_lastname_label', 'გვარი')} value={lastName} onChange={updLastName} placeholder={L('profile_lastname_placeholder', 'ცინცაძე')} required />
+              </div>
               <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} small required />
             </div>
           </div>
