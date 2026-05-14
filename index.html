@@ -936,6 +936,24 @@ function getUrlParams() {
 
 function App() {
   const urlParams = getUrlParams();
+
+  // ─── Persistent login: auto-redirect to last saved PID ───
+  // If user visits root URL with no params, use saved PID from localStorage
+  if (typeof window !== 'undefined' && urlParams.logout) {
+    try { localStorage.removeItem('farmasi_last_pid'); } catch {}
+    window.location.replace('/');
+    return null;
+  }
+  if (typeof window !== 'undefined' && !urlParams.pid && !urlParams.slug) {
+    try {
+      const saved = localStorage.getItem('farmasi_last_pid');
+      if (saved && /^\d{6}$/.test(saved)) {
+        window.location.replace(`?pid=${saved}&edit=1`);
+        return null;
+      }
+    } catch {}
+  }
+
   const [view, setView] = useState((urlParams.pid || urlParams.slug) ? 'loading' : 'login');
   const [repCode, setRepCode] = useState(urlParams.pid || '');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -1203,6 +1221,8 @@ function Login({ onLogin, initialError, labels = {} }) {
     setLoading(true);
     setErr('');
     try {
+      // Save PID for next visit — user won't need to paste link again
+      try { localStorage.setItem('farmasi_last_pid', c); } catch {}
       // Redirect to URL with PID + edit mode → triggers auto-load in App
       window.location.href = `?pid=${c}&edit=1`;
     } catch (e) {
@@ -1824,7 +1844,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
       <header className="px-5 pt-20 pb-6" style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}22` }}>
         <div className="max-w-3xl mx-auto">
           <span className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
-            <span className="font-mono" style={{ color: theme.wine }}>#{repCode}</span> · {L('dash_header_subtitle', 'წარმომადგენლის პანელი')}
+            <span className="font-mono" style={{ color: theme.wine }}>#{repCode}</span> · {L('dash_header_subtitle', 'წარმომადგენლის პანელი')} · <a href="?logout=1" style={{ color: theme.ink + '66', textDecoration: 'underline', textTransform: 'none', letterSpacing: 'normal' }}>{L('switch_pid_link', 'სხვა PID')}</a>
           </span>
           <h1 className="font-display text-3xl mb-1 mt-2" style={{ color: theme.ink }}>
             {L('dash_header_greeting', 'გამარჯობა,')} {rep.name.split(' ')[0]} 🌹
