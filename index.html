@@ -997,6 +997,65 @@ function captureUrlEditToken() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// SSO LOGIN — Lasha integration with HMAC-signed URLs
+// Flow: rep.php → ?pid=X&ts=Y&sig=HMAC → trySsoLogin() → Apps Script validation → session token
+// ════════════════════════════════════════════════════════════════════════════
+function trySsoLogin() {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('pid');
+    const ts = params.get('ts');
+    const sig = params.get('sig');
+    
+    // No SSO params — continue with normal login flow
+    if (!pid || !ts || !sig) return;
+    
+    console.log('🔐 SSO Login attempt: pid=' + pid);
+    
+    // Call Apps Script to validate HMAC signature and create session
+    fetch(`${API_URL}?action=sso_login&pid=${encodeURIComponent(pid)}&ts=${encodeURIComponent(ts)}&sig=${encodeURIComponent(sig)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          console.log('✓ SSO Login successful for PID ' + pid);
+          
+          // Store session token
+          localStorage.setItem(`farmasi_session_${pid}`, data.token);
+          localStorage.setItem('farmasi_current_pid', pid);
+          
+          // Store rep data if provided
+          if (data.rep) {
+            localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(data.rep));
+          }
+          
+          // Save as "last used" for persistent login
+          try { localStorage.setItem('farmasi_last_pid', pid); } catch {}
+          
+          // Clean URL (remove SSO params before redirect)
+          const cleanParams = new URLSearchParams();
+          cleanParams.set('pid', pid);
+          cleanParams.set('edit', '1');
+          window.history.replaceState({}, document.title, '?' + cleanParams.toString());
+          
+          // Redirect to dashboard edit mode
+          window.location.href = '?' + cleanParams.toString();
+        } else {
+          console.warn('✗ SSO Login failed:', data.error);
+          alert('SSO ავტორიზაცია ვერ მოხერხდა: ' + (data.error || 'უცნობი შეცდომა'));
+        }
+      })
+      .catch(err => {
+        console.error('SSO Login error:', err);
+        alert('SSO შეცდომა: ' + err.message);
+      });
+  } catch (err) {
+    console.error('trySsoLogin exception:', err);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 
 function App() {
   const urlParams = getUrlParams();
@@ -1004,6 +1063,9 @@ function App() {
   // Capture and persist any edit token from URL before anything else runs
   // (saves to localStorage, strips from URL for security)
   captureUrlEditToken();
+  
+  // SSO Login handler — if URL has ?pid=X&ts=Y&sig=Z, validate and create session
+  trySsoLogin();
 
   // ─── Persistent login: auto-redirect to last saved PID ───
   // If user visits root URL with no params, use saved PID from localStorage
