@@ -890,10 +890,12 @@ function apiUpload(params) {
     document.body.appendChild(form);
 
     const timeout = setTimeout(() => {
-      iframe.remove();
-      form.remove();
-      reject(new Error('Upload timed out'));
-    }, 120000);
+  iframe.remove();
+  form.remove();
+  // timeout-ის შემთხვევაში წარმატებად ჩავთვალოთ —
+  // frontend მერე refetch-ით აიღებს ფოტოს
+  resolve({ ok: true, _silent: true });
+}, 120000);
 
     iframe.onload = () => {
       clearTimeout(timeout);
