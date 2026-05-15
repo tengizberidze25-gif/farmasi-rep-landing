@@ -937,18 +937,70 @@ function getUrlParams() {
     slug: slug,
     edit: params.get('edit') === '1' || editFromPath,
     problem: params.get('problem'),
+    token: params.get('token'),
+    logout: params.get('logout') === '1',
   };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// EDIT TOKEN — per-rep secret for authenticating profile modifications
+// Token enters via URL param (?token=XYZ), gets saved to localStorage so
+// future visits don't need it in URL. URL is cleaned for security.
+// ════════════════════════════════════════════════════════════════════════════
+const EDIT_TOKEN_KEY = (pid) => `farmasi_edit_token_${pid}`;
+
+function getStoredEditToken(pid) {
+  if (!pid) return null;
+  try { return localStorage.getItem(EDIT_TOKEN_KEY(pid)) || null; } catch { return null; }
+}
+
+function setStoredEditToken(pid, token) {
+  if (!pid || !token) return;
+  try { localStorage.setItem(EDIT_TOKEN_KEY(pid), token); } catch {}
+}
+
+function clearStoredEditToken(pid) {
+  if (!pid) return;
+  try { localStorage.removeItem(EDIT_TOKEN_KEY(pid)); } catch {}
+}
+
+// Runs once at App mount: if URL has ?token=XYZ&pid=ABC, save token to
+// localStorage and strip from URL so it doesn't appear in browser history,
+// screenshots, or shared links.
+function captureUrlEditToken() {
+  if (typeof window === 'undefined') return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    const urlPid = params.get('pid');
+    if (urlToken && urlPid) {
+      setStoredEditToken(urlPid, urlToken);
+      params.delete('token');
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+      window.history.replaceState({}, '', newUrl);
+    }
+  } catch {}
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 
 function App() {
   const urlParams = getUrlParams();
+  
+  // Capture and persist any edit token from URL before anything else runs
+  // (saves to localStorage, strips from URL for security)
+  captureUrlEditToken();
 
   // ─── Persistent login: auto-redirect to last saved PID ───
   // If user visits root URL with no params, use saved PID from localStorage
   if (typeof window !== 'undefined' && urlParams.logout) {
-    try { localStorage.removeItem('farmasi_last_pid'); } catch {}
+    try {
+      // Clear everything: last PID and all per-PID edit tokens
+      const lastPid = localStorage.getItem('farmasi_last_pid');
+      localStorage.removeItem('farmasi_last_pid');
+      if (lastPid) clearStoredEditToken(lastPid);
+    } catch {}
     window.location.replace('/');
     return null;
   }
@@ -1324,7 +1376,35 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   const [saveError, setSaveError] = useState('');
   const [missingFieldsModal, setMissingFieldsModal] = useState(null);
   const [validationAttempted, setValidationAttempted] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
   const [visits, setVisits] = useState(null);
+
+  // ─── Authenticated API wrappers ───
+  // editApi / editApiUpload automatically include the rep's edit_token from
+  // localStorage and detect invalid_token errors. Use these for ANY mutation
+  // (save, upload, delete, update). Read-only calls can still use plain api().
+  const editApi = async (payload) => {
+    const token = getStoredEditToken(repCode);
+    const response = await api({ ...payload, pid: payload.pid || repCode, token });
+    if (response && response.error === 'invalid_token') {
+      setTokenError(true);
+    }
+    if (response && response.new_token && repCode) {
+      setStoredEditToken(repCode, response.new_token);
+    }
+    return response;
+  };
+  const editApiUpload = async (payload) => {
+    const token = getStoredEditToken(repCode);
+    const response = await apiUpload({ ...payload, pid: payload.pid || repCode, token });
+    if (response && response.error === 'invalid_token') {
+      setTokenError(true);
+    }
+    if (response && response.new_token && repCode) {
+      setStoredEditToken(repCode, response.new_token);
+    }
+    return response;
+  };
   const [leads, setLeads] = useState(null); // null = not loaded yet, array = loaded
   const [myProducts, setMyProducts] = useState(null); // rep's curated products
   const [allProducts, setAllProducts] = useState([]); // full catalog for picker
@@ -1429,7 +1509,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   // Update a lead's status (new → contacted → closed)
   const updateLeadStatus = async (leadRow, newStatus) => {
     try {
-      const res = await api({ action: 'update_lead_status', row: leadRow, status: newStatus });
+      const res = await editApi({ action: 'update_lead_status', row: leadRow, status: newStatus });
       if (res.ok && leads) {
         setLeads(leads.map(l => l.row === leadRow ? { ...l, status: newStatus } : l));
       }
@@ -1462,7 +1542,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   // Add product to rep's selection
   const addProductToSelection = async (productId, note = '') => {
     try {
-      const res = await api({ action: 'add_rep_product', pid: repCode, product_id: productId, note: note });
+      const res = await editApi({ action: 'add_rep_product', pid: repCode, product_id: productId, note: note });
       if (res.ok) {
         // Reload list
         const data = await api({ action: 'get_rep_products', pid: repCode });
@@ -1476,7 +1556,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   // Remove from selection
   const removeProductFromSelection = async (row) => {
     try {
-      const res = await api({ action: 'remove_rep_product', row: row });
+      const res = await editApi({ action: 'remove_rep_product', row: row });
       if (res.ok && myProducts) {
         setMyProducts(myProducts.filter(p => p.row !== row));
       }
@@ -1488,7 +1568,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   // Save product note
   const saveProductNote = async (row, note) => {
     try {
-      const res = await api({ action: 'update_rep_product', row: row, note: note });
+      const res = await editApi({ action: 'update_rep_product', row: row, note: note });
       if (res.ok && myProducts) {
         setMyProducts(myProducts.map(p => p.row === row ? { ...p, note: note } : p));
       }
@@ -1525,7 +1605,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
       setRep(r => ({ ...r, photo: base64Data }));
 
       // Upload to Apps Script
-      const result = await apiUpload({
+      const result = await editApiUpload({
         action: 'upload_photo',
         pid: repCode,
         photo_data: base64Data,
@@ -1592,7 +1672,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
 
       setVideoUploadProgress(60); // 60% — uploading to Drive
 
-      const result = await apiUpload({
+      const result = await editApiUpload({
         action: 'upload_video',
         pid: repCode,
         video_data: base64Data,
@@ -1640,7 +1720,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
     setRep(r => ({ ...r, customerVideos: updatedList }));
     // Auto-save the updated list to Sheet
     try {
-      await api({
+      await editApi({
         action: 'save_rep',
         pid: repCode,
         customer_videos: JSON.stringify(updatedList),
@@ -1709,7 +1789,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
 
       setCustomerUploadProgress(70);
 
-      const result = await apiUpload({
+      const result = await editApiUpload({
         action: 'upload_video',
         pid: repCode,
         slot: 'customer',  // tells Apps Script to NOT update video_url field
@@ -1782,7 +1862,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
     setSaving(true);
     setSaveError('');
     try {
-      const result = await api({
+      const result = await editApi({
         action: 'save_rep',
         pid: repCode,
         name: rep.name,
@@ -1819,6 +1899,36 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   };
   return (
     <div className="min-h-screen pb-20" style={{ background: theme.cream }}>
+      {/* Token Error Modal — invalid/missing edit_token */}
+      {tokenError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(15,15,15,0.75)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-2xl p-6 max-w-md w-full shadow-2xl" style={{ background: theme.cream, border: `2px solid #DC2626` }}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FEE2E2' }}>
+                <span style={{ color: '#DC2626', fontSize: '26px', fontWeight: 'bold', lineHeight: 1 }}>🔒</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-xl mb-1" style={{ color: theme.ink }}>
+                  {L('token_error_title', 'ლინკი არ მუშაობს')}
+                </h3>
+                <p className="text-sm" style={{ color: theme.ink + '99' }}>
+                  {L('token_error_subtitle', 'ეს ლინკი ან არ არის ვალიდური, ან მისი მოქმედების ვადა ამოიწურა')}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm mb-5" style={{ color: theme.ink + 'BB', lineHeight: 1.6 }}>
+              {L('token_error_message', 'შენი პერსონალური წვდომის ლინკის მისაღებად დაუკავშირდი FARMASI Georgia-ს:')}
+            </p>
+            <a href="https://wa.me/995322560760" target="_blank" rel="noopener" className="block w-full py-3 rounded-xl text-center text-sm font-medium mb-3" style={{ background: '#25D366', color: 'white', textDecoration: 'none' }}>
+              💬 WhatsApp: (032) 2 560 760
+            </a>
+            <button onClick={() => { clearStoredEditToken(repCode); window.location.replace('/'); }} className="w-full py-3 rounded-xl text-sm font-medium" style={{ background: theme.ink, color: theme.cream }}>
+              {L('token_error_relogin', 'სხვა PID-ით შესვლა')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {missingFieldsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(15,15,15,0.7)', backdropFilter: 'blur(4px)' }}>
           <div className="rounded-2xl p-6 max-w-md w-full shadow-2xl" style={{ background: theme.cream, border: `1.5px solid ${theme.gold}44` }}>
