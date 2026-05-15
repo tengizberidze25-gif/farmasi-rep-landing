@@ -893,59 +893,40 @@ async function compressImage(file, maxDimension = 1200, quality = 0.85) {
   });
 }
 
-// For large payloads (photos): submit form to hidden iframe, poll the result via JSONP afterwards
+// For large payloads (photos/videos): POST to Apps Script via fetch + no-cors.
+// Response is opaque (we can't read it), but the POST reliably reaches the server.
+// Frontend refetches rep data afterward to confirm the upload took effect.
+// (Old iframe approach was blocked by iOS Safari / modern Chrome cross-origin tracking prevention.)
 function apiUpload(params) {
   return new Promise((resolve, reject) => {
-    const iframeName = 'upload_iframe_' + Date.now();
-    const iframe = document.createElement('iframe');
-    iframe.name = iframeName;
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+    const body = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => body.append(k, v));
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = API_URL;
-    form.target = iframeName;
-    form.enctype = 'application/x-www-form-urlencoded';
-    form.style.display = 'none';
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s safety net
 
-    Object.entries(params).forEach(([k, v]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = k;
-      input.value = v;
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(form);
-
-    const timeout = setTimeout(() => {
-  iframe.remove();
-  form.remove();
-  // timeout-ის შემთხვევაში წარმატებად ჩავთვალოთ —
-  // frontend მერე refetch-ით აიღებს ფოტოს
-  resolve({ ok: true, _silent: true });
-}, 120000);
-
-    iframe.onload = () => {
-      clearTimeout(timeout);
-      try {
-        // Apps Script returns JSON in iframe body
-        const body = iframe.contentDocument?.body?.innerText || '';
-        const data = JSON.parse(body);
-        iframe.remove();
-        form.remove();
-        resolve(data);
-      } catch (e) {
-        iframe.remove();
-        form.remove();
-        // If we can't read response (cross-origin block), still resolve as success
-        // and refetch rep data afterwards
+    fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+      signal: controller.signal,
+    })
+      .then(() => {
+        clearTimeout(timeoutId);
+        // no-cors response is opaque — we trust POST reached server.
+        // _silent flag tells frontend to refetch rep data.
         resolve({ ok: true, _silent: true });
-      }
-    };
-
-    form.submit();
+      })
+      .catch(err => {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          // Server might still have processed — let frontend refetch and verify.
+          resolve({ ok: true, _silent: true });
+        } else {
+          reject(err);
+        }
+      });
   });
 }
 
