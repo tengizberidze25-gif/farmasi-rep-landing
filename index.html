@@ -893,7 +893,7 @@ function apiUpload(params) {
       iframe.remove();
       form.remove();
       reject(new Error('Upload timed out'));
-    }, 60000);
+    }, 120000);
 
     iframe.onload = () => {
       clearTimeout(timeout);
