@@ -605,7 +605,7 @@ const GEO_TRANSLIT = {
 };
 
 // Generate slug from a name (Georgian or Latin) — first word only by default for privacy
-function slugFromName(name, { includeSurname = false } = {}) {
+function slugFromName(name, { includeSurname = true } = {}) {
   if (!name || typeof name !== 'string') return '';
   const cleaned = name.trim();
   if (!cleaned) return '';
