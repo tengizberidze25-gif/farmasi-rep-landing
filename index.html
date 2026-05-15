@@ -1101,6 +1101,25 @@ function App() {
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
     instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
   });
+  const [otpToken, setOtpToken] = useState(null); // OTP session token
+
+  // Check OTP session on mount
+  useEffect(() => {
+    if (urlParams.pid) {
+      const token = localStorage.getItem(`farmasi_otp_session_${urlParams.pid}`);
+      if (token) setOtpToken(token);
+    }
+  }, [urlParams.pid]);
+
+  // Handle OTP login success
+  const handleOtpLoginSuccess = (pid, token, rep) => {
+    setRepCode(pid);
+    setOtpToken(token);
+    setRep(rep || {});
+    setView('loading');
+    const newUrl = `?pid=${pid}&edit=1`;
+    window.history.replaceState({}, document.title, newUrl);
+  };
 
   // ─── Auto-scroll to top on every navigation ───
   // Triggers whenever view changes (login → dashboard → public → product)
@@ -1242,14 +1261,20 @@ function App() {
 
   return (
     <div style={{ background: theme.cream, minHeight: '100vh' }}>
-      {/* Admin nav — only visible when in edit mode OR when no rep identifier is in URL (login flow).
-          Hides for customers visiting `?pid=...` or `/slug` directly. */}
-      {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
-      {view === 'loading' && <LoadingScreen labels={labels} />}
-      {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} labels={labels} />}
-      {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} labels={labels} />}
-      {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} />}
-      {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} />}
+      {/* OTP Login — shows when edit mode is requested but no OTP session */}
+      {urlParams.edit && !otpToken && <LoginScreen onLoginSuccess={handleOtpLoginSuccess} labels={labels} />}
+      
+      {/* Normal views — only visible if not in OTP login flow */}
+      {!(urlParams.edit && !otpToken) && (
+        <>
+          {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
+          {view === 'loading' && <LoadingScreen labels={labels} />}
+          {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} labels={labels} />}
+          {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} labels={labels} />}
+          {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} />}
+          {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} />}
+        </>
+      )}
     </div>
   );
 }
@@ -1441,6 +1466,174 @@ function Login({ onLogin, initialError, labels = {} }) {
     </div>
   );
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOGIN SCREEN — OTP Authentication
+// ════════════════════════════════════════════════════════════════════════════
+
+function LoginScreen({ onLoginSuccess, labels = {} }) {
+  const [step, setStep] = useState('pid'); // 'pid' → 'otp'
+  const [pid, setPid] = useState('');
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [repName, setRepName] = useState('');
+
+  const handleRequestOtp = async () => {
+    if (!pid || !/^\d{6}$/.test(pid)) {
+      setError('PID must be 6 digits');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api({ action: 'request_otp', pid });
+      if (response.ok) {
+        setRepName(response.repName || '');
+        setStep('otp');
+        setError('');
+      } else {
+        setError(response.error || 'Failed to send OTP');
+      }
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length !== 6) {
+      setError('OTP must be 6 digits');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api({ action: 'verify_otp', pid, otp });
+      if (response.ok) {
+        // Store session token
+        localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
+        localStorage.setItem('farmasi_current_pid', pid);
+        localStorage.setItem('farmasi_last_pid', pid);
+        if (response.rep) {
+          localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(response.rep));
+        }
+        // Call success callback
+        onLoginSuccess(pid, response.token, response.rep);
+      } else {
+        setError(response.error || 'Invalid OTP');
+      }
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  return React.createElement('div', {
+    className: 'min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center px-4'
+  },
+    React.createElement('div', {
+      className: 'w-full max-w-md'
+    },
+      // Header
+      React.createElement('div', { className: 'text-center mb-8' },
+        React.createElement('div', { className: 'inline-block mb-4' },
+          React.createElement('svg', {
+            width: '60', height: '60', viewBox: '0 0 60 60', fill: 'none',
+            className: 'text-pink-600'
+          },
+            React.createElement('path', {
+              d: 'M30 5C16.19 5 5 16.19 5 30s11.19 25 25 25 25-11.19 25-25S43.81 5 30 5z',
+              fill: 'currentColor', fillOpacity: '0.1'
+            }),
+            React.createElement('path', {
+              d: 'M30 15c8.27 0 15 6.73 15 15s-6.73 15-15 15-15-6.73-15-15 6.73-15 15-15z',
+              fill: 'currentColor'
+            })
+          )
+        ),
+        React.createElement('h1', { className: 'text-3xl font-bold text-slate-900 mb-2' },
+          'FARMASI'
+        ),
+        React.createElement('p', { className: 'text-slate-600' },
+          'რეპრეზენტანტის პორტფოლიო'
+        )
+      ),
+
+      // Login Form
+      React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-8' },
+        step === 'pid' ? (
+          // PID Input
+          React.createElement('div', {},
+            React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
+              'FARMASI PID'
+            ),
+            React.createElement('input', {
+              type: 'text',
+              value: pid,
+              onChange: (e) => setPid(e.target.value.replace(/\D/g, '').slice(0, 6)),
+              onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
+              placeholder: '123456',
+              disabled: loading,
+              maxLength: '6',
+              className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
+            }),
+            error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
+            React.createElement('button', {
+              onClick: handleRequestOtp,
+              disabled: loading || !pid,
+              className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
+            },
+              loading ? 'იგზავნება...' : 'კოდი გამომატვევ'
+            )
+          )
+        ) : (
+          // OTP Input
+          React.createElement('div', {},
+            React.createElement('p', { className: 'text-slate-600 text-sm mb-4' },
+              `${repName ? 'კი, ' + repName + '!' : 'კოდი გამოწერილი'}`
+            ),
+            React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
+              'დამადასტურებელი კოდი (SMS)'
+            ),
+            React.createElement('input', {
+              type: 'text',
+              value: otp,
+              onChange: (e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)),
+              onKeyPress: (e) => e.key === 'Enter' && handleVerifyOtp(),
+              placeholder: '000000',
+              disabled: loading,
+              maxLength: '6',
+              className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none text-center text-2xl tracking-widest disabled:bg-slate-100'
+            }),
+            error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
+            React.createElement('button', {
+              onClick: handleVerifyOtp,
+              disabled: loading || otp.length !== 6,
+              className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
+            },
+              loading ? 'დამდასტურდება...' : 'შეხვედი'
+            ),
+            React.createElement('button', {
+              onClick: () => { setStep('pid'); setPid(''); setOtp(''); setError(''); setRepName(''); },
+              disabled: loading,
+              className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
+            },
+              'უკან'
+            )
+          )
+        ),
+
+        // Footer
+        React.createElement('p', { className: 'text-xs text-slate-500 text-center mt-6' },
+          'ეს გვერდი დაცული. მხოლოდ SMS კოდით შეუძლია შესვლა.'
+        )
+      )
+    )
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 
 function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
