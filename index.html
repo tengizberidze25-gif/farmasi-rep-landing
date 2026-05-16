@@ -1127,6 +1127,10 @@ function App() {
         if (response.ok && response.valid) {
           // ✅ Backend confirms session is valid
           setOtpToken(token);
+          // ✅ Sliding session — backend extended expiry, update localStorage too
+          if (response.expiresAt) {
+            localStorage.setItem(`farmasi_otp_expires_${urlParams.pid}`, String(response.expiresAt));
+          }
         } else {
           // ❌ Backend rejected (admin reset, deleted user, token mismatch from new login on another device)
           localStorage.removeItem(`farmasi_otp_session_${urlParams.pid}`);
@@ -1800,8 +1804,11 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               React.createElement('p', { className: 'text-sm text-slate-700 font-medium mb-1' },
                 '👋 გამარჯობა! პირველად ხარ აქ.'
               ),
-              React.createElement('p', { className: 'text-xs text-slate-600' },
+              React.createElement('p', { className: 'text-xs text-slate-600 mb-2' },
                 'PID ' + pid + ' — დარეგისტრირე შენი ტელეფონის ნომერი. SMS კოდი მოგივა ვერიფიკაციისთვის.'
+              ),
+              React.createElement('p', { className: 'text-[11px] text-slate-500 italic' },
+                'ნომერი მხოლოდ ერთხელ რეგისტრირდება — შემდეგ შესაცვლელად ადმინთან დაუკავშირდი.'
               )
             ),
             React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
@@ -1823,9 +1830,6 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               })
             ),
             error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
-            React.createElement('p', { className: 'text-xs text-slate-500 mt-2' },
-              '⚠️ ერთხელ რეგისტრირდება. შემდეგ შესაცვლელად ადმინთან დაუკავშირდი.'
-            ),
             React.createElement('button', {
               onClick: handleRegisterPhone,
               disabled: loading || phone.length !== 9,
