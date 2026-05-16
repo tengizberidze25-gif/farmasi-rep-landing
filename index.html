@@ -1961,17 +1961,33 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
   };
 
-  const applySlugEdit = () => {
+  const applySlugEdit = async () => {
     const cleaned = slugDraft.trim().toLowerCase();
     if (!isValidSlug(cleaned)) {
       setSlugError('მცირე ასოები, ციფრები ან დეფისი (3-30 ანბანი). მაგ: rose-bloom, beautymood, ana-23');
       return;
     }
-    setSlug(cleaned);
-    setSlugDraft(cleaned);
-    setEditingSlug(false);
+    // ✅ Persist directly to Sheet — no need for separate "Save" click
     setSlugError('');
-    setSlugWasGenerated(false); // user manually customized
+    try {
+      const result = await editApi({
+        action: 'save_rep',
+        pid: repCode,
+        slug: cleaned,
+      });
+      if (result.ok) {
+        setSlug(cleaned);
+        setSlugDraft(cleaned);
+        setEditingSlug(false);
+        setSlugWasGenerated(false); // user manually customized
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 2000);
+      } else {
+        setSlugError(result.error || 'შენახვა ვერ მოხერხდა');
+      }
+    } catch (err) {
+      setSlugError('კავშირის შეცდომა: ' + (err.message || err));
+    }
   };
 
   // Load visit stats
