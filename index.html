@@ -1079,15 +1079,12 @@ function App() {
     window.location.replace('/');
     return null;
   }
-  if (typeof window !== 'undefined' && !urlParams.pid && !urlParams.slug) {
-    try {
-      const saved = localStorage.getItem('farmasi_last_pid');
-      if (saved && /^\d{6}$/.test(saved)) {
-        window.location.replace(`?pid=${saved}&edit=1`);
-        return null;
-      }
-    } catch {}
-  }
+  // ─── Front door is always Login screen ───
+  // Previously this auto-redirected to ?pid=X&edit=1 if farmasi_last_pid was in
+  // localStorage. That made my.farmasi.ge feel like a personalized homepage and
+  // leaked the last user's PID to anyone who opened the link. Now my.farmasi.ge
+  // always shows the Login screen (link paste). Returning users still skip SMS
+  // via the 30-day session token on the ?pid=X&edit=1 redirect that follows.
 
   const [view, setView] = useState((urlParams.pid || urlParams.slug) ? 'loading' : 'login');
   const [repCode, setRepCode] = useState(urlParams.pid || '');
