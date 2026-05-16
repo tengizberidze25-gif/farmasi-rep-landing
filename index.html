@@ -1115,8 +1115,34 @@ function App() {
   const handleOtpLoginSuccess = (pid, token, rep) => {
     setRepCode(pid);
     setOtpToken(token);
-    setRep(rep || {});
-    setView('loading');
+    // Map API response to UI state (same shape as the rep loading useEffect at line ~1207)
+    // The backend returns rep with snake_case fields (photo_url, video_url, customer_videos)
+    // — convert to the UI's camelCase shape so all components render correctly.
+    setRep({
+      name: rep?.name || '',
+      bio: rep?.bio || '',
+      photo: rep?.photo_url || null,
+      phone: rep?.phone || '',
+      whatsapp: rep?.whatsapp || '',
+      instagram: rep?.instagram || '',
+      facebook: rep?.facebook || '',
+      tiktok: rep?.tiktok || '',
+      youtube: rep?.youtube || '',
+      telegram: rep?.telegram || '',
+      city: rep?.city || '',
+      videoUrl: rep?.video_url || '',
+      customerVideos: (() => {
+        try {
+          const raw = rep?.customer_videos;
+          if (!raw) return [];
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          return Array.isArray(parsed) ? parsed : [];
+        } catch { return []; }
+      })(),
+    });
+    // ✅ Go directly to dashboard — the rep-loading useEffect won't re-run after URL change
+    // (it has empty deps and was already executed on initial mount).
+    setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
     window.history.replaceState({}, document.title, newUrl);
   };
