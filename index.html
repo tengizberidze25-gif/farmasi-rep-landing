@@ -1103,11 +1103,19 @@ function App() {
   });
   const [otpToken, setOtpToken] = useState(null); // OTP session token
 
-  // Check OTP session on mount
+  // Check OTP session on mount (with 30-day expiry validation)
   useEffect(() => {
     if (urlParams.pid) {
       const token = localStorage.getItem(`farmasi_otp_session_${urlParams.pid}`);
-      if (token) setOtpToken(token);
+      const expiresAt = parseInt(localStorage.getItem(`farmasi_otp_expires_${urlParams.pid}`) || '0', 10);
+      if (token && expiresAt > Date.now()) {
+        // ✅ Valid session — trust it (backend will re-validate on sensitive actions)
+        setOtpToken(token);
+      } else if (token || expiresAt) {
+        // ⚠️ Expired or malformed — clean up so LoginScreen (OTP) is shown
+        localStorage.removeItem(`farmasi_otp_session_${urlParams.pid}`);
+        localStorage.removeItem(`farmasi_otp_expires_${urlParams.pid}`);
+      }
     }
   }, [urlParams.pid]);
 
@@ -1115,9 +1123,7 @@ function App() {
   const handleOtpLoginSuccess = (pid, token, rep) => {
     setRepCode(pid);
     setOtpToken(token);
-    // Map API response to UI state (same shape as the rep loading useEffect at line ~1207)
-    // The backend returns rep with snake_case fields (photo_url, video_url, customer_videos)
-    // — convert to the UI's camelCase shape so all components render correctly.
+    // Map API response (snake_case) to UI state (camelCase)
     setRep({
       name: rep?.name || '',
       bio: rep?.bio || '',
@@ -1140,11 +1146,29 @@ function App() {
         } catch { return []; }
       })(),
     });
-    // ✅ Go directly to dashboard — the rep-loading useEffect won't re-run after URL change
-    // (it has empty deps and was already executed on initial mount).
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
     window.history.replaceState({}, document.title, newUrl);
+  };
+
+  // ─── Logout: clear all session data + redirect to first-time login ───
+  const handleLogout = () => {
+    const pid = repCode || urlParams.pid || localStorage.getItem('farmasi_last_pid');
+    if (pid) {
+      const token = localStorage.getItem(`farmasi_otp_session_${pid}`);
+      // Invalidate session on backend (silent — don't block logout on network errors)
+      if (token) {
+        try { api({ action: 'logout', pid: pid, token: token }).catch(() => {}); } catch {}
+      }
+      // Clear all per-PID localStorage
+      localStorage.removeItem(`farmasi_otp_session_${pid}`);
+      localStorage.removeItem(`farmasi_otp_expires_${pid}`);
+      localStorage.removeItem(`farmasi_rep_${pid}`);
+    }
+    localStorage.removeItem('farmasi_current_pid');
+    localStorage.removeItem('farmasi_last_pid');
+    // Hard redirect to root — triggers Login (link-paste) on next mount
+    window.location.href = '/';
   };
 
   // ─── Auto-scroll to top on every navigation ───
@@ -1296,7 +1320,7 @@ function App() {
           {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
           {view === 'loading' && <LoadingScreen labels={labels} />}
           {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} labels={labels} />}
-          {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} problems={problems} labels={labels} />}
+          {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
           {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} />}
           {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} />}
         </>
@@ -1537,8 +1561,9 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     try {
       const response = await api({ action: 'verify_otp', pid, otp });
       if (response.ok) {
-        // Store session token
+        // Store session token + 30-day expiry (matches backend session TTL)
         localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
+        localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
         localStorage.setItem('farmasi_current_pid', pid);
         localStorage.setItem('farmasi_last_pid', pid);
         if (response.rep) {
@@ -1661,7 +1686,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 
-function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
+function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {} }) {
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
   const [copied, setCopied] = useState(false);
@@ -2271,6 +2296,16 @@ function Dashboard({ rep, setRep, repCode, onPreview, problems, labels = {} }) {
             <button onClick={onPreview} className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition"
               style={{ background: theme.ink, color: theme.cream }}>
               <Ic name="eye" className="w-3 h-3" /> ნახე
+            </button>
+            <button onClick={() => {
+              if (typeof onLogout === 'function' && window.confirm(L('logout_confirm', 'ნამდვილად გსურს გასვლა? შემდეგ შესვლისას SMS კოდი მოგთხოვება.'))) {
+                onLogout();
+              }
+            }}
+              className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition"
+              style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.ink}33` }}
+              title={L('logout_title', 'გასვლა')}>
+              <Ic name="log-out" className="w-3 h-3" /> {L('logout_button', 'გასვლა')}
             </button>
           </div>
 
