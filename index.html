@@ -1100,20 +1100,52 @@ function App() {
   });
   const [otpToken, setOtpToken] = useState(null); // OTP session token
 
-  // Check OTP session on mount (with 30-day expiry validation)
+  // ✅ Validate session against backend on mount (catches admin reset / Sheet row deletion)
+  // Without this, deleting a user's row from the Sheet doesn't kick them out — the
+  // 30-day session token in PropertiesService and localStorage keeps them "logged in"
+  // with an empty auto-recreated row.
+  const [validatingSession, setValidatingSession] = useState(false);
   useEffect(() => {
-    if (urlParams.pid) {
-      const token = localStorage.getItem(`farmasi_otp_session_${urlParams.pid}`);
-      const expiresAt = parseInt(localStorage.getItem(`farmasi_otp_expires_${urlParams.pid}`) || '0', 10);
-      if (token && expiresAt > Date.now()) {
-        // ✅ Valid session — trust it (backend will re-validate on sensitive actions)
-        setOtpToken(token);
-      } else if (token || expiresAt) {
-        // ⚠️ Expired or malformed — clean up so LoginScreen (OTP) is shown
+    if (!urlParams.pid) return;
+    
+    const token = localStorage.getItem(`farmasi_otp_session_${urlParams.pid}`);
+    const expiresAt = parseInt(localStorage.getItem(`farmasi_otp_expires_${urlParams.pid}`) || '0', 10);
+    
+    // No token or expired locally → nothing to validate, fall through to LoginScreen
+    if (!token || expiresAt <= Date.now()) {
+      if (token || expiresAt) {
         localStorage.removeItem(`farmasi_otp_session_${urlParams.pid}`);
         localStorage.removeItem(`farmasi_otp_expires_${urlParams.pid}`);
       }
+      return;
     }
+    
+    // Local token looks valid — but verify with backend before trusting
+    setValidatingSession(true);
+    api({ action: 'validate_session', pid: urlParams.pid, token: token })
+      .then(response => {
+        if (response.ok && response.valid) {
+          // ✅ Backend confirms session is valid
+          setOtpToken(token);
+        } else {
+          // ❌ Backend rejected (admin reset, deleted user, token mismatch from new login on another device)
+          localStorage.removeItem(`farmasi_otp_session_${urlParams.pid}`);
+          localStorage.removeItem(`farmasi_otp_expires_${urlParams.pid}`);
+          localStorage.removeItem(`farmasi_rep_${urlParams.pid}`);
+          // Also clear last_pid so my.farmasi.ge front door is clean
+          if (response.userDeleted) {
+            localStorage.removeItem('farmasi_last_pid');
+            localStorage.removeItem('farmasi_current_pid');
+          }
+        }
+      })
+      .catch(() => {
+        // Network error — fall back to trusting localStorage (don't log users out offline)
+        setOtpToken(token);
+      })
+      .finally(() => {
+        setValidatingSession(false);
+      });
   }, [urlParams.pid]);
 
   // Handle OTP login success
@@ -1315,11 +1347,14 @@ function App() {
 
   return (
     <div style={{ background: theme.cream, minHeight: '100vh' }}>
+      {/* Session validation in progress — prevent flash of LoginScreen */}
+      {urlParams.edit && validatingSession && <LoadingScreen labels={labels} />}
+      
       {/* OTP Login — shows when edit mode is requested but no OTP session */}
-      {urlParams.edit && !otpToken && <LoginScreen onLoginSuccess={handleOtpLoginSuccess} labels={labels} />}
+      {urlParams.edit && !otpToken && !validatingSession && <LoginScreen onLoginSuccess={handleOtpLoginSuccess} labels={labels} />}
       
       {/* Normal views — only visible if not in OTP login flow */}
-      {!(urlParams.edit && !otpToken) && (
+      {!(urlParams.edit && !otpToken) && !validatingSession && (
         <>
           {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
           {view === 'loading' && <LoadingScreen labels={labels} />}
