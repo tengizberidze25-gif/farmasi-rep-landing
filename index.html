@@ -1522,8 +1522,9 @@ function Login({ onLogin, initialError, labels = {} }) {
 // ════════════════════════════════════════════════════════════════════════════
 
 function LoginScreen({ onLoginSuccess, labels = {} }) {
-  const [step, setStep] = useState('pid'); // 'pid' → 'otp'
+  const [step, setStep] = useState('pid'); // 'pid' → 'phone' (if first-time) → 'otp'
   const [pid, setPid] = useState('');
+  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -1542,8 +1543,41 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
         setRepName(response.repName || '');
         setStep('otp');
         setError('');
+      } else if (response.error === 'first_time_setup_required' || response.needsPhone) {
+        // ✅ First-time user — no phone registered yet. Show phone input.
+        setStep('phone');
+        setError('');
       } else {
         setError(response.error || 'Failed to send OTP');
+      }
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  // ✅ NEW: First-time phone registration — saves phone + triggers OTP
+  const handleRegisterPhone = async () => {
+    // Strip non-digits and any leading 995
+    let normalized = phone.replace(/[^\d]/g, '');
+    if (normalized.startsWith('995') && normalized.length > 9) {
+      normalized = normalized.substring(3);
+    }
+    if (!/^5\d{8}$/.test(normalized)) {
+      setError('ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api({ action: 'register_phone', pid, phone: normalized });
+      if (response.ok) {
+        // Phone registered + OTP sent → move to OTP step
+        setRepName(response.repName || '');
+        setStep('otp');
+        setError('');
+      } else {
+        setError(response.error || 'ნომრის რეგისტრაცია ვერ მოხერხდა');
       }
     } catch (err) {
       setError('Error: ' + err.message);
@@ -1638,6 +1672,54 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               loading ? 'იგზავნება...' : 'კოდი გამომატვევ'
             )
           )
+        ) : step === 'phone' ? (
+          // ✅ NEW: Phone registration (first-time setup)
+          React.createElement('div', {},
+            React.createElement('div', { className: 'mb-4 p-3 rounded-lg bg-pink-50 border border-pink-200' },
+              React.createElement('p', { className: 'text-sm text-slate-700 font-medium mb-1' },
+                '👋 გამარჯობა! პირველად ხარ აქ.'
+              ),
+              React.createElement('p', { className: 'text-xs text-slate-600' },
+                'PID ' + pid + ' — დარეგისტრირე შენი ტელეფონის ნომერი. SMS კოდი მოგივა ვერიფიკაციისთვის.'
+              )
+            ),
+            React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
+              'ტელეფონის ნომერი'
+            ),
+            React.createElement('div', { className: 'flex gap-2' },
+              React.createElement('span', {
+                className: 'inline-flex items-center px-3 py-3 rounded-lg bg-slate-100 border border-slate-300 text-slate-700 text-sm font-medium'
+              }, '+995'),
+              React.createElement('input', {
+                type: 'tel',
+                value: phone,
+                onChange: (e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)),
+                onKeyPress: (e) => e.key === 'Enter' && handleRegisterPhone(),
+                placeholder: '599 12 34 56',
+                disabled: loading,
+                maxLength: '9',
+                className: 'flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100 text-lg tracking-wider'
+              })
+            ),
+            error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
+            React.createElement('p', { className: 'text-xs text-slate-500 mt-2' },
+              '⚠️ ერთხელ რეგისტრირდება. შემდეგ შესაცვლელად ადმინთან დაუკავშირდი.'
+            ),
+            React.createElement('button', {
+              onClick: handleRegisterPhone,
+              disabled: loading || phone.length !== 9,
+              className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
+            },
+              loading ? 'იგზავნება...' : 'რეგისტრაცია და SMS კოდი'
+            ),
+            React.createElement('button', {
+              onClick: () => { setStep('pid'); setPhone(''); setError(''); },
+              disabled: loading,
+              className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
+            },
+              'უკან'
+            )
+          )
         ) : (
           // OTP Input
           React.createElement('div', {},
@@ -1666,7 +1748,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               loading ? 'დამდასტურდება...' : 'შეხვედი'
             ),
             React.createElement('button', {
-              onClick: () => { setStep('pid'); setPid(''); setOtp(''); setError(''); setRepName(''); },
+              onClick: () => { setStep('pid'); setPid(''); setPhone(''); setOtp(''); setError(''); setRepName(''); },
               disabled: loading,
               className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
             },
