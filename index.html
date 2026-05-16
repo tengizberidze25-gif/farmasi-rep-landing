@@ -1292,8 +1292,15 @@ function App() {
             api({ action: 'log_visit', pid: resolvedPid }).catch(() => {});
           }
         } else {
-          setLoadError(data.error || 'წარმომადგენელი ვერ მოიძებნა');
-          setView('login');
+          // ⚠️ Differentiate: slug not found → show 404 page (public visitor)
+          // PID not found → fall back to login (likely a rep who typed wrong PID)
+          if (urlParams.slug) {
+            setLoadError('');
+            setView('notfound');
+          } else {
+            setLoadError(data.error || 'წარმომადგენელი ვერ მოიძებნა');
+            setView('login');
+          }
         }
       })
       .catch(err => {
@@ -1316,6 +1323,7 @@ function App() {
         <>
           {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
           {view === 'loading' && <LoadingScreen labels={labels} />}
+          {view === 'notfound' && <NotFoundScreen labels={labels} />}
           {view === 'login' && <Login onLogin={(code, name) => { setRepCode(code); setRep(r => ({ ...r, name })); setView('dashboard'); }} initialError={loadError} labels={labels} />}
           {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
           {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} />}
@@ -1384,6 +1392,84 @@ function LoadingScreen({ labels = {} }) {
       }}>{L('loading_text', 'ვტვირთავ...')}</p>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ✅ NEW: Shown when a slug URL doesn't resolve to a rep (public visitor)
+// Friendly 404 instead of bouncing them to the rep login screen.
+function NotFoundScreen({ labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const requestedSlug = (() => {
+    try {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      return parts[0] || '';
+    } catch { return ''; }
+  })();
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `linear-gradient(135deg, ${theme.cream} 0%, ${theme.ivory} 100%)`,
+      padding: '20px',
+      textAlign: 'center'
+    }}>
+      <div style={{
+        fontSize: 72,
+        fontWeight: 700,
+        color: theme.wine,
+        letterSpacing: '-0.02em',
+        marginBottom: 8,
+        fontFamily: 'Georgia, serif'
+      }}>404</div>
+      <h1 style={{
+        fontSize: 24,
+        fontWeight: 600,
+        color: theme.ink,
+        marginBottom: 12
+      }}>
+        {L('notfound_title', 'გვერდი ვერ მოიძებნა')}
+      </h1>
+      {requestedSlug && (
+        <p style={{
+          fontSize: 14,
+          color: theme.ink + '99',
+          marginBottom: 8,
+          fontFamily: 'monospace'
+        }}>
+          /{requestedSlug}
+        </p>
+      )}
+      <p style={{
+        fontSize: 15,
+        color: theme.ink + 'cc',
+        marginBottom: 28,
+        maxWidth: 400,
+        lineHeight: 1.5
+      }}>
+        {L('notfound_message', 'ეს URL არ ეკუთვნის არცერთ წარმომადგენელს. შესაძლოა ლინკი არასწორად დაიწერა ან წარმომადგენელმა შეცვალა.')}
+      </p>
+      <a href="/"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '12px 24px',
+          background: theme.ink,
+          color: theme.cream,
+          borderRadius: 999,
+          textDecoration: 'none',
+          fontSize: 14,
+          fontWeight: 500,
+          transition: 'transform 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+        ← {L('notfound_back', 'მთავარზე დაბრუნება')}
+      </a>
     </div>
   );
 }
