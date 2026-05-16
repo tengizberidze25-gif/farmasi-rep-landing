@@ -1608,6 +1608,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const [step, setStep] = useState('pid'); // 'pid' → 'phone' (if first-time) → 'otp'
   const [pid, setPid] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneMask, setPhoneMask] = useState(''); // e.g. "****2266" — shown on OTP step
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -1624,6 +1625,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
       const response = await api({ action: 'request_otp', pid });
       if (response.ok) {
         setRepName(response.repName || '');
+        setPhoneMask(response.phoneMask || '');
         setStep('otp');
         setError('');
       } else if (response.error === 'first_time_setup_required' || response.needsPhone) {
@@ -1657,6 +1659,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
       if (response.ok) {
         // Phone registered + OTP sent → move to OTP step
         setRepName(response.repName || '');
+        setPhoneMask(response.phoneMask || '');
         setStep('otp');
         setError('');
       } else {
@@ -1806,8 +1809,11 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
         ) : (
           // OTP Input
           React.createElement('div', {},
-            React.createElement('p', { className: 'text-slate-600 text-sm mb-4' },
+            React.createElement('p', { className: 'text-slate-600 text-sm mb-2' },
               `${repName ? 'კი, ' + repName + '!' : 'კოდი გამოწერილი'}`
+            ),
+            phoneMask && React.createElement('p', { className: 'text-pink-600 text-xs mb-4 font-medium' },
+              '📱 კოდი გავიდა ' + phoneMask + '-ზე'
             ),
             React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
               'დამადასტურებელი კოდი (SMS)'
