@@ -5636,6 +5636,25 @@ function ProductCard({ p, onClick, featured }) {
 //   PRODUCT PAGE — individual product landing
 // ═══════════════════════════════════════════════════════════
 function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) {
+  // ⚠️ ADD THIS FIX:
+  if (!product) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
+        <div className="text-center">
+          <p style={{ marginBottom: '20px', color: '#333' }}>პროდუქტი ვერ იტვირთა</p>
+          <button 
+            onClick={onBack} 
+            style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+            უკან
+          </button>
+        </div>
+      </div>
+    );
+  }
+  // END FIX
+  
+  const t = (key, fallback = '') => (labels && labels[key]) || fallback;
+  // ... rest of code
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
   const [chatOpen, setChatOpen] = useState(false);
   const [qty, setQty] = useState(1);
