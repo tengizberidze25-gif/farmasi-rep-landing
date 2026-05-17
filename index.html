@@ -1644,6 +1644,8 @@ function Login({ onLogin, initialError, labels = {} }) {
 // ════════════════════════════════════════════════════════════════════════════
 
 function LoginScreen({ onLoginSuccess, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  
   // ✅ Read PID from URL on mount — user already provided it via Login (link paste)
   const urlPid = (() => {
     try {
@@ -1652,7 +1654,11 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     } catch { return ''; }
   })();
   
-  const [step, setStep] = useState('pid'); // 'pid' → 'phone' (if first-time) → 'otp'
+  // ✅ Skip PID step entirely when URL has PID — start in 'autoLoading' state
+  // This avoids the "2 second flash" of the PID input the user complained about.
+  const [step, setStep] = useState(() => {
+    return urlPid && /^\d{6}$/.test(urlPid) ? 'autoLoading' : 'pid';
+  });
   const [pid, setPid] = useState(urlPid);
   const [phone, setPhone] = useState('');
   const [phoneMask, setPhoneMask] = useState(''); // e.g. "****2266" — shown on OTP step
@@ -1664,7 +1670,8 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const handleRequestOtp = async (pidOverride) => {
     const targetPid = pidOverride || pid;
     if (!targetPid || !/^\d{6}$/.test(targetPid)) {
-      setError('PID must be 6 digits');
+      setError(L('login_pid_error', 'PID უნდა იყოს 6 ციფრიანი'));
+      setStep('pid');
       return;
     }
     setLoading(true);
@@ -1681,10 +1688,12 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
         setStep('phone');
         setError('');
       } else {
-        setError(response.error || 'Failed to send OTP');
+        setError(response.error || L('login_pid_send_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+        setStep('pid'); // fall back to PID step so user can fix
       }
     } catch (err) {
       setError('Error: ' + err.message);
+      setStep('pid');
     }
     setLoading(false);
   };
@@ -1762,45 +1771,48 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     React.createElement('div', {
       className: 'w-full max-w-md'
     },
-      // Header
+      // Header — real FARMASI logo + login subtitle
       React.createElement('div', { className: 'text-center mb-8' },
-        React.createElement('div', { className: 'inline-block mb-4' },
-          React.createElement('svg', {
-            width: '60', height: '60', viewBox: '0 0 60 60', fill: 'none',
-            className: 'text-pink-600'
-          },
-            React.createElement('path', {
-              d: 'M30 5C16.19 5 5 16.19 5 30s11.19 25 25 25 25-11.19 25-25S43.81 5 30 5z',
-              fill: 'currentColor', fillOpacity: '0.1'
-            }),
-            React.createElement('path', {
-              d: 'M30 15c8.27 0 15 6.73 15 15s-6.73 15-15 15-15-6.73-15-15 6.73-15 15-15z',
-              fill: 'currentColor'
-            })
-          )
+        React.createElement('img', {
+          src: '/farmasi-logo.png',
+          alt: 'FARMASI',
+          className: 'mx-auto mb-4',
+          style: { height: 48, width: 'auto', objectFit: 'contain' }
+        }),
+        React.createElement('h1', { className: 'text-2xl font-bold text-slate-900 mb-1' },
+          L('login_hero_title', 'წარმომადგენლის შესვლა')
         ),
-        React.createElement('h1', { className: 'text-3xl font-bold text-slate-900 mb-2' },
-          'FARMASI'
-        ),
-        React.createElement('p', { className: 'text-slate-600' },
-          'რეპრეზენტანტის პორტფოლიო'
+        React.createElement('p', { className: 'text-pink-600 italic text-sm' },
+          L('login_hero_subtitle', 'FARMASI Georgia')
         )
       ),
 
       // Login Form
       React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-8' },
-        step === 'pid' ? (
+        step === 'autoLoading' ? (
+          // ✅ NEW: Skip-the-flash loading state — shown when URL has PID and we're auto-requesting OTP
+          React.createElement('div', { className: 'flex flex-col items-center justify-center py-8' },
+            React.createElement('div', {
+              className: 'w-12 h-12 border-4 border-pink-200 border-t-pink-600 rounded-full',
+              style: { animation: 'spin 0.8s linear infinite' }
+            }),
+            React.createElement('p', { className: 'text-slate-600 text-sm mt-4' },
+              L('login_auto_loading', 'SMS კოდი მზადდება...')
+            ),
+            error && React.createElement('p', { className: 'text-red-500 text-sm mt-3 text-center' }, error)
+          )
+        ) : step === 'pid' ? (
           // PID Input
           React.createElement('div', {},
             React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-              'FARMASI PID'
+              L('login_pid_label', 'FARMASI PID')
             ),
             React.createElement('input', {
               type: 'text',
               value: pid,
               onChange: (e) => setPid(e.target.value.replace(/\D/g, '').slice(0, 6)),
               onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
-              placeholder: '123456',
+              placeholder: L('login_pid_placeholder', '123456'),
               disabled: loading,
               maxLength: '6',
               className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
@@ -1811,7 +1823,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               disabled: loading || !pid,
               className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
             },
-              loading ? 'იგზავნება...' : 'კოდი გამომატვევ'
+              loading ? L('login_loading_send', 'იგზავნება...') : L('login_pid_button', 'კოდი გამოაგზავნე')
             )
           )
         ) : step === 'phone' ? (
@@ -1819,17 +1831,17 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
           React.createElement('div', {},
             React.createElement('div', { className: 'mb-4 p-3 rounded-lg bg-pink-50 border border-pink-200' },
               React.createElement('p', { className: 'text-sm text-slate-700 font-medium mb-1' },
-                '👋 გამარჯობა! პირველად ხარ აქ.'
+                L('login_phone_welcome', '👋 გამარჯობა! პირველად ხარ აქ.')
               ),
               React.createElement('p', { className: 'text-xs text-slate-600 mb-2' },
-                'PID ' + pid + ' — დარეგისტრირე შენი ტელეფონის ნომერი. SMS კოდი მოგივა ვერიფიკაციისთვის.'
+                L('login_phone_description', 'PID ' + pid + ' — დარეგისტრირე შენი ტელეფონის ნომერი. SMS კოდი მოგივა ვერიფიკაციისთვის.').replace('{pid}', pid)
               ),
               React.createElement('p', { className: 'text-[11px] text-slate-500 italic' },
-                'ნომერი მხოლოდ ერთხელ რეგისტრირდება — შემდეგ შესაცვლელად ადმინთან დაუკავშირდი.'
+                L('login_phone_warning', 'ნომერი მხოლოდ ერთხელ რეგისტრირდება — შემდეგ შესაცვლელად ადმინთან დაუკავშირდი.')
               )
             ),
             React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-              'ტელეფონის ნომერი'
+              L('login_phone_label', 'ტელეფონის ნომერი')
             ),
             React.createElement('div', { className: 'flex gap-2' },
               React.createElement('span', {
@@ -1840,7 +1852,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
                 value: phone,
                 onChange: (e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)),
                 onKeyPress: (e) => e.key === 'Enter' && handleRegisterPhone(),
-                placeholder: '599 12 34 56',
+                placeholder: L('login_phone_placeholder', '599 12 34 56'),
                 disabled: loading,
                 maxLength: '9',
                 className: 'flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100 text-lg tracking-wider'
@@ -1852,34 +1864,34 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               disabled: loading || phone.length !== 9,
               className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
             },
-              loading ? 'იგზავნება...' : 'რეგისტრაცია და SMS კოდი'
+              loading ? L('login_loading_send', 'იგზავნება...') : L('login_phone_button', 'რეგისტრაცია და SMS კოდი')
             ),
             React.createElement('button', {
               onClick: () => { setStep('pid'); setPhone(''); setError(''); },
               disabled: loading,
               className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
             },
-              'უკან'
+              L('login_back', 'უკან')
             )
           )
         ) : (
           // OTP Input
           React.createElement('div', {},
             React.createElement('p', { className: 'text-slate-600 text-sm mb-2' },
-              `${repName ? 'კი, ' + repName + '!' : 'კოდი გამოწერილი'}`
+              repName ? L('login_otp_greeting', 'კი, ') + repName + '!' : L('login_otp_subtitle', 'კოდი გამოწერილი')
             ),
             phoneMask && React.createElement('p', { className: 'text-pink-600 text-xs mb-4 font-medium' },
-              '📱 კოდი გავიდა ' + phoneMask + '-ზე'
+              L('login_otp_phone_mask', '📱 კოდი გავიდა ') + phoneMask + L('login_otp_phone_mask_suffix', '-ზე')
             ),
             React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-              'დამადასტურებელი კოდი (SMS)'
+              L('login_otp_label', 'დამადასტურებელი კოდი (SMS)')
             ),
             React.createElement('input', {
               type: 'text',
               value: otp,
               onChange: (e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)),
               onKeyPress: (e) => e.key === 'Enter' && handleVerifyOtp(),
-              placeholder: '000000',
+              placeholder: L('login_otp_placeholder', '000000'),
               disabled: loading,
               maxLength: '6',
               className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none text-center text-2xl tracking-widest disabled:bg-slate-100'
@@ -1890,21 +1902,21 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               disabled: loading || otp.length !== 6,
               className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
             },
-              loading ? 'დამდასტურდება...' : 'შეხვედი'
+              loading ? L('login_loading_verify', 'დამდასტურდება...') : L('login_otp_button', 'შეხვედი')
             ),
             React.createElement('button', {
               onClick: () => { setStep('pid'); setPid(''); setPhone(''); setOtp(''); setError(''); setRepName(''); },
               disabled: loading,
               className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
             },
-              'უკან'
+              L('login_back', 'უკან')
             )
           )
         ),
 
         // Footer
         React.createElement('p', { className: 'text-xs text-slate-500 text-center mt-6' },
-          'ეს გვერდი დაცული. მხოლოდ SMS კოდით შეუძლია შესვლა.'
+          L('login_footer', 'ეს გვერდი დაცული. მხოლოდ SMS კოდით შეიძლება შესვლა.')
         )
       )
     )
