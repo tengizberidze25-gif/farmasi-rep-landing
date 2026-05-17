@@ -2549,7 +2549,10 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             <>
               <div className="flex items-center gap-2 p-3 rounded-xl"
                 style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
-                <span className="text-sm flex-1 truncate font-mono" style={{ color: theme.wine }}>{shareUrl}</span>
+                <a href={'https://' + shareUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-sm flex-1 truncate font-mono hover:underline transition cursor-pointer"
+                  style={{ color: theme.wine, textDecoration: 'none' }}
+                  title={L('dash_share_open_tooltip', 'გახსენი ახალ ფანჯარაში')}>{shareUrl}</a>
                 <button onClick={() => { setSlugDraft(slug); setEditingSlug(true); setSlugError(''); }}
                   className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition hover:scale-105"
                   style={{ background: theme.ink + '22', color: theme.ink }}
@@ -2624,7 +2627,12 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
           </div>
           <div className="flex items-center gap-2 p-3 rounded-xl"
             style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
-            <span className="text-sm flex-1 truncate font-mono" style={{ color: theme.wine }}>{GUIDE_URL.replace('https://', '')}</span>
+            <a href={GUIDE_URL} target="_blank" rel="noopener noreferrer"
+              className="text-sm flex-1 truncate font-mono hover:underline transition cursor-pointer"
+              style={{ color: theme.wine, textDecoration: 'none' }}
+              title={L('dash_guide_open_tooltip', 'გახსენი ახალ ფანჯარაში')}>
+              {GUIDE_URL.replace('https://', '')}
+            </a>
             <button onClick={copyGuideUrl}
               className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
               style={{ background: guideCopied ? theme.gold : theme.wine, color: theme.cream }}>
