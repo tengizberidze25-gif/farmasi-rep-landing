@@ -5636,31 +5636,60 @@ function ProductCard({ p, onClick, featured }) {
 //   PRODUCT PAGE — individual product landing
 // ═══════════════════════════════════════════════════════════
 function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) {
-  // ⚠️ ADD THIS FIX:
-  if (!product) {
-  if (!product || !product.id) {
-  return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
-      <div className="text-center">
-        <p style={{ marginBottom: '20px', color: '#333' }}>პროდუქტი ვერ იტვირთა</p>
-        <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+  try {
+    // ⚠️ VALIDATION CHECK
+    if (!product || !product.id) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
+          <div className="text-center">
+            <p style={{ marginBottom: '20px', color: '#333' }}>პროდუქტი ვერ იტვირთა</p>
+            <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+          </div>
+        </div>
+      );
+    }
+
+    const t = (key, fallback = '') => (labels && labels[key]) || fallback;
+    const [chatOpen, setChatOpen] = useState(false);
+    const [qty, setQty] = useState(1);
+    const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
+    const goShop = () => window.open(referralUrl, '_blank');
+    const productUrl = `farmasi-rep.ge/r/${repCode}/p/${product.id}`;
+    const Mockup = product.mockup ? Mockups[product.mockup] : null;
+    
+    const features = product.features || [
+      { ic: 'leaf', t: 'არ იტესტება ცხოველებზე' },
+      { ic: 'sparkles', t: 'მდგრადი ფორმულა' },
+      { ic: 'shield-check', t: 'დერმატოლოგიურად დადასტურებული' },
+      { ic: 'heart', t: 'ნატურალური ინგრედიენტები' },
+    ];
+
+    const otherProducts = products.filter(p => p.id !== product.id).slice(0, 3);
+
+    const shareWA = () => {
+      const text = `${product.name} — ${product.price} ₾\nფასდაკავშირდი ${rep.name}-ს FARMASI ლენდინგზე`;
+      const url = `https://wa.me/${(rep.whatsapp || '').replace(/[^\d]/g,'')}?text=${encodeURIComponent(text)}`;
+      if (rep.whatsapp) window.open(url, '_blank');
+    };
+
+    // === მთელი return statement აქ (line 5705+ იქიდან) ===
+    return (
+      <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+        {/* ... rest of component JSX ... */}
       </div>
-    </div>
-  );
-}
+    );
+  } catch (err) {
+    console.error('ProductPage Error:', err);
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
         <div className="text-center">
-          <p style={{ marginBottom: '20px', color: '#333' }}>პროდუქტი ვერ იტვირთა</p>
-          <button 
-            onClick={onBack} 
-            style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-            უკან
-          </button>
+          <p style={{ marginBottom: '20px', color: '#333' }}>რაღაც არ ჯდა</p>
+          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
         </div>
       </div>
     );
   }
+}
   // END FIX
   
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
