@@ -5672,33 +5672,51 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) 
       if (rep.whatsapp) window.open(url, '_blank');
     };
 
+    // === მთელი return statement აქ (line 5705+ იქიდან) ===
     return (
       <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
-        {/* Sticky top bar */}
-        <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center justify-between"
-          style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
-          <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: theme.ink }}>
-            <Ic name="arrow-left" className="w-4 h-4" /> უკან
-          </button>
-          <span className="font-mono text-[10px]" style={{ color: theme.gold }}>#{product.id}</span>
-          <button onClick={shareWA} className="flex items-center gap-1 text-xs" style={{ color: theme.wine }}>
-            <Ic name="share-2" className="w-3.5 h-3.5" />
-          </button>
+        {/* ... rest of component JSX ... */}
+      </div>
+    );
+  } catch (err) {
+    console.error('ProductPage Error:', err);
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
+        <div className="text-center">
+          <p style={{ marginBottom: '20px', color: '#333' }}>რაღაც არ ჯდა</p>
+          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
         </div>
+      </div>
+    );
+  }
+}
+  return (
+    <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+      {/* Sticky top bar */}
+      <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center justify-between"
+        style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: theme.ink }}>
+          <Ic name="arrow-left" className="w-4 h-4" /> უკან
+        </button>
+        <span className="font-mono text-[10px]" style={{ color: theme.gold }}>#{product.id}</span>
+        <button onClick={shareWA} className="flex items-center gap-1 text-xs" style={{ color: theme.wine }}>
+          <Ic name="share-2" className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
-        {/* HERO — large product showcase */}
-        <section className="relative overflow-hidden pt-8 pb-12 px-5"
-          style={{ background: `linear-gradient(180deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}66 0%, ${theme.cream} 100%)` }}>
-          <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl"
-            style={{ background: product.accent }} />
-          <div className="absolute top-40 -left-20 w-80 h-80 rounded-full opacity-20 blur-3xl"
-            style={{ background: product.accent }} />
+      {/* HERO — large product showcase */}
+      <section className="relative overflow-hidden pt-8 pb-12 px-5"
+        style={{ background: `linear-gradient(180deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}66 0%, ${theme.cream} 100%)` }}>
+        <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl"
+          style={{ background: product.accent }} />
+        <div className="absolute top-40 -left-20 w-80 h-80 rounded-full opacity-20 blur-3xl"
+          style={{ background: product.accent }} />
 
-          <div className="relative max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            {/* Product visual */}
-            <div className="relative aspect-square rounded-3xl overflow-hidden flex items-center justify-center anim-fadeup"
-              style={{ background: `linear-gradient(135deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}, ${product.bg?.[1] ?? product.accent ?? '#f5f0eb'})`,
-                       boxShadow: `0 30px 80px -20px ${product.accent}55` }}>
+        <div className="relative max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          {/* Product visual */}
+          <div className="relative aspect-square rounded-3xl overflow-hidden flex items-center justify-center anim-fadeup"
+            style={{ background: `linear-gradient(135deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}, ${product.bg?.[1] ?? product.accent ?? '#f5f0eb'})`,
+                     boxShadow: `0 30px 80px -20px ${product.accent}55` }}>
             <div className="absolute top-8 right-8 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: product.accent }} />
             <div className="absolute bottom-12 left-12 w-56 h-56 rounded-full opacity-20 blur-3xl" style={{ background: product.accent }} />
             {product.tag && (
@@ -6562,6 +6580,17 @@ function BrandVideo({ videoId, thumbnail }) {
       )}
     </div>
   );
+  } catch (err) {
+    console.error('ProductPage Error:', err);
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
+        <div className="text-center">
+          <p style={{ marginBottom: '20px', color: '#333' }}>რაღაც არ ჯდა</p>
+          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+        </div>
+      </div>
+    );
+  }
 }
 
 function ProductVideo({ video }) {
@@ -6604,17 +6633,6 @@ function ProductVideo({ video }) {
       )}
     </div>
   );
-  } catch (err) {
-    console.error('ProductPage Error:', err);
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
-        <div className="text-center">
-          <p style={{ marginBottom: '20px', color: '#333' }}>რაღაც არ ჯდა</p>
-          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
-        </div>
-      </div>
-    );
-  }
 }
 
 // CINEMATIC ACT — masterclass-style dark luxury showcase
