@@ -6,7 +6,6 @@
 <title>წარმომადგენლის გზამკვლევი — FARMASI Georgia</title>
 <meta name="description" content="FARMASI წარმომადგენლის გზამკვლევი — როგორ შექმნა პროფესიონალური პროფილი 5 ნაბიჯში" />
 
-<!-- Open Graph for WhatsApp/Facebook sharing -->
 <meta property="og:type" content="article" />
 <meta property="og:title" content="FARMASI წარმომადგენლის გზამკვლევი" />
 <meta property="og:description" content="5 ნაბიჯი სრულყოფილი პროფილისთვის" />
@@ -29,9 +28,8 @@
   }
 
   * { box-sizing: border-box; }
-  
   html { scroll-behavior: smooth; }
-  
+
   body {
     font-family: 'FiraGO', 'Noto Serif Georgian', system-ui, sans-serif;
     margin: 0;
@@ -48,18 +46,8 @@
     letter-spacing: -0.015em;
   }
 
-  .font-display-lat {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-style: italic;
-  }
+  .container { max-width: 720px; margin: 0 auto; padding: 0 24px; }
 
-  .container {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 0 24px;
-  }
-
-  /* HERO */
   .hero {
     background: linear-gradient(180deg, var(--ivory) 0%, var(--cream) 100%);
     border-bottom: 1px solid rgba(190, 24, 93, 0.08);
@@ -71,10 +59,8 @@
   .hero::before {
     content: '';
     position: absolute;
-    top: -150px;
-    right: -100px;
-    width: 380px;
-    height: 380px;
+    top: -150px; right: -100px;
+    width: 380px; height: 380px;
     background: radial-gradient(circle, rgba(229, 5, 113, 0.06) 0%, transparent 60%);
     pointer-events: none;
   }
@@ -82,26 +68,14 @@
   .hero::after {
     content: '';
     position: absolute;
-    bottom: -120px;
-    left: -80px;
-    width: 280px;
-    height: 280px;
+    bottom: -120px; left: -80px;
+    width: 280px; height: 280px;
     background: radial-gradient(circle, rgba(190, 24, 93, 0.05) 0%, transparent 60%);
     pointer-events: none;
   }
 
-  .hero-content {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-  }
-
-  .hero-logo {
-    height: 52px;
-    width: auto;
-    margin-bottom: 32px;
-    display: inline-block;
-  }
+  .hero-content { position: relative; z-index: 1; text-align: center; }
+  .hero-logo { height: 52px; width: auto; margin-bottom: 32px; display: inline-block; }
 
   .eyebrow {
     font-size: 11px;
@@ -137,18 +111,9 @@
     line-height: 1.65;
   }
 
-  /* SECTION */
-  .section {
-    padding: 64px 0;
-  }
-
-  .section + .section {
-    border-top: 1px solid rgba(190, 24, 93, 0.08);
-  }
-
-  .section-head {
-    margin-bottom: 40px;
-  }
+  .section { padding: 64px 0; }
+  .section + .section { border-top: 1px solid rgba(190, 24, 93, 0.08); }
+  .section-head { margin-bottom: 40px; }
 
   .section-title {
     font-size: clamp(28px, 6vw, 38px);
@@ -157,13 +122,7 @@
     color: var(--ink);
   }
 
-  /* WHY section */
-  .why-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin-top: 32px;
-  }
+  .why-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 32px; }
   @media (min-width: 640px) {
     .why-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
   }
@@ -175,12 +134,7 @@
     padding: 24px 22px;
   }
 
-  .why-icon {
-    font-size: 32px;
-    line-height: 1;
-    margin-bottom: 14px;
-    display: block;
-  }
+  .why-icon { font-size: 32px; line-height: 1; margin-bottom: 14px; display: block; }
 
   .why-card-title {
     font-family: 'Noto Serif Georgian', serif;
@@ -190,21 +144,9 @@
     color: var(--ink);
   }
 
-  .why-card-text {
-    font-size: 14px;
-    color: var(--muted);
-    margin: 0;
-    line-height: 1.5;
-  }
+  .why-card-text { font-size: 14px; color: var(--muted); margin: 0; line-height: 1.5; }
 
-  /* STEPS */
-  .step {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 56px;
-    align-items: flex-start;
-  }
-
+  .step { display: flex; gap: 24px; margin-bottom: 56px; align-items: flex-start; }
   .step:last-child { margin-bottom: 0; }
 
   .step-number {
@@ -218,10 +160,7 @@
     font-weight: 500;
   }
 
-  .step-content {
-    flex: 1;
-    padding-top: 8px;
-  }
+  .step-content { flex: 1; padding-top: 8px; }
 
   .step-eyebrow {
     font-size: 10px;
@@ -241,65 +180,16 @@
     font-weight: 600;
   }
 
-  .step-text {
-    font-size: 16px;
-    color: var(--ink);
-    line-height: 1.65;
-    margin: 0 0 16px;
-    opacity: 0.85;
-  }
+  .step-text { font-size: 16px; color: var(--ink); line-height: 1.65; margin: 0 0 16px; opacity: 0.85; }
 
-  /* Lists */
-  .check-list {
-    list-style: none;
-    padding: 0;
-    margin: 16px 0 0;
-  }
+  .check-list { list-style: none; padding: 0; margin: 16px 0 0; }
+  .check-list li { padding: 8px 0 8px 28px; position: relative; font-size: 15px; line-height: 1.55; color: var(--ink); }
+  .check-list li::before { content: '✓'; position: absolute; left: 0; top: 8px; color: var(--wine); font-weight: 700; font-size: 16px; }
 
-  .check-list li {
-    padding: 8px 0 8px 28px;
-    position: relative;
-    font-size: 15px;
-    line-height: 1.55;
-    color: var(--ink);
-  }
+  .x-list { list-style: none; padding: 0; margin: 0; }
+  .x-list li { padding: 6px 0 6px 24px; position: relative; font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .x-list li::before { content: '×'; position: absolute; left: 0; top: 5px; color: var(--muted); font-weight: 700; font-size: 18px; opacity: 0.5; }
 
-  .check-list li::before {
-    content: '✓';
-    position: absolute;
-    left: 0;
-    top: 8px;
-    color: var(--wine);
-    font-weight: 700;
-    font-size: 16px;
-  }
-
-  .x-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .x-list li {
-    padding: 6px 0 6px 24px;
-    position: relative;
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--muted);
-  }
-
-  .x-list li::before {
-    content: '×';
-    position: absolute;
-    left: 0;
-    top: 5px;
-    color: var(--muted);
-    font-weight: 700;
-    font-size: 18px;
-    opacity: 0.5;
-  }
-
-  /* Tip box */
   .tip-box {
     background: var(--blush);
     border-left: 3px solid var(--wine);
@@ -318,7 +208,6 @@
   }
 
   .tip-box-text {
-    font-size: 14px;
     color: var(--ink);
     line-height: 1.5;
     margin: 0;
@@ -327,7 +216,6 @@
     font-size: 16px;
   }
 
-  /* Example block */
   .examples {
     background: var(--ivory);
     border-radius: 16px;
@@ -356,20 +244,20 @@
   }
 
   .example:last-child { border-bottom: 0; }
-  .example::before {
-    content: '"';
-    color: var(--wine);
-    margin-right: 4px;
-    font-size: 20px;
-  }
-  .example::after {
-    content: '"';
-    color: var(--wine);
-    margin-left: 2px;
-    font-size: 20px;
-  }
+  .example::before { content: '"'; color: var(--wine); margin-right: 4px; font-size: 20px; }
+  .example::after { content: '"'; color: var(--wine); margin-left: 2px; font-size: 20px; }
 
-  /* CTA */
+  .share-example {
+    font-family: 'FiraGO', sans-serif;
+    font-style: normal;
+    font-size: 15px;
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(190, 24, 93, 0.08);
+  }
+  .share-example:last-child { border-bottom: 0; }
+
   .cta-section {
     background: linear-gradient(180deg, var(--ivory) 0%, var(--cream) 100%);
     text-align: center;
@@ -419,20 +307,10 @@
     box-shadow: 0 4px 20px rgba(15, 15, 15, 0.12);
   }
 
-  .cta-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 28px rgba(229, 5, 113, 0.2);
-  }
+  .cta-button:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(229, 5, 113, 0.2); }
+  .cta-arrow { transition: transform 0.2s ease; }
+  .cta-button:hover .cta-arrow { transform: translateX(4px); }
 
-  .cta-arrow {
-    transition: transform 0.2s ease;
-  }
-
-  .cta-button:hover .cta-arrow {
-    transform: translateX(4px);
-  }
-
-  /* FOOTER */
   .footer {
     padding: 32px 0;
     text-align: center;
@@ -450,19 +328,14 @@
     letter-spacing: 0.15em;
   }
 
-  /* Fade-up animation */
   .fade-up {
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.7s ease, transform 0.7s ease;
   }
 
-  .fade-up.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
 
-  /* Section dividers */
   .divider {
     width: 60px;
     height: 1px;
@@ -475,221 +348,242 @@
 
 <body>
 
-<!-- HERO -->
 <header class="hero">
   <div class="container hero-content fade-up">
     <img src="/farmasi-logo.png" alt="FARMASI" class="hero-logo" />
-    <div class="eyebrow">FARMASI Georgia · გზამკვლევი</div>
-    <h1 class="font-display hero-title">წარმომადგენლის გზამკვლევი</h1>
-    <p class="hero-subtitle">5 ნაბიჯი სრულყოფილი პროფილისთვის</p>
-    <p class="hero-quote">
-      პროფესიონალური პროფილი = მომხმარებლის ნდობა.
-      ნდობა = გაყიდვა. ეს გზამკვლევი დაგეხმარება შენი FARMASI გვერდი ცოცხალი და სანდო გახდეს.
-    </p>
+    <div class="eyebrow" data-i18n="guide_hero_eyebrow">FARMASI Georgia · გზამკვლევი</div>
+    <h1 class="font-display hero-title" data-i18n="guide_hero_title">წარმომადგენლის გზამკვლევი</h1>
+    <p class="hero-subtitle" data-i18n="guide_hero_subtitle">5 ნაბიჯი სრულყოფილი პროფილისთვის</p>
+    <p class="hero-quote" data-i18n="guide_hero_quote">პროფესიონალური პროფილი = მომხმარებლის ნდობა. ნდობა = გაყიდვა. ეს გზამკვლევი დაგეხმარება შენი FARMASI გვერდი ცოცხალი და სანდო გახდეს.</p>
   </div>
 </header>
 
-<!-- WHY -->
 <section class="section">
   <div class="container fade-up">
     <div class="section-head" style="text-align: center;">
       <div class="divider"></div>
-      <div class="eyebrow">რატომ მნიშვნელოვანია</div>
-      <h2 class="font-display section-title">სრულდე პროფილი — მეტი შედეგი</h2>
+      <div class="eyebrow" data-i18n="guide_why_eyebrow">რატომ მნიშვნელოვანია</div>
+      <h2 class="font-display section-title" data-i18n="guide_why_title">სრულდე პროფილი — მეტი შედეგი</h2>
     </div>
 
     <div class="why-grid">
       <div class="why-card">
-        <span class="why-icon">💎</span>
-        <p class="why-card-title">ნდობა</p>
-        <p class="why-card-text">სრული პროფილი მომხმარებელს ეუბნება — შენ პროფესიონალი ხარ, არა ანონიმური ანგარიში.</p>
+        <span class="why-icon" data-i18n="guide_why_card1_icon">💎</span>
+        <p class="why-card-title" data-i18n="guide_why_card1_title">ნდობა</p>
+        <p class="why-card-text" data-i18n="guide_why_card1_text">სრული პროფილი მომხმარებელს ეუბნება — შენ პროფესიონალი ხარ, არა ანონიმური ანგარიში.</p>
       </div>
       <div class="why-card">
-        <span class="why-icon">📈</span>
-        <p class="why-card-title">გაყიდვა</p>
-        <p class="why-card-text">სტატისტიკით — სრული პროფილით რეპები 3-ჯერ მეტ შეკვეთას იღებენ. ფოტო + ბიო ნდობას ქმნის.</p>
+        <span class="why-icon" data-i18n="guide_why_card2_icon">📈</span>
+        <p class="why-card-title" data-i18n="guide_why_card2_title">გაყიდვა</p>
+        <p class="why-card-text" data-i18n="guide_why_card2_text">სტატისტიკით — სრული პროფილით რეპები 3-ჯერ მეტ შეკვეთას იღებენ. ფოტო + ბიო ნდობას ქმნის.</p>
       </div>
       <div class="why-card">
-        <span class="why-icon">🔗</span>
-        <p class="why-card-title">ხილვადობა</p>
-        <p class="why-card-text">შენი ლენდინგ ფეიჯი არის შენი ციფრული ვიზიტი — გააზიარე WhatsApp-ში, Facebook-ში, Instagram bio-ში.</p>
+        <span class="why-icon" data-i18n="guide_why_card3_icon">🔗</span>
+        <p class="why-card-title" data-i18n="guide_why_card3_title">ხილვადობა</p>
+        <p class="why-card-text" data-i18n="guide_why_card3_text">შენი ლენდინგ ფეიჯი არის შენი ციფრული ვიზიტი — გააზიარე WhatsApp-ში, Facebook-ში, Instagram bio-ში.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- STEPS -->
 <section class="section">
   <div class="container">
     <div class="section-head fade-up" style="text-align: center;">
       <div class="divider"></div>
-      <div class="eyebrow">ნაბიჯ-ნაბიჯ</div>
-      <h2 class="font-display section-title">5 ნაბიჯი შენი პროფილისთვის</h2>
+      <div class="eyebrow" data-i18n="guide_steps_eyebrow">ნაბიჯ-ნაბიჯ</div>
+      <h2 class="font-display section-title" data-i18n="guide_steps_title">5 ნაბიჯი შენი პროფილისთვის</h2>
     </div>
 
-    <!-- STEP 01 -->
     <div class="step fade-up">
       <div class="step-number">01</div>
       <div class="step-content">
-        <div class="step-eyebrow">სახელი</div>
-        <h3 class="step-title">შენი სრული სახელი</h3>
-        <p class="step-text">ჩაწერე შენი ნამდვილი სახელი და გვარი. ანონიმური "Anna_2024" ან მონიკერი — არ მუშაობს. მომხმარებელი დარწმუნებას სახელით პოულობს.</p>
-        
+        <div class="step-eyebrow" data-i18n="guide_step1_eyebrow">სახელი</div>
+        <h3 class="step-title" data-i18n="guide_step1_title">შენი სრული სახელი</h3>
+        <p class="step-text" data-i18n="guide_step1_text">ჩაწერე შენი ნამდვილი სახელი და გვარი. ანონიმური "Anna_2024" ან მონიკერი — არ მუშაობს. მომხმარებელი დარწმუნებას სახელით პოულობს.</p>
         <ul class="check-list">
-          <li>თამარ გელაშვილი</li>
-          <li>ნინო ბერიძე</li>
-          <li>მაია კაკაბაძე</li>
+          <li data-i18n="guide_step1_example1">თამარ გელაშვილი</li>
+          <li data-i18n="guide_step1_example2">ნინო ბერიძე</li>
+          <li data-i18n="guide_step1_example3">მაია კაკაბაძე</li>
         </ul>
-
         <div class="tip-box">
-          <div class="tip-box-label">რჩევა</div>
-          <p class="tip-box-text">სახელი ისე დაწერე როგორც პასპორტში — ფორმალურად. პროფესიონალური ტონი ნდობას ქმნის.</p>
+          <div class="tip-box-label" data-i18n="guide_step1_tip_label">რჩევა</div>
+          <p class="tip-box-text" data-i18n="guide_step1_tip_text">სახელი ისე დაწერე როგორც პასპორტში — ფორმალურად. პროფესიონალური ტონი ნდობას ქმნის.</p>
         </div>
       </div>
     </div>
 
-    <!-- STEP 02 -->
     <div class="step fade-up">
       <div class="step-number">02</div>
       <div class="step-content">
-        <div class="step-eyebrow">ფოტო</div>
-        <h3 class="step-title">პროფესიონალური სურათი</h3>
-        <p class="step-text">ფოტო ყველაზე მნიშვნელოვანი ელემენტია. მომხმარებელი პირველ რიგში სახეს უყურებს — გადაწყვიტავს მისცემს თუ არა ნდობას.</p>
-
+        <div class="step-eyebrow" data-i18n="guide_step2_eyebrow">ფოტო</div>
+        <h3 class="step-title" data-i18n="guide_step2_title">პროფესიონალური სურათი</h3>
+        <p class="step-text" data-i18n="guide_step2_text">ფოტო ყველაზე მნიშვნელოვანი ელემენტია. მომხმარებელი პირველ რიგში სახეს უყურებს — გადაწყვიტავს მისცემს თუ არა ნდობას.</p>
         <ul class="check-list">
-          <li>შენი სახე ნათლად ჩანდეს</li>
-          <li>კარგი განათება (დღის შუქი ან თეთრი ფონი)</li>
-          <li>ღიმილი — ნდობას ქმნის</li>
-          <li>ვერტიკალური ფორმატი (square ან portrait)</li>
+          <li data-i18n="guide_step2_do1">შენი სახე ნათლად ჩანდეს</li>
+          <li data-i18n="guide_step2_do2">კარგი განათება (დღის შუქი ან თეთრი ფონი)</li>
+          <li data-i18n="guide_step2_do3">ღიმილი — ნდობას ქმნის</li>
+          <li data-i18n="guide_step2_do4">ვერტიკალური ფორმატი (square ან portrait)</li>
         </ul>
-
         <ul class="x-list">
-          <li>ბნელი ან blurred ფოტო</li>
-          <li>ჯგუფური სურათი — მხოლოდ შენ უნდა იყო</li>
-          <li>ძალიან ბევრი ფილტრი ან Photoshop</li>
-          <li>სელფი მანქანაში ან არასაჭირო ფონით</li>
+          <li data-i18n="guide_step2_dont1">ბნელი ან blurred ფოტო</li>
+          <li data-i18n="guide_step2_dont2">ჯგუფური სურათი — მხოლოდ შენ უნდა იყო</li>
+          <li data-i18n="guide_step2_dont3">ძალიან ბევრი ფილტრი ან Photoshop</li>
+          <li data-i18n="guide_step2_dont4">სელფი მანქანაში ან არასაჭირო ფონით</li>
         </ul>
       </div>
     </div>
 
-    <!-- STEP 03 -->
     <div class="step fade-up">
       <div class="step-number">03</div>
       <div class="step-content">
-        <div class="step-eyebrow">ბიო</div>
-        <h3 class="step-title">შენი მოკლე ისტორია</h3>
-        <p class="step-text">2-3 წინადადებაში გადმოეცი: ვინ ხარ, რას სთავაზობ, რა გამოცდილება გაქვს. ეს არის შენი visit card — შენი ღირებულების შესახებ.</p>
-
+        <div class="step-eyebrow" data-i18n="guide_step3_eyebrow">ბიო</div>
+        <h3 class="step-title" data-i18n="guide_step3_title">შენი მოკლე ისტორია</h3>
+        <p class="step-text" data-i18n="guide_step3_text">2-3 წინადადებაში გადმოეცი: ვინ ხარ, რას სთავაზობ, რა გამოცდილება გაქვს. ეს არის შენი visit card — შენი ღირებულების შესახებ.</p>
         <div class="examples">
-          <p class="examples-title">კარგი მაგალითები</p>
-          <p class="example">გამარჯობა! მე ლიკო ვარ — FARMASI ექსპერტი 2018 წლიდან. გირჩევთ პროდუქციას პირადი გამოცდილებით და დაგეხმარებით კანის ტიპის მიხედვით სწორი არჩევანის გაკეთებაში.</p>
-          <p class="example">FARMASI მენეჯერი 5+ წლის გამოცდილებით. ხარისხიანი პროდუქცია მისაღებ ფასად — სწრაფი მიწოდება მთელ საქართველოში.</p>
+          <p class="examples-title" data-i18n="guide_step3_examples_title">კარგი მაგალითები</p>
+          <p class="example" data-i18n="guide_step3_example1">გამარჯობა! მე ლიკო ვარ — FARMASI ექსპერტი 2018 წლიდან. გირჩევთ პროდუქციას პირადი გამოცდილებით და დაგეხმარებით კანის ტიპის მიხედვით სწორი არჩევანის გაკეთებაში.</p>
+          <p class="example" data-i18n="guide_step3_example2">FARMASI მენეჯერი 5+ წლის გამოცდილებით. ხარისხიანი პროდუქცია მისაღებ ფასად — სწრაფი მიწოდება მთელ საქართველოში.</p>
         </div>
-
         <div class="tip-box">
-          <div class="tip-box-label">ფორმულა</div>
-          <p class="tip-box-text">ვინ ხარ + რას სთავაზობ + რატომ ხარ სანდო = კარგი ბიო. 100-200 ცარიელი იდეალურია.</p>
+          <div class="tip-box-label" data-i18n="guide_step3_tip_label">ფორმულა</div>
+          <p class="tip-box-text" data-i18n="guide_step3_tip_text">ვინ ხარ + რას სთავაზობ + რატომ ხარ სანდო = კარგი ბიო. 100-200 ცარიელი იდეალურია.</p>
         </div>
       </div>
     </div>
 
-    <!-- STEP 04 -->
     <div class="step fade-up">
       <div class="step-number">04</div>
       <div class="step-content">
-        <div class="step-eyebrow">ქალაქი</div>
-        <h3 class="step-title">სად მდებარეობხარ</h3>
-        <p class="step-text">ქალაქი ეუბნება მომხმარებელს — შენ ადგილობრივი ხარ. ეს ნდობას ქმნის და მიწოდების ლოგისტიკას ამარტივებს.</p>
-        
+        <div class="step-eyebrow" data-i18n="guide_step4_eyebrow">ქალაქი</div>
+        <h3 class="step-title" data-i18n="guide_step4_title">სად მდებარეობხარ</h3>
+        <p class="step-text" data-i18n="guide_step4_text">ქალაქი ეუბნება მომხმარებელს — შენ ადგილობრივი ხარ. ეს ნდობას ქმნის და მიწოდების ლოგისტიკას ამარტივებს.</p>
         <ul class="check-list">
-          <li>თბილისი</li>
-          <li>ბათუმი</li>
-          <li>ქუთაისი</li>
-          <li>რუსთავი, გორი, ზუგდიდი — ნებისმიერი</li>
+          <li data-i18n="guide_step4_city1">თბილისი</li>
+          <li data-i18n="guide_step4_city2">ბათუმი</li>
+          <li data-i18n="guide_step4_city3">ქუთაისი</li>
+          <li data-i18n="guide_step4_city4">რუსთავი, გორი, ზუგდიდი — ნებისმიერი</li>
         </ul>
       </div>
     </div>
 
-    <!-- STEP 05 -->
     <div class="step fade-up">
       <div class="step-number">05</div>
       <div class="step-content">
-        <div class="step-eyebrow">სოციალური</div>
-        <h3 class="step-title">ლინკები სოციალურ ქსელებზე</h3>
-        <p class="step-text">დაამატე Facebook, Instagram, TikTok ან WhatsApp ლინკები. რაც მეტი არხია, მით უფრო მარტივად აღმოგაჩენენ მომხმარებლები.</p>
-
+        <div class="step-eyebrow" data-i18n="guide_step5_eyebrow">სოციალური</div>
+        <h3 class="step-title" data-i18n="guide_step5_title">ლინკები სოციალურ ქსელებზე</h3>
+        <p class="step-text" data-i18n="guide_step5_text">დაამატე Facebook, Instagram, TikTok ან WhatsApp ლინკები. რაც მეტი არხია, მით უფრო მარტივად აღმოგაჩენენ მომხმარებლები.</p>
         <ul class="check-list">
-          <li>📘 Facebook პროფილი ან გვერდი</li>
-          <li>📸 Instagram პროფესიონალური აქაუნთით</li>
-          <li>🎵 TikTok — ვიდეო კონტენტი</li>
-          <li>💬 WhatsApp ნომერი (პირდაპირი კავშირისთვის)</li>
+          <li data-i18n="guide_step5_do1">📘 Facebook პროფილი ან გვერდი</li>
+          <li data-i18n="guide_step5_do2">📸 Instagram პროფესიონალური აქაუნთით</li>
+          <li data-i18n="guide_step5_do3">🎵 TikTok — ვიდეო კონტენტი</li>
+          <li data-i18n="guide_step5_do4">💬 WhatsApp ნომერი (პირდაპირი კავშირისთვის)</li>
         </ul>
-
         <div class="tip-box">
-          <div class="tip-box-label">პრო რჩევა</div>
-          <p class="tip-box-text">სოციალურ ქსელებში გამოაქვეყნე FARMASI პროდუქცია, შენი მიმოხილვები, before/after — ეს გვერდი თქვენი reputation-ის ფაიფე ხდება.</p>
+          <div class="tip-box-label" data-i18n="guide_step5_tip_label">პრო რჩევა</div>
+          <p class="tip-box-text" data-i18n="guide_step5_tip_text">სოციალურ ქსელებში გამოაქვეყნე FARMASI პროდუქცია, შენი მიმოხილვები, before/after — ეს გვერდი თქვენი reputation-ის ფაიფე ხდება.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- SHARING -->
 <section class="section">
   <div class="container">
     <div class="section-head fade-up" style="text-align: center;">
       <div class="divider"></div>
-      <div class="eyebrow">გაზიარება</div>
-      <h2 class="font-display section-title">გააზიარე შენი ლინკი</h2>
+      <div class="eyebrow" data-i18n="guide_share_eyebrow">გაზიარება</div>
+      <h2 class="font-display section-title" data-i18n="guide_share_title">გააზიარე შენი ლინკი</h2>
     </div>
 
     <div class="fade-up">
-      <p class="step-text" style="text-align: center; max-width: 540px; margin: 0 auto 32px;">
-        როცა პროფილი მზადაა — გადადი Dashboard-ში, დააფე <strong>"კოპი"</strong> ღილაკი share section-ში და გააზიარე შენი პერსონალური ლინკი.
-      </p>
+      <p class="step-text" style="text-align: center; max-width: 540px; margin: 0 auto 32px;" data-i18n="guide_share_text">როცა პროფილი მზადაა — გადადი Dashboard-ში, დააფე "კოპი" ღილაკი share section-ში და გააზიარე შენი პერსონალური ლინკი.</p>
 
       <div class="examples">
-        <p class="examples-title">სად გავაზიარო</p>
-        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
-          📱 <strong>WhatsApp სტატუსი</strong> — სიტყვით "ნახე ჩემი FARMASI პროდუქცია"
-        </p>
-        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
-          📸 <strong>Instagram bio</strong> — შენი ლინკი მუდმივი ხილვადობით
-        </p>
-        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
-          📘 <strong>Facebook პოსტი</strong> — ფოტოთი და მოკლე აღწერით
-        </p>
-        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
-          💬 <strong>პირადი მესიჯი</strong> — ნაცნობებს, ოჯახს, კოლეგებს
-        </p>
+        <p class="examples-title" data-i18n="guide_share_examples_title">სად გავაზიარო</p>
+        <p class="share-example" data-i18n-html="guide_share_example1">📱 <strong>WhatsApp სტატუსი</strong> — სიტყვით "ნახე ჩემი FARMASI პროდუქცია"</p>
+        <p class="share-example" data-i18n-html="guide_share_example2">📸 <strong>Instagram bio</strong> — შენი ლინკი მუდმივი ხილვადობით</p>
+        <p class="share-example" data-i18n-html="guide_share_example3">📘 <strong>Facebook პოსტი</strong> — ფოტოთი და მოკლე აღწერით</p>
+        <p class="share-example" data-i18n-html="guide_share_example4">💬 <strong>პირადი მესიჯი</strong> — ნაცნობებს, ოჯახს, კოლეგებს</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA -->
 <section class="cta-section fade-up">
   <div class="container">
-    <div class="cta-eyebrow">დაიწყე ეხლავე</div>
-    <h2 class="font-display cta-title">გადადი შენი პროფილისკენ</h2>
-    <p class="cta-subtitle">ნდობას ერთი ფოტო და ბიო ქმნის</p>
+    <div class="cta-eyebrow" data-i18n="guide_cta_eyebrow">დაიწყე ეხლავე</div>
+    <h2 class="font-display cta-title" data-i18n="guide_cta_title">გადადი შენი პროფილისკენ</h2>
+    <p class="cta-subtitle" data-i18n="guide_cta_subtitle">ნდობას ერთი ფოტო და ბიო ქმნის</p>
     <a href="https://my.farmasi.ge" class="cta-button">
-      ჩემი პროფილი
+      <span data-i18n="guide_cta_button">ჩემი პროფილი</span>
       <span class="cta-arrow">→</span>
     </a>
   </div>
 </section>
 
-<!-- FOOTER -->
 <footer class="footer">
   <div class="container">
-    <p class="footer-brand">FARMASI Georgia</p>
-    <p style="margin: 8px 0 0;">© ოფიციალური წარმომადგენელი საქართველოში</p>
+    <p class="footer-brand" data-i18n="guide_footer_brand">FARMASI Georgia</p>
+    <p style="margin: 8px 0 0;" data-i18n="guide_footer_text">© ოფიციალური წარმომადგენელი საქართველოში</p>
   </div>
 </footer>
 
 <script>
-  // Scroll-triggered fade-up animation
+  // ── Sheet-driven i18n via JSONP ──────────────────────────────────
+  const API_URL = 'https://script.google.com/macros/s/AKfycbytRrFPbb1lOQ-_M8o1HmXtpZLUJ_4S6kn7HTOW4lVfRrum8ZQI4xjAO27azelbEpQ6/exec';
+
+  function applyLabels(labels) {
+    if (!labels || typeof labels !== 'object') return;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (labels[key] && String(labels[key]).trim()) {
+        el.textContent = labels[key];
+      }
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      const key = el.getAttribute('data-i18n-html');
+      if (labels[key] && String(labels[key]).trim()) {
+        el.innerHTML = labels[key];
+      }
+    });
+  }
+
+  function loadLabels() {
+    const callbackName = 'guideCb_' + Date.now();
+    const script = document.createElement('script');
+    let done = false;
+
+    window[callbackName] = function(data) {
+      done = true;
+      try {
+        if (data && data.ok && data.labels) {
+          applyLabels(data.labels);
+        }
+      } catch (e) {
+        console.warn('Label apply error:', e);
+      }
+      delete window[callbackName];
+      script.remove();
+    };
+
+    script.src = API_URL + '?action=get_labels&callback=' + callbackName + '&_t=' + Date.now();
+    script.onerror = function() {
+      console.warn('Labels fetch failed — using fallback text');
+      delete window[callbackName];
+      script.remove();
+    };
+
+    setTimeout(() => {
+      if (!done) {
+        console.warn('Labels fetch timeout — using fallback text');
+        delete window[callbackName];
+        if (script.parentNode) script.remove();
+      }
+    }, 8000);
+
+    document.head.appendChild(script);
+  }
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -701,10 +595,11 @@
 
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 
-  // Make hero fade in immediately on load
   setTimeout(() => {
     document.querySelector('.hero .fade-up')?.classList.add('visible');
   }, 100);
+
+  loadLabels();
 </script>
 
 </body>
