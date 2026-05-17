@@ -1706,6 +1706,31 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ WebOTP API — auto-fill OTP from SMS on Android Chrome 84+
+  // iOS uses native QuickType bar suggestion (handled by autoComplete="one-time-code")
+  useEffect(() => {
+    if (step !== 'otp') return;
+    if (!('OTPCredential' in window)) return; // not supported (iOS, older browsers)
+
+    const ac = new AbortController();
+    navigator.credentials.get({
+      otp: { transport: ['sms'] },
+      signal: ac.signal
+    }).then((otpCred) => {
+      if (otpCred && otpCred.code) {
+        setOtp(otpCred.code);
+        // Auto-submit after short delay so user sees the code populated
+        setTimeout(() => handleVerifyOtp(otpCred.code), 300);
+      }
+    }).catch((err) => {
+      // User denied or timeout — silent failure (fallback to manual entry)
+      console.log('WebOTP: ', err.message);
+    });
+
+    return () => ac.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   // ✅ NEW: First-time phone registration — saves phone + triggers OTP
   const handleRegisterPhone = async () => {
     // Strip non-digits and any leading 995
@@ -1736,15 +1761,16 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     setLoading(false);
   };
 
-  const handleVerifyOtp = async () => {
-    if (!otp || otp.length !== 6) {
+  const handleVerifyOtp = async (codeOverride) => {
+    const codeToVerify = codeOverride || otp;
+    if (!codeToVerify || codeToVerify.length !== 6) {
       setError('OTP must be 6 digits');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const response = await api({ action: 'verify_otp', pid, otp });
+      const response = await api({ action: 'verify_otp', pid, otp: codeToVerify });
       if (response.ok) {
         // Store session token + 30-day expiry (matches backend session TTL)
         localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
@@ -1894,6 +1920,9 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               placeholder: L('login_otp_placeholder', '000000'),
               disabled: loading,
               maxLength: '6',
+              inputMode: 'numeric',
+              autoComplete: 'one-time-code',
+              pattern: '[0-9]*',
               className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none text-center text-2xl tracking-widest disabled:bg-slate-100'
             }),
             error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
