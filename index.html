@@ -1589,7 +1589,7 @@ function Login({ onLogin, initialError, labels = {} }) {
               <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_link_label', 'ჩასვი ლინკი ან 6-ნიშნა PID')}</label>
               <div className="relative">
                 <input type="text" value={code} onChange={(e) => { setCode(e.target.value); setErr(''); }}
-                  placeholder={L('welcome_link_placeholder', 'https://farmasi.ge/ka/signup153205')}
+                  placeholder={L('welcome_link_placeholder', 'https://farmasi.ge/ka/signup/153205')}
                   className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
                   style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
                   onKeyDown={(e) => e.key === 'Enter' && handleNext()} />
@@ -3579,7 +3579,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const expandedRef = useRef(null);
   const heroPhotoTiltRef = useRef(null);
   const heroPhotoContainerRef = useRef(null);
-  const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
+  const referralUrl = `https://farmasi.ge/ka/signup/${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
   const goCatalog = () => window.open(CATALOG_URL, '_blank');
 
@@ -5652,7 +5652,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) 
     const t = (key, fallback = '') => (labels && labels[key]) || fallback;
     const [chatOpen, setChatOpen] = useState(false);
     const [qty, setQty] = useState(1);
-    const referralUrl = `https://farmasi.ge/ka/signup${repCode}`;
+    const referralUrl = `https://farmasi.ge/ka/signup/${repCode}`;
     const goShop = () => window.open(referralUrl, '_blank');
     const productUrl = `farmasi-rep.ge/r/${repCode}/p/${product.id}`;
     const Mockup = product.mockup ? Mockups[product.mockup] : null;
