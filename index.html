@@ -5663,7 +5663,8 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) 
   const goShop = () => window.open(referralUrl, '_blank');
   const productUrl = `farmasi-rep.ge/r/${repCode}/p/${product.id}`;
   const Mockup = product.mockup ? Mockups[product.mockup] : null;
-
+  console.log('product.mockup:', product?.mockup);
+  console.log('product keys:', Object.keys(product));
   const features = product.features || [
     { ic: 'leaf',         t: 'არ იტესტება ცხოველებზე' },
     { ic: 'sparkles',     t: 'მდგრადი ფორმულა' },
