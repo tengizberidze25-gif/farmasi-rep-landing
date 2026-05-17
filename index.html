@@ -2539,15 +2539,29 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
       )}
       <header className="px-5 pt-20 pb-6" style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}22` }}>
         <div className="max-w-3xl mx-auto">
-          <span className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
-            <span className="font-mono" style={{ color: theme.wine }}>#{repCode}</span> · {L('dash_header_subtitle', 'წარმომადგენლის პანელი')} · <a href="?logout=1" style={{ color: theme.ink + '66', textDecoration: 'underline', textTransform: 'none', letterSpacing: 'normal' }}>{L('switch_pid_link', 'სხვა PID')}</a>
-          </span>
-          <h1 className="font-display text-3xl mb-1 mt-2" style={{ color: theme.ink }}>
-            {L('dash_header_greeting', 'გამარჯობა,')} {rep.name.split(' ')[0]} 🌹
-          </h1>
-          <p className="text-sm" style={{ color: theme.ink + '99' }}>
-            {L('dash_header_description', 'შეავსე პროფილი — ეს გვერდი ნახავს ყველა, ვინც შენ ლინკზე გადავა')}
-          </p>
+          <div className="flex justify-between items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <span className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                <span className="font-mono" style={{ color: theme.wine }}>#{repCode}</span> · {L('dash_header_subtitle', 'წარმომადგენლის პანელი')} · <a href="?logout=1" style={{ color: theme.ink + '66', textDecoration: 'underline', textTransform: 'none', letterSpacing: 'normal' }}>{L('switch_pid_link', 'სხვა PID')}</a>
+              </span>
+              <h1 className="font-display text-3xl mb-1 mt-2" style={{ color: theme.ink }}>
+                {L('dash_header_greeting', 'გამარჯობა,')} {rep.name.split(' ')[0]} 🌹
+              </h1>
+              <p className="text-sm" style={{ color: theme.ink + '99' }}>
+                {L('dash_header_description', 'შეავსე პროფილი — ეს გვერდი ნახავს ყველა, ვინც შენ ლინკზე გადავა')}
+              </p>
+            </div>
+            <button onClick={() => {
+              if (typeof onLogout === 'function' && window.confirm(L('logout_confirm', 'ნამდვილად გსურს გასვლა? შემდეგ შესვლისას SMS კოდი მოგთხოვება.'))) {
+                onLogout();
+              }
+            }}
+              className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition self-end flex-shrink-0"
+              style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.ink}33` }}
+              title={L('logout_title', 'გასვლა')}>
+              <Ic name="log-out" className="w-3 h-3" /> {L('logout_button', 'გასვლა')}
+            </button>
+          </div>
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
@@ -2557,19 +2571,9 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
               <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{L('dash_share_eyebrow', 'შენი ლენდინგ ფეიჯი')}</p>
               <p className="font-display text-lg" style={{ color: theme.ink }}>{L('dash_share_title', 'გააზიარე და მიიღე გაყიდვა')}</p>
             </div>
-            <button onClick={onPreview} className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition"
+            <button onClick={onPreview} className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
               style={{ background: theme.ink, color: theme.cream }}>
               <Ic name="eye" className="w-3 h-3" /> ნახე
-            </button>
-            <button onClick={() => {
-              if (typeof onLogout === 'function' && window.confirm(L('logout_confirm', 'ნამდვილად გსურს გასვლა? შემდეგ შესვლისას SMS კოდი მოგთხოვება.'))) {
-                onLogout();
-              }
-            }}
-              className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition"
-              style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.ink}33` }}
-              title={L('logout_title', 'გასვლა')}>
-              <Ic name="log-out" className="w-3 h-3" /> {L('logout_button', 'გასვლა')}
             </button>
           </div>
 
