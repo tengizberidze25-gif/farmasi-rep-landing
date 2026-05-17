@@ -1,312 +1,711 @@
 <!DOCTYPE html>
 <html lang="ka">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FARMASI · წარმომადგენლის გზამკვლევი</title>
-<meta name="description" content="ნაბიჯ-ნაბიჯ ინსტრუქცია — როგორ შექმენი შენი ციფრული გვერდი my.farmasi.ge-ზე 5 წუთში">
-<meta name="theme-color" content="#FAF7F2">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>წარმომადგენლის გზამკვლევი — FARMASI Georgia</title>
+<meta name="description" content="FARMASI წარმომადგენლის გზამკვლევი — როგორ შექმნა პროფესიონალური პროფილი 5 ნაბიჯში" />
 
-<!-- Open Graph — WhatsApp, Facebook, Telegram, LinkedIn -->
-<meta property="og:type" content="website">
-<meta property="og:title" content="FARMASI · წარმომადგენლის გზამკვლევი">
-<meta property="og:description" content="ნაბიჯ-ნაბიჯ ინსტრუქცია — როგორ შექმენი შენი ციფრული გვერდი 5 წუთში · FARMASI Georgia">
-<meta property="og:image" content="https://my.farmasi.ge/farmasi-guide-cover.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="FARMASI Georgia · წარმომადგენლის გზამკვლევი">
-<meta property="og:url" content="https://my.farmasi.ge/guide.html">
-<meta property="og:locale" content="ka_GE">
-<meta property="og:site_name" content="FARMASI Georgia">
+<!-- Open Graph for WhatsApp/Facebook sharing -->
+<meta property="og:type" content="article" />
+<meta property="og:title" content="FARMASI წარმომადგენლის გზამკვლევი" />
+<meta property="og:description" content="5 ნაბიჯი სრულყოფილი პროფილისთვის" />
+<meta property="og:locale" content="ka_GE" />
 
-<!-- Twitter Card -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="FARMASI · წარმომადგენლის გზამკვლევი">
-<meta name="twitter:description" content="ნაბიჯ-ნაბიჯ ინსტრუქცია · FARMASI Georgia">
-<meta name="twitter:image" content="https://my.farmasi.ge/farmasi-guide-cover.jpg">
-
-<link rel="icon" type="image/png" href="/farmasi-icon.png">
-<link rel="apple-touch-icon" href="/farmasi-icon.png">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@500;600;700&family=FiraGO:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;500;600;700;800;900&family=FiraGO:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet" />
 
 <style>
-:root {
-  --cream: #FAF7F2;
-  --ivory: #FFFEF9;
-  --ink: #0F0F0F;
-  --ink-soft: #2A2724;
-  --wine: #BE185D;
-  --gold: #B8860B;
-  --blush: #FCE7E6;
-}
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body {
-  background: var(--cream);
-  color: var(--ink);
-  font-family: 'FiraGO', 'Noto Serif Georgian', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
-}
-body {
-  background: linear-gradient(180deg, var(--cream) 0%, var(--blush) 50%, var(--cream) 100%);
-  overflow-x: hidden;
-}
-.bg-blur {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(80px);
-  z-index: 0;
-  pointer-events: none;
-}
-.bg-blur.tr {
-  top: -100px; right: -100px;
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(190,24,93,0.3), transparent 70%);
-}
-.bg-blur.bl {
-  bottom: -100px; left: -150px;
-  width: 600px; height: 600px;
-  background: radial-gradient(circle, rgba(184,134,11,0.25), transparent 70%);
-}
-.container {
-  position: relative;
-  z-index: 1;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 60px 24px 80px;
-  text-align: center;
-}
-.brand-logo {
-  width: 180px;
-  height: auto;
-  margin: 0 auto 8px;
-  display: block;
-}
-.brand-region {
-  font-family: 'FiraGO', sans-serif;
-  font-size: 11px;
-  letter-spacing: 6px;
-  text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 500;
-  margin-bottom: 60px;
-}
-.eyebrow {
-  font-size: 11px;
-  letter-spacing: 5px;
-  text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 500;
-  margin-bottom: 14px;
-}
-.title {
-  font-family: 'Noto Serif Georgian', serif;
-  font-weight: 700;
-  font-size: clamp(36px, 7vw, 56px);
-  line-height: 1.15;
-  color: var(--ink);
-  margin-bottom: 16px;
-}
-.italic {
-  font-family: 'Cormorant Garamond', serif;
-  font-style: italic;
-  font-size: clamp(18px, 3vw, 24px);
-  color: var(--wine);
-  font-weight: 500;
-  margin-bottom: 36px;
-}
-.divider {
-  width: 50px;
-  height: 1.5px;
-  background: var(--gold);
-  margin: 0 auto 36px;
-}
-.intro {
-  font-size: clamp(15px, 2.2vw, 17px);
-  color: var(--ink-soft);
-  line-height: 1.65;
-  max-width: 520px;
-  margin: 0 auto 40px;
-}
-.cover-card {
-  display: inline-block;
-  margin: 0 auto 36px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 30px 80px rgba(0,0,0,0.18), 0 12px 24px rgba(0,0,0,0.1);
-  background: white;
-  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-  max-width: 320px;
-  width: 100%;
-}
-.cover-card:hover {
-  transform: translateY(-6px);
-}
-.cover-card img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-width: 360px;
-  margin: 0 auto 50px;
-}
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 16px 32px;
-  font-size: 15px;
-  font-weight: 600;
-  font-family: 'FiraGO', sans-serif;
-  text-decoration: none;
-  border-radius: 100px;
-  transition: all 0.3s;
-  letter-spacing: 0.5px;
-}
-.btn-primary {
-  background: var(--ink);
-  color: var(--cream);
-  box-shadow: 0 8px 24px rgba(15,15,15,0.25);
-}
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(15,15,15,0.35);
-}
-.btn-secondary {
-  background: transparent;
-  color: var(--ink);
-  border: 1.5px solid rgba(184,134,11,0.4);
-}
-.btn-secondary:hover {
-  background: var(--ivory);
-}
-.info-card {
-  background: rgba(255,255,255,0.6);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(184,134,11,0.25);
-  border-radius: 16px;
-  padding: 24px 28px;
-  margin: 40px auto 0;
-  max-width: 480px;
-  text-align: left;
-}
-.info-card-label {
-  font-size: 10px;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--gold);
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-.info-card ul {
-  list-style: none;
-  font-size: 14px;
-  color: var(--ink-soft);
-  line-height: 1.8;
-}
-.info-card li {
-  padding: 2px 0;
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-}
-.info-card li::before {
-  content: '★';
-  color: var(--wine);
-  font-size: 11px;
-  flex-shrink: 0;
-}
-.footer {
-  text-align: center;
-  margin-top: 60px;
-  padding-top: 30px;
-  border-top: 1px solid rgba(184,134,11,0.2);
-}
-.footer-brand {
-  font-family: 'Cormorant Garamond', serif;
-  letter-spacing: 4px;
-  font-size: 13px;
-  color: var(--ink-soft);
-  font-weight: 500;
-}
-.footer-contact {
-  font-family: 'FiraGO', sans-serif;
-  font-size: 13px;
-  color: var(--wine);
-  margin-top: 6px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-.footer-url {
-  font-family: 'FiraGO', sans-serif;
-  font-size: 11px;
-  color: rgba(15,15,15,0.4);
-  margin-top: 8px;
-  letter-spacing: 1px;
-}
-@media (max-width: 600px) {
-  .container { padding: 40px 20px 60px; }
-  .brand-region { margin-bottom: 40px; }
-  .cover-card { max-width: 260px; }
-}
+  :root {
+    --cream: #FFFFFF;
+    --ivory: #FAFAFA;
+    --wine: #E50571;
+    --rose: #F472B6;
+    --blush: #FCE7F3;
+    --gold: #BE185D;
+    --ink: #0F0F0F;
+    --muted: #6B6B6B;
+  }
+
+  * { box-sizing: border-box; }
+  
+  html { scroll-behavior: smooth; }
+  
+  body {
+    font-family: 'FiraGO', 'Noto Serif Georgian', system-ui, sans-serif;
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  .font-display {
+    font-family: 'Noto Serif Georgian', 'Cormorant Garamond', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .font-display-lat {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(180deg, var(--ivory) 0%, var(--cream) 100%);
+    border-bottom: 1px solid rgba(190, 24, 93, 0.08);
+    padding: 64px 0 56px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -150px;
+    right: -100px;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(229, 5, 113, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -120px;
+    left: -80px;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(190, 24, 93, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .hero-logo {
+    height: 52px;
+    width: auto;
+    margin-bottom: 32px;
+    display: inline-block;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 18px;
+    font-weight: 500;
+  }
+
+  .hero-title {
+    font-size: clamp(34px, 8vw, 52px);
+    line-height: 1.05;
+    margin: 0 0 16px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .hero-subtitle {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: clamp(20px, 4vw, 26px);
+    color: var(--wine);
+    margin: 0 0 36px;
+    font-weight: 400;
+  }
+
+  .hero-quote {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* SECTION */
+  .section {
+    padding: 64px 0;
+  }
+
+  .section + .section {
+    border-top: 1px solid rgba(190, 24, 93, 0.08);
+  }
+
+  .section-head {
+    margin-bottom: 40px;
+  }
+
+  .section-title {
+    font-size: clamp(28px, 6vw, 38px);
+    line-height: 1.15;
+    margin: 8px 0 0;
+    color: var(--ink);
+  }
+
+  /* WHY section */
+  .why-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 32px;
+  }
+  @media (min-width: 640px) {
+    .why-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  }
+
+  .why-card {
+    background: var(--ivory);
+    border: 1px solid rgba(190, 24, 93, 0.08);
+    border-radius: 16px;
+    padding: 24px 22px;
+  }
+
+  .why-icon {
+    font-size: 32px;
+    line-height: 1;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .why-card-title {
+    font-family: 'Noto Serif Georgian', serif;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 6px;
+    color: var(--ink);
+  }
+
+  .why-card-text {
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* STEPS */
+  .step {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 56px;
+    align-items: flex-start;
+  }
+
+  .step:last-child { margin-bottom: 0; }
+
+  .step-number {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 64px;
+    line-height: 0.85;
+    font-style: italic;
+    color: var(--wine);
+    flex-shrink: 0;
+    min-width: 80px;
+    font-weight: 500;
+  }
+
+  .step-content {
+    flex: 1;
+    padding-top: 8px;
+  }
+
+  .step-eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .step-title {
+    font-family: 'Noto Serif Georgian', serif;
+    font-size: clamp(22px, 4.5vw, 28px);
+    line-height: 1.2;
+    margin: 0 0 12px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .step-text {
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.65;
+    margin: 0 0 16px;
+    opacity: 0.85;
+  }
+
+  /* Lists */
+  .check-list {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+  }
+
+  .check-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  .check-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    color: var(--wine);
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .x-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .x-list li {
+    padding: 6px 0 6px 24px;
+    position: relative;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .x-list li::before {
+    content: '×';
+    position: absolute;
+    left: 0;
+    top: 5px;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 18px;
+    opacity: 0.5;
+  }
+
+  /* Tip box */
+  .tip-box {
+    background: var(--blush);
+    border-left: 3px solid var(--wine);
+    padding: 18px 22px;
+    margin: 24px 0 0;
+    border-radius: 8px;
+  }
+
+  .tip-box-label {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .tip-box-text {
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.5;
+    margin: 0;
+    font-style: italic;
+    font-family: 'Cormorant Garamond', 'Noto Serif Georgian', Georgia, serif;
+    font-size: 16px;
+  }
+
+  /* Example block */
+  .examples {
+    background: var(--ivory);
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin: 28px 0;
+    border: 1px solid rgba(190, 24, 93, 0.08);
+  }
+
+  .examples-title {
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+    margin: 0 0 16px;
+  }
+
+  .example {
+    font-family: 'Cormorant Garamond', 'Noto Serif Georgian', Georgia, serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink);
+    line-height: 1.5;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(190, 24, 93, 0.08);
+  }
+
+  .example:last-child { border-bottom: 0; }
+  .example::before {
+    content: '"';
+    color: var(--wine);
+    margin-right: 4px;
+    font-size: 20px;
+  }
+  .example::after {
+    content: '"';
+    color: var(--wine);
+    margin-left: 2px;
+    font-size: 20px;
+  }
+
+  /* CTA */
+  .cta-section {
+    background: linear-gradient(180deg, var(--ivory) 0%, var(--cream) 100%);
+    text-align: center;
+    padding: 80px 0;
+    margin-top: 32px;
+    border-top: 1px solid rgba(190, 24, 93, 0.08);
+  }
+
+  .cta-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+
+  .cta-title {
+    font-family: 'Noto Serif Georgian', serif;
+    font-size: clamp(28px, 6vw, 40px);
+    line-height: 1.15;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+
+  .cta-subtitle {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--wine);
+    margin: 0 0 32px;
+  }
+
+  .cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 16px 32px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 20px rgba(15, 15, 15, 0.12);
+  }
+
+  .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(229, 5, 113, 0.2);
+  }
+
+  .cta-arrow {
+    transition: transform 0.2s ease;
+  }
+
+  .cta-button:hover .cta-arrow {
+    transform: translateX(4px);
+  }
+
+  /* FOOTER */
+  .footer {
+    padding: 32px 0;
+    text-align: center;
+    border-top: 1px solid rgba(190, 24, 93, 0.08);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .footer-brand {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    color: var(--gold);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+  }
+
+  /* Fade-up animation */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Section dividers */
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: var(--wine);
+    opacity: 0.4;
+    margin: 0 auto 24px;
+  }
 </style>
 </head>
+
 <body>
-<div class="bg-blur tr"></div>
-<div class="bg-blur bl"></div>
 
-<div class="container">
-  <img src="/farmasi-logo-pdf.png" alt="FARMASI" class="brand-logo">
-  <div class="brand-region">GEORGIA</div>
+<!-- HERO -->
+<header class="hero">
+  <div class="container hero-content fade-up">
+    <img src="/farmasi-logo.png" alt="FARMASI" class="hero-logo" />
+    <div class="eyebrow">FARMASI Georgia · გზამკვლევი</div>
+    <h1 class="font-display hero-title">წარმომადგენლის გზამკვლევი</h1>
+    <p class="hero-subtitle">5 ნაბიჯი სრულყოფილი პროფილისთვის</p>
+    <p class="hero-quote">
+      პროფესიონალური პროფილი = მომხმარებლის ნდობა.
+      ნდობა = გაყიდვა. ეს გზამკვლევი დაგეხმარება შენი FARMASI გვერდი ცოცხალი და სანდო გახდეს.
+    </p>
+  </div>
+</header>
 
-  <div class="eyebrow">წარმომადგენლის გზამკვლევი</div>
-  <h1 class="title">დაიწყე<br>5 წუთში</h1>
-  <div class="italic">your portfolio · your link · your audience</div>
-  <div class="divider"></div>
+<!-- WHY -->
+<section class="section">
+  <div class="container fade-up">
+    <div class="section-head" style="text-align: center;">
+      <div class="divider"></div>
+      <div class="eyebrow">რატომ მნიშვნელოვანია</div>
+      <h2 class="font-display section-title">სრულდე პროფილი — მეტი შედეგი</h2>
+    </div>
 
-  <p class="intro">
-    ნაბიჯ-ნაბიჯ ინსტრუქცია — როგორ შექმენი შენი ციფრული გვერდი
-    <strong style="color: var(--wine);">my.farmasi.ge</strong>-ზე და გააფართოვე შენი მომხმარებლების ქსელი.
-  </p>
+    <div class="why-grid">
+      <div class="why-card">
+        <span class="why-icon">💎</span>
+        <p class="why-card-title">ნდობა</p>
+        <p class="why-card-text">სრული პროფილი მომხმარებელს ეუბნება — შენ პროფესიონალი ხარ, არა ანონიმური ანგარიში.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-icon">📈</span>
+        <p class="why-card-title">გაყიდვა</p>
+        <p class="why-card-text">სტატისტიკით — სრული პროფილით რეპები 3-ჯერ მეტ შეკვეთას იღებენ. ფოტო + ბიო ნდობას ქმნის.</p>
+      </div>
+      <div class="why-card">
+        <span class="why-icon">🔗</span>
+        <p class="why-card-title">ხილვადობა</p>
+        <p class="why-card-text">შენი ლენდინგ ფეიჯი არის შენი ციფრული ვიზიტი — გააზიარე WhatsApp-ში, Facebook-ში, Instagram bio-ში.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <a href="/farmasi-guide.pdf" target="_blank" class="cover-card" aria-label="გახსენი გზამკვლევი">
-    <img src="/farmasi-guide-cover.jpg" alt="გზამკვლევის გადახედვა">
-  </a>
+<!-- STEPS -->
+<section class="section">
+  <div class="container">
+    <div class="section-head fade-up" style="text-align: center;">
+      <div class="divider"></div>
+      <div class="eyebrow">ნაბიჯ-ნაბიჯ</div>
+      <h2 class="font-display section-title">5 ნაბიჯი შენი პროფილისთვის</h2>
+    </div>
 
-  <div class="actions">
-    <a href="/farmasi-guide.pdf" target="_blank" class="btn btn-primary">
-      გახსენი გზამკვლევი →
+    <!-- STEP 01 -->
+    <div class="step fade-up">
+      <div class="step-number">01</div>
+      <div class="step-content">
+        <div class="step-eyebrow">სახელი</div>
+        <h3 class="step-title">შენი სრული სახელი</h3>
+        <p class="step-text">ჩაწერე შენი ნამდვილი სახელი და გვარი. ანონიმური "Anna_2024" ან მონიკერი — არ მუშაობს. მომხმარებელი დარწმუნებას სახელით პოულობს.</p>
+        
+        <ul class="check-list">
+          <li>თამარ გელაშვილი</li>
+          <li>ნინო ბერიძე</li>
+          <li>მაია კაკაბაძე</li>
+        </ul>
+
+        <div class="tip-box">
+          <div class="tip-box-label">რჩევა</div>
+          <p class="tip-box-text">სახელი ისე დაწერე როგორც პასპორტში — ფორმალურად. პროფესიონალური ტონი ნდობას ქმნის.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 02 -->
+    <div class="step fade-up">
+      <div class="step-number">02</div>
+      <div class="step-content">
+        <div class="step-eyebrow">ფოტო</div>
+        <h3 class="step-title">პროფესიონალური სურათი</h3>
+        <p class="step-text">ფოტო ყველაზე მნიშვნელოვანი ელემენტია. მომხმარებელი პირველ რიგში სახეს უყურებს — გადაწყვიტავს მისცემს თუ არა ნდობას.</p>
+
+        <ul class="check-list">
+          <li>შენი სახე ნათლად ჩანდეს</li>
+          <li>კარგი განათება (დღის შუქი ან თეთრი ფონი)</li>
+          <li>ღიმილი — ნდობას ქმნის</li>
+          <li>ვერტიკალური ფორმატი (square ან portrait)</li>
+        </ul>
+
+        <ul class="x-list">
+          <li>ბნელი ან blurred ფოტო</li>
+          <li>ჯგუფური სურათი — მხოლოდ შენ უნდა იყო</li>
+          <li>ძალიან ბევრი ფილტრი ან Photoshop</li>
+          <li>სელფი მანქანაში ან არასაჭირო ფონით</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- STEP 03 -->
+    <div class="step fade-up">
+      <div class="step-number">03</div>
+      <div class="step-content">
+        <div class="step-eyebrow">ბიო</div>
+        <h3 class="step-title">შენი მოკლე ისტორია</h3>
+        <p class="step-text">2-3 წინადადებაში გადმოეცი: ვინ ხარ, რას სთავაზობ, რა გამოცდილება გაქვს. ეს არის შენი visit card — შენი ღირებულების შესახებ.</p>
+
+        <div class="examples">
+          <p class="examples-title">კარგი მაგალითები</p>
+          <p class="example">გამარჯობა! მე ლიკო ვარ — FARMASI ექსპერტი 2018 წლიდან. გირჩევთ პროდუქციას პირადი გამოცდილებით და დაგეხმარებით კანის ტიპის მიხედვით სწორი არჩევანის გაკეთებაში.</p>
+          <p class="example">FARMASI მენეჯერი 5+ წლის გამოცდილებით. ხარისხიანი პროდუქცია მისაღებ ფასად — სწრაფი მიწოდება მთელ საქართველოში.</p>
+        </div>
+
+        <div class="tip-box">
+          <div class="tip-box-label">ფორმულა</div>
+          <p class="tip-box-text">ვინ ხარ + რას სთავაზობ + რატომ ხარ სანდო = კარგი ბიო. 100-200 ცარიელი იდეალურია.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 04 -->
+    <div class="step fade-up">
+      <div class="step-number">04</div>
+      <div class="step-content">
+        <div class="step-eyebrow">ქალაქი</div>
+        <h3 class="step-title">სად მდებარეობხარ</h3>
+        <p class="step-text">ქალაქი ეუბნება მომხმარებელს — შენ ადგილობრივი ხარ. ეს ნდობას ქმნის და მიწოდების ლოგისტიკას ამარტივებს.</p>
+        
+        <ul class="check-list">
+          <li>თბილისი</li>
+          <li>ბათუმი</li>
+          <li>ქუთაისი</li>
+          <li>რუსთავი, გორი, ზუგდიდი — ნებისმიერი</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- STEP 05 -->
+    <div class="step fade-up">
+      <div class="step-number">05</div>
+      <div class="step-content">
+        <div class="step-eyebrow">სოციალური</div>
+        <h3 class="step-title">ლინკები სოციალურ ქსელებზე</h3>
+        <p class="step-text">დაამატე Facebook, Instagram, TikTok ან WhatsApp ლინკები. რაც მეტი არხია, მით უფრო მარტივად აღმოგაჩენენ მომხმარებლები.</p>
+
+        <ul class="check-list">
+          <li>📘 Facebook პროფილი ან გვერდი</li>
+          <li>📸 Instagram პროფესიონალური აქაუნთით</li>
+          <li>🎵 TikTok — ვიდეო კონტენტი</li>
+          <li>💬 WhatsApp ნომერი (პირდაპირი კავშირისთვის)</li>
+        </ul>
+
+        <div class="tip-box">
+          <div class="tip-box-label">პრო რჩევა</div>
+          <p class="tip-box-text">სოციალურ ქსელებში გამოაქვეყნე FARMASI პროდუქცია, შენი მიმოხილვები, before/after — ეს გვერდი თქვენი reputation-ის ფაიფე ხდება.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SHARING -->
+<section class="section">
+  <div class="container">
+    <div class="section-head fade-up" style="text-align: center;">
+      <div class="divider"></div>
+      <div class="eyebrow">გაზიარება</div>
+      <h2 class="font-display section-title">გააზიარე შენი ლინკი</h2>
+    </div>
+
+    <div class="fade-up">
+      <p class="step-text" style="text-align: center; max-width: 540px; margin: 0 auto 32px;">
+        როცა პროფილი მზადაა — გადადი Dashboard-ში, დააფე <strong>"კოპი"</strong> ღილაკი share section-ში და გააზიარე შენი პერსონალური ლინკი.
+      </p>
+
+      <div class="examples">
+        <p class="examples-title">სად გავაზიარო</p>
+        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
+          📱 <strong>WhatsApp სტატუსი</strong> — სიტყვით "ნახე ჩემი FARMASI პროდუქცია"
+        </p>
+        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
+          📸 <strong>Instagram bio</strong> — შენი ლინკი მუდმივი ხილვადობით
+        </p>
+        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
+          📘 <strong>Facebook პოსტი</strong> — ფოტოთი და მოკლე აღწერით
+        </p>
+        <p class="example" style="font-style: normal; font-family: 'FiraGO', sans-serif; font-size: 15px;">
+          💬 <strong>პირადი მესიჯი</strong> — ნაცნობებს, ოჯახს, კოლეგებს
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section fade-up">
+  <div class="container">
+    <div class="cta-eyebrow">დაიწყე ეხლავე</div>
+    <h2 class="font-display cta-title">გადადი შენი პროფილისკენ</h2>
+    <p class="cta-subtitle">ნდობას ერთი ფოტო და ბიო ქმნის</p>
+    <a href="https://my.farmasi.ge" class="cta-button">
+      ჩემი პროფილი
+      <span class="cta-arrow">→</span>
     </a>
-    <a href="/farmasi-guide.pdf" download class="btn btn-secondary">
-      ↓ ჩამოტვირთვა (PDF)
-    </a>
   </div>
+</section>
 
-  <div class="info-card">
-    <div class="info-card-label">რას ისწავლი</div>
-    <ul>
-      <li>როგორ შეხვიდე my.farmasi.ge-ზე</li>
-      <li>პროფილის შევსება — სავალდებულო ველები</li>
-      <li>შენახვა და ლინკის გაზიარება</li>
-      <li>ხატულას დამატება ტელეფონის ეკრანზე</li>
-      <li>ავტო-შესვლის ფუნქცია</li>
-    </ul>
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <p class="footer-brand">FARMASI Georgia</p>
+    <p style="margin: 8px 0 0;">© ოფიციალური წარმომადგენელი საქართველოში</p>
   </div>
+</footer>
 
-  <div class="footer">
-    <div class="footer-brand">FARMASI · GEORGIA</div>
-    <div class="footer-contact">(032) 2 560 760</div>
-    <div class="footer-url">my.farmasi.ge</div>
-  </div>
-</div>
+<script>
+  // Scroll-triggered fade-up animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // Make hero fade in immediately on load
+  setTimeout(() => {
+    document.querySelector('.hero .fade-up')?.classList.add('visible');
+  }, 100);
+</script>
 
 </body>
 </html>
