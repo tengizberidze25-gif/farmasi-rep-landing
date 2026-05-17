@@ -1644,8 +1644,16 @@ function Login({ onLogin, initialError, labels = {} }) {
 // ════════════════════════════════════════════════════════════════════════════
 
 function LoginScreen({ onLoginSuccess, labels = {} }) {
+  // ✅ Read PID from URL on mount — user already provided it via Login (link paste)
+  const urlPid = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('pid') || '';
+    } catch { return ''; }
+  })();
+  
   const [step, setStep] = useState('pid'); // 'pid' → 'phone' (if first-time) → 'otp'
-  const [pid, setPid] = useState('');
+  const [pid, setPid] = useState(urlPid);
   const [phone, setPhone] = useState('');
   const [phoneMask, setPhoneMask] = useState(''); // e.g. "****2266" — shown on OTP step
   const [otp, setOtp] = useState('');
@@ -1653,15 +1661,16 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const [error, setError] = useState('');
   const [repName, setRepName] = useState('');
 
-  const handleRequestOtp = async () => {
-    if (!pid || !/^\d{6}$/.test(pid)) {
+  const handleRequestOtp = async (pidOverride) => {
+    const targetPid = pidOverride || pid;
+    if (!targetPid || !/^\d{6}$/.test(targetPid)) {
       setError('PID must be 6 digits');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const response = await api({ action: 'request_otp', pid });
+      const response = await api({ action: 'request_otp', pid: targetPid });
       if (response.ok) {
         setRepName(response.repName || '');
         setPhoneMask(response.phoneMask || '');
@@ -1679,6 +1688,14 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     }
     setLoading(false);
   };
+
+  // ✅ Auto-trigger OTP request when arriving with PID in URL (skip duplicate PID entry)
+  useEffect(() => {
+    if (urlPid && /^\d{6}$/.test(urlPid)) {
+      handleRequestOtp(urlPid);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ✅ NEW: First-time phone registration — saves phone + triggers OTP
   const handleRegisterPhone = async () => {
