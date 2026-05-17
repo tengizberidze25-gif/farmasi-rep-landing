@@ -5638,6 +5638,16 @@ function ProductCard({ p, onClick, featured }) {
 function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) {
   // ⚠️ ADD THIS FIX:
   if (!product) {
+  if (!product || !product.id) {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
+      <div className="text-center">
+        <p style={{ marginBottom: '20px', color: '#333' }}>პროდუქტი ვერ იტვირთა</p>
+        <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+      </div>
+    </div>
+  );
+}
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
         <div className="text-center">
