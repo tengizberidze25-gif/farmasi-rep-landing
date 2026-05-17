@@ -5432,8 +5432,8 @@ function ProductImage({ src, alt, className, style, onError }) {
 // Single product card for ProblemProductShowcase — with 3D tilt
 function ProblemProductCard({ product, index, accent, onClick }) {
   const tiltRef = useRef(null);
-  const containerRef = useRef(null);
 
+  const containerRef = useRef(null);
   const handleMouseMove = (e) => {
     if (!containerRef.current || !tiltRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -5654,6 +5654,8 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) 
   // END FIX
   
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
+  console.log('ProductPage product:', product);
+  console.log('product.features:', product?.features);
   // ... rest of code
   const [chatOpen, setChatOpen] = useState(false);
   const [qty, setQty] = useState(1);
