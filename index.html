@@ -1098,6 +1098,66 @@ function App() {
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
     instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
   });
+
+  // ─── Shopping cart state ───
+  // Cart is scoped per-rep (each rep page has its own cart in localStorage).
+  // Customers can browse multiple rep pages without their cart leaking between them.
+  const cartStorageKey = repCode ? `farmasi_cart_${repCode}` : null;
+  const [cartItems, setCartItems] = useState(() => {
+    if (typeof window === 'undefined' || !cartStorageKey) return [];
+    try {
+      const stored = localStorage.getItem(cartStorageKey);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+  const [cartOpen, setCartOpen] = useState(false);
+
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined' || !cartStorageKey) return;
+    try {
+      if (cartItems.length === 0) {
+        localStorage.removeItem(cartStorageKey);
+      } else {
+        localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
+      }
+    } catch {}
+  }, [cartItems, cartStorageKey]);
+
+  // Reload cart when repCode changes (e.g. visiting different rep's page)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !cartStorageKey) {
+      setCartItems([]);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(cartStorageKey);
+      setCartItems(stored ? JSON.parse(stored) : []);
+    } catch { setCartItems([]); }
+  }, [cartStorageKey]);
+
+  const cartAddItem = (product) => {
+    setCartItems(items => {
+      const existing = items.find(it => it.product_id === product.product_id);
+      if (existing) {
+        return items.map(it => it.product_id === product.product_id
+          ? { ...it, quantity: it.quantity + (product.quantity || 1) }
+          : it);
+      }
+      return [...items, { ...product, quantity: product.quantity || 1 }];
+    });
+  };
+  const cartUpdateQty = (productId, qty) => {
+    if (qty <= 0) {
+      setCartItems(items => items.filter(it => it.product_id !== productId));
+    } else {
+      setCartItems(items => items.map(it => it.product_id === productId ? { ...it, quantity: qty } : it));
+    }
+  };
+  const cartRemove = (productId) => setCartItems(items => items.filter(it => it.product_id !== productId));
+  const cartClear = () => setCartItems([]);
+  const cartCount = cartItems.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  const cartTotal = cartItems.reduce((sum, it) => sum + ((it.quantity || 0) * (parseFloat(it.price) || 0)), 0);
   const [otpToken, setOtpToken] = useState(null); // OTP session token
 
   // ✅ Validate session against backend on mount (catches admin reset / Sheet row deletion)
@@ -1367,8 +1427,8 @@ function App() {
           {view === 'notfound' && <NotFoundScreen labels={labels} />}
           {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
           {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
-          {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} />}
-          {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} />}
+          {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+          {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
         </>
       )}
     </div>
@@ -3463,7 +3523,260 @@ function VideoIntro({ url }) {
   );
 }
 
-function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], labels = {} }) {
+// ════════════════════════════════════════════════════════════════════════════
+// CART — Floating cart button + drawer + checkout form + success screen
+// 
+// Renders inline (button is fixed bottom-right, drawer slides from right).
+// All cart state lives in the App component and is passed as props.
+// ════════════════════════════════════════════════════════════════════════════
+
+function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, remove, clear, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [step, setStep] = useState('cart'); // 'cart' | 'checkout' | 'success'
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [orderId, setOrderId] = useState('');
+
+  // Reset state when drawer is closed and re-opens fresh from success
+  const close = () => {
+    setOpen(false);
+    setTimeout(() => {
+      if (step === 'success') {
+        setStep('cart');
+        setCustomerName('');
+        setCustomerPhone('');
+        setCustomerAddress('');
+        setOrderId('');
+        setError('');
+      }
+    }, 300);
+  };
+
+  const handleSubmit = async () => {
+    setError('');
+    if (!customerName.trim()) return setError(L('cart_err_name', 'სახელი გვარი სავალდებულოა'));
+    let normalizedPhone = customerPhone.replace(/[^\d]/g, '');
+    if (normalizedPhone.startsWith('995') && normalizedPhone.length > 9) normalizedPhone = normalizedPhone.substring(3);
+    if (!/^5\d{8}$/.test(normalizedPhone)) return setError(L('cart_err_phone', 'ნომერი არასწორი ფორმატია (599XXXXXX)'));
+    if (!customerAddress.trim()) return setError(L('cart_err_addr', 'მისამართი სავალდებულოა'));
+    
+    setSubmitting(true);
+    try {
+      const res = await api({
+        action: 'submit_order',
+        rep_pid: repPid,
+        customer_name: customerName.trim(),
+        customer_phone: normalizedPhone,
+        customer_address: customerAddress.trim(),
+        items: JSON.stringify(items.map(it => ({
+          product_id: it.product_id,
+          name: it.name,
+          quantity: it.quantity,
+          price: it.price
+        })))
+      });
+      if (res.ok) {
+        setOrderId(res.order_id || '');
+        setStep('success');
+        clear();
+      } else {
+        setError(res.error || L('cart_err_submit', 'შეცდომა შეკვეთის გაგზავნისას'));
+      }
+    } catch (e) {
+      setError(L('cart_err_network', 'ქსელის შეცდომა: ') + e.message);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <>
+      {/* Floating cart button — fixed bottom-right, visible always */}
+      <button onClick={() => setOpen(true)} aria-label={L('cart_button_aria', 'კალათა')}
+        className="fixed bottom-6 right-6 z-40 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+        style={{ background: theme.ink, color: theme.cream, width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Ic name="shopping-bag" className="w-6 h-6" />
+        {count > 0 && (
+          <span className="absolute -top-1 -right-1 rounded-full font-bold flex items-center justify-center"
+            style={{ background: theme.wine, color: theme.cream, minWidth: 24, height: 24, fontSize: 12, padding: '0 6px', border: `2px solid ${theme.cream}` }}>
+            {count}
+          </span>
+        )}
+      </button>
+
+      {/* Drawer backdrop */}
+      {open && (
+        <div onClick={close}
+          className="fixed inset-0 z-50 anim-fadeup"
+          style={{ background: 'rgba(35,23,18,0.55)', backdropFilter: 'blur(4px)' }} />
+      )}
+
+      {/* Drawer panel */}
+      {open && (
+        <div className="fixed top-0 right-0 bottom-0 z-50 overflow-y-auto"
+          style={{ background: theme.cream, width: '100%', maxWidth: 480, boxShadow: '-20px 0 60px -20px rgba(35,23,18,0.4)' }}>
+          
+          {/* Header */}
+          <div className="sticky top-0 z-10 px-5 py-4 flex items-center justify-between"
+            style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}33` }}>
+            <h2 className="font-display text-xl" style={{ color: theme.ink }}>
+              {step === 'cart' && L('cart_title', '🛒 შენი კალათა')}
+              {step === 'checkout' && L('cart_checkout_title', '📝 შეკვეთის გაფორმება')}
+              {step === 'success' && L('cart_success_title', '✅ შეკვეთა მიღებულია!')}
+            </h2>
+            <button onClick={close} className="rounded-full p-2 hover:bg-black/5" aria-label="დახურვა">
+              <Ic name="x" className="w-5 h-5" style={{ color: theme.ink }} />
+            </button>
+          </div>
+
+          <div className="px-5 py-5">
+            {/* STEP: CART — items list */}
+            {step === 'cart' && (
+              <>
+                {items.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Ic name="shopping-bag" className="w-16 h-16 mx-auto mb-4 opacity-30" style={{ color: theme.ink }} />
+                    <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_empty', 'კალათა ცარიელია')}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {items.map(it => (
+                        <div key={it.product_id}
+                          className="rounded-xl p-3 flex items-center gap-3"
+                          style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                          {it.image && (
+                            <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+                              style={{ background: theme.cream }}>
+                              <img src={it.image} alt={it.name} className="max-w-full max-h-full object-contain" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium leading-tight mb-1" style={{ color: theme.ink }}>{it.name}</div>
+                            <div className="text-xs" style={{ color: theme.wine }}>{it.price} GEL</div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <button onClick={() => updateQty(it.product_id, it.quantity - 1)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-sm hover:scale-110 transition-transform"
+                                style={{ background: theme.cream, border: `1px solid ${theme.gold}44`, color: theme.ink }}>−</button>
+                              <span className="text-sm font-semibold tabular-nums w-6 text-center" style={{ color: theme.ink }}>{it.quantity}</span>
+                              <button onClick={() => updateQty(it.product_id, it.quantity + 1)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-sm hover:scale-110 transition-transform"
+                                style={{ background: theme.cream, border: `1px solid ${theme.gold}44`, color: theme.ink }}>+</button>
+                              <button onClick={() => remove(it.product_id)}
+                                className="ml-auto text-xs hover:underline" style={{ color: theme.rose }}>
+                                {L('cart_remove', 'წაშლა')}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-5 pt-4 flex items-center justify-between"
+                      style={{ borderTop: `1px solid ${theme.gold}33` }}>
+                      <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                      <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{total} GEL</span>
+                    </div>
+                    
+                    <button onClick={() => setStep('checkout')}
+                      className="w-full mt-5 py-4 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.01]"
+                      style={{ background: theme.wine, color: theme.cream }}>
+                      {L('cart_checkout_button', 'შეკვეთის გაფორმება')} <Ic name="arrow-right" className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* STEP: CHECKOUT — customer info form */}
+            {step === 'checkout' && (
+              <>
+                <p className="text-xs mb-5" style={{ color: theme.ink + '99' }}>
+                  {L('cart_checkout_hint', '💡 შენი ინფორმაცია წარმომადგენელთან გავა SMS-ით — დაგიკავშირდება შეკვეთის დასადასტურებლად')}
+                </p>
+                
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_name', 'სახელი გვარი')} <span style={{ color: theme.rose }}>*</span>
+                </label>
+                <input type="text" value={customerName} onChange={(e) => { setCustomerName(e.target.value); setError(''); }}
+                  placeholder={L('cart_field_name_placeholder', 'ნინო ცინცაძე')}
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_phone', 'ტელეფონის ნომერი')} <span style={{ color: theme.rose }}>*</span>
+                </label>
+                <input type="tel" inputMode="numeric" value={customerPhone} onChange={(e) => { setCustomerPhone(e.target.value); setError(''); }}
+                  placeholder="599 12 34 56"
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_address', 'მისამართი')} <span style={{ color: theme.rose }}>*</span>
+                </label>
+                <textarea value={customerAddress} onChange={(e) => { setCustomerAddress(e.target.value); setError(''); }}
+                  placeholder={L('cart_field_address_placeholder', 'ქალაქი, უბანი, ქუჩა, კორპუსი, ბინა')}
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <div className="mt-4 pt-4 flex items-center justify-between"
+                  style={{ borderTop: `1px solid ${theme.gold}33` }}>
+                  <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                  <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{total} GEL</span>
+                </div>
+
+                {error && <p className="text-xs mt-3" style={{ color: theme.rose }}>{error}</p>}
+
+                <button onClick={handleSubmit} disabled={submitting}
+                  className="w-full mt-5 py-4 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.01] disabled:opacity-50"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  {submitting ? L('cart_submitting', 'იგზავნება...') : <>{L('cart_submit_button', 'შეკვეთის გაგზავნა')} <Ic name="send" className="w-4 h-4" /></>}
+                </button>
+                
+                <button onClick={() => setStep('cart')} disabled={submitting}
+                  className="w-full mt-2 text-xs tracking-widest uppercase py-2"
+                  style={{ color: theme.ink + '88' }}>
+                  {L('cart_back_button', '← უკან კალათაში')}
+                </button>
+              </>
+            )}
+
+            {/* STEP: SUCCESS */}
+            {step === 'success' && (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center"
+                  style={{ background: theme.gold + '33' }}>
+                  <Ic name="check" className="w-10 h-10" style={{ color: theme.wine }} />
+                </div>
+                <h3 className="font-display text-2xl mb-3" style={{ color: theme.ink }}>
+                  {L('cart_success_msg_1', 'მადლობა შენი შეკვეთისთვის!')}
+                </h3>
+                <p className="text-sm mb-2" style={{ color: theme.ink + '99' }}>
+                  {repName ? `${repName} ` : ''}{L('cart_success_msg_2', 'მალე დაგიკავშირდება შეკვეთის დასადასტურებლად')}
+                </p>
+                {orderId && (
+                  <p className="text-xs mt-4 font-mono" style={{ color: theme.ink + '77' }}>
+                    {L('cart_success_order_id', 'შეკვეთის ID:')} {orderId}
+                  </p>
+                )}
+                <button onClick={close}
+                  className="w-full mt-8 py-3 rounded-xl font-medium text-sm tracking-wider uppercase"
+                  style={{ background: theme.ink, color: theme.cream }}>
+                  {L('cart_success_close', 'დახურვა')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], labels = {}, cart }) {
   // i18n-style label helper — Sheet override wins, hardcoded fallback otherwise
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
   const [chatOpen, setChatOpen] = useState(false);
@@ -4749,6 +5062,9 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           </div>
         );
       })()}
+
+      {/* Floating cart button + drawer */}
+      {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
     </div>
   );
 }
@@ -5549,7 +5865,7 @@ function ProductCard({ p, onClick, featured }) {
 // ═══════════════════════════════════════════════════════════
 //   PRODUCT PAGE — individual product landing
 // ═══════════════════════════════════════════════════════════
-function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) {
+function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, cart }) {
   try {
     // ⚠️ VALIDATION CHECK
     if (!product || !product.id) {
@@ -5707,10 +6023,17 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) 
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                {cart && (
+                  <button onClick={() => { cart.addItem({ product_id: product.id, name: product.name, price: product.price, image: product.image, quantity: qty }); cart.setOpen(true); }}
+                    className="flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                    style={{ background: theme.ink, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.ink}88` }}>
+                    <Ic name="shopping-bag" className="w-4 h-4" /> კალათაში დამატება
+                  </button>
+                )}
                 <button onClick={goShop}
                   className="flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
                   style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
-                  <Ic name="shopping-bag" className="w-4 h-4" /> შეიძინე ახლა
+                  <Ic name="external-link" className="w-4 h-4" /> შეიძინე ახლა
                 </button>
                 {rep.whatsapp && (
                   <button onClick={shareWA}
@@ -6431,6 +6754,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) 
         )}
 
         {chatOpen && <ChatModal rep={rep} product={product} onClose={() => setChatOpen(false)} />}
+
+        {/* Floating cart button + drawer */}
+        {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
       </div>
     );
   } catch (err) {
