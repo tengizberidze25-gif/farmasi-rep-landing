@@ -4102,6 +4102,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [leadError, setLeadError] = useState('');
   // Rep's curated products (Sheet: RepProducts) — shown as "rep's pick" section
   const [repPicks, setRepPicks] = useState([]);
+  // Selected pick product → opens elegant ProductDetailModal (same as problem flow)
+  const [pickModalProduct, setPickModalProduct] = useState(null);
 
   // Fetch rep's curated products on mount
   useEffect(() => {
@@ -5049,7 +5051,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 <div key={p.row || p.id}
                   className="rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
                   style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, boxShadow: '0 8px 30px -12px rgba(0,0,0,0.15)' }}
-                  onClick={() => onProduct(p)}>
+                  onClick={() => setPickModalProduct(p)}>
                   {p.image && (
                     <div className="aspect-[4/3] overflow-hidden" style={{ background: theme.cream }}>
                       <img src={p.image} alt={p.name}
@@ -5425,6 +5427,17 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {/* Floating cart button + drawer */}
       {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
+
+      {/* Pick product modal — opens elegant detail view when clicking on rep's curated picks */}
+      {pickModalProduct && (
+        <ProductDetailModal
+          product={pickModalProduct}
+          onClose={() => setPickModalProduct(null)}
+          repWhatsapp={rep.whatsapp}
+          t={t}
+          onAddToCart={cart ? (prod) => { cart.addItem({ product_id: prod.id, name: prod.name, price: prod.price, image: prod.image, quantity: 1 }); cart.setOpen(true); setPickModalProduct(null); } : null}
+        />
+      )}
     </div>
   );
 }
