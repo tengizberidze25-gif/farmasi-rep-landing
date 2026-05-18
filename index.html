@@ -5375,7 +5375,8 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k
         }`}>
           {products.map((p, idx) => (
             <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent}
-              onClick={() => setSelectedProduct(p)} />
+              onClick={() => setSelectedProduct(p)}
+              onAddToCart={cart ? (prod) => { cart.addItem({ product_id: prod.id, name: prod.name, price: prod.price, image: prod.image, quantity: 1 }); cart.setOpen(true); } : null} />
           ))}
         </div>
 
@@ -5660,7 +5661,7 @@ function ProductImage({ src, alt, className, style, onError }) {
 }
 
 // Single product card for ProblemProductShowcase — with 3D tilt
-function ProblemProductCard({ product, index, accent, onClick }) {
+function ProblemProductCard({ product, index, accent, onClick, onAddToCart }) {
   const tiltRef = useRef(null);
 
   const containerRef = useRef(null);
@@ -5685,7 +5686,7 @@ function ProblemProductCard({ product, index, accent, onClick }) {
     : null;
 
   return (
-    <div className="reveal-up" style={{ animationDelay: `${index * 80}ms` }}>
+    <div className="reveal-up relative" style={{ animationDelay: `${index * 80}ms` }}>
       <button onClick={onClick}
         className="block w-full text-left rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02] hover:shadow-2xl group"
         style={{
@@ -5775,6 +5776,16 @@ function ProblemProductCard({ product, index, accent, onClick }) {
           </div>
         </div>
       </button>
+
+      {/* Floating "Add to cart" button — positioned over card, doesn't trigger navigation */}
+      {onAddToCart && product.price && (
+        <button onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+          aria-label="კალათში დამატება"
+          className="absolute bottom-5 right-5 rounded-full shadow-lg hover:scale-110 active:scale-95 transition-transform z-10 flex items-center justify-center"
+          style={{ background: theme.cream, color: theme.ink, width: 48, height: 48, border: `2px solid ${accent}` }}>
+          <Ic name="plus" className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 }
