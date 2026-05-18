@@ -1683,8 +1683,10 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
         setPhoneMask(response.phoneMask || '');
         setStep('otp');
         setError('');
-      } else if (response.error === 'first_time_setup_required' || response.needsPhone) {
-        // ✅ First-time user — no phone registered yet. Show phone input.
+      } else if (response.error === 'first_time_setup_required' || response.needsPhone || response.error === 'Phone not found in profile') {
+        // ✅ First-time user — no phone registered yet. Show phone input step.
+        // ⚠️ SECURITY NOTE: PIDs are public. This flow allows ANYONE who knows an
+        // unclaimed PID to register a phone for it. Monitor REPS sheet for suspicious entries.
         setStep('phone');
         setError('');
       } else {
@@ -1731,7 +1733,8 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // ✅ NEW: First-time phone registration — saves phone + triggers OTP
+  // ✅ First-time phone registration — saves phone + logs in directly (NO SMS)
+  // ⚠️ SECURITY: PIDs are public, this is a deliberate trade-off for onboarding ease.
   const handleRegisterPhone = async () => {
     // Strip non-digits and any leading 995
     let normalized = phone.replace(/[^\d]/g, '');
@@ -1739,21 +1742,25 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
       normalized = normalized.substring(3);
     }
     if (!/^5\d{8}$/.test(normalized)) {
-      setError('ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)');
+      setError(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)'));
       return;
     }
     setLoading(true);
     setError('');
     try {
       const response = await api({ action: 'register_phone', pid, phone: normalized });
-      if (response.ok) {
-        // Phone registered + OTP sent → move to OTP step
-        setRepName(response.repName || '');
-        setPhoneMask(response.phoneMask || '');
-        setStep('otp');
-        setError('');
+      if (response.ok && response.token) {
+        // Phone saved + session created → login directly (no SMS for first-time)
+        localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
+        localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+        localStorage.setItem('farmasi_current_pid', pid);
+        localStorage.setItem('farmasi_last_pid', pid);
+        if (response.rep) {
+          localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(response.rep));
+        }
+        onLoginSuccess(pid, response.token, response.rep);
       } else {
-        setError(response.error || 'ნომრის რეგისტრაცია ვერ მოხერხდა');
+        setError(response.error || L('login_phone_register_failed', 'ნომრის რეგისტრაცია ვერ მოხერხდა'));
       }
     } catch (err) {
       setError('Error: ' + err.message);
