@@ -6178,7 +6178,7 @@ function ProductCard({ p, onClick, featured }) {
           style={{ background: theme.ink + 'AA' }}>
           <span className="text-xs tracking-[0.2em] uppercase flex items-center gap-2 px-4 py-2 rounded-full"
             style={{ background: theme.cream, color: theme.ink }}>
-            <Ic name="shopping-bag" className="w-3.5 h-3.5" /> შეიძინე
+            <Ic name="eye" className="w-3.5 h-3.5" /> ნახე
           </span>
         </div>
       </div>
@@ -6198,7 +6198,7 @@ function ProductCard({ p, onClick, featured }) {
           </p>
           {featured && (
             <span className="text-xs tracking-widest uppercase flex items-center gap-1" style={{ color: theme.wine }}>
-              შეიძინე <Ic name="arrow-right" className="w-3 h-3" />
+              ნახე <Ic name="arrow-right" className="w-3 h-3" />
             </span>
           )}
         </div>
@@ -6375,11 +6375,6 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                     <Ic name="shopping-bag" className="w-4 h-4" /> კალათაში დამატება
                   </button>
                 )}
-                <button onClick={goShop}
-                  className="flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
-                  style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
-                  <Ic name="external-link" className="w-4 h-4" /> შეიძინე ახლა
-                </button>
                 {rep.whatsapp && (
                   <button onClick={shareWA}
                     className="py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
@@ -6828,14 +6823,6 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                           )}
                         </div>
 
-                        <button onClick={goShop}
-                          className="group relative w-full sm:w-auto py-4 px-8 rounded-full flex items-center justify-center gap-3 font-medium text-sm tracking-[0.2em] uppercase transition hover:scale-[1.02] overflow-hidden"
-                          style={{ background: theme.cream, color: '#0a0808' }}>
-                          <span style={{ color: theme.wine }}>✦</span>
-                          შეიძინე კოლექცია
-                          <Ic name="arrow-right" className="w-4 h-4" />
-                        </button>
-
                         <div className="flex items-center gap-4 mt-5 text-[10px] tracking-widest uppercase opacity-60 flex-wrap">
                           <span className="flex items-center gap-1.5">
                             <Ic name="truck" className="w-3 h-3" /> უფასო მიწოდება
@@ -7002,11 +6989,13 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                 <SocialIcon name="whatsapp" className="w-4 h-4" style={{ color: '#25D366' }} />
               </button>
             )}
-            <button onClick={goShop}
-              className="flex-1 py-3 px-5 rounded-xl flex items-center justify-center gap-2 font-medium text-xs tracking-wider uppercase"
-              style={{ background: theme.wine, color: theme.cream }}>
-              <Ic name="shopping-bag" className="w-4 h-4" /> შეიძინე
-            </button>
+            {cart && (
+              <button onClick={() => { cart.addItem({ product_id: product.id, name: product.name, price: product.price, image: product.image, quantity: qty }); cart.setOpen(true); }}
+                className="flex-1 py-3 px-5 rounded-xl flex items-center justify-center gap-2 font-medium text-xs tracking-wider uppercase"
+                style={{ background: theme.ink, color: theme.cream }}>
+                <Ic name="shopping-bag" className="w-4 h-4" /> კალათაში დამატება
+              </button>
+            )}
           </div>
         </div>
 
@@ -7339,17 +7328,6 @@ function CinematicAct({ item, index, reverse, onShop }) {
                 {item.price} ₾
               </p>
             </div>
-            <button onClick={onShop}
-              className="group relative py-3 px-6 sm:py-4 sm:px-8 rounded-full flex items-center gap-3 text-sm tracking-[0.2em] uppercase transition hover:scale-[1.02] overflow-hidden"
-              style={{ background: 'transparent', color: '#F8F6F1',
-                       border: `1px solid ${item.accent}` }}>
-              <span style={{ color: item.accent }}>✦</span>
-              შეიძინე
-              <Ic name="arrow-right" className="w-4 h-4" />
-              {/* hover background */}
-              <span className="absolute inset-0 transition opacity-0 group-hover:opacity-100"
-                style={{ background: item.accent, zIndex: -1 }} />
-            </button>
           </div>
         </div>
       </div>
