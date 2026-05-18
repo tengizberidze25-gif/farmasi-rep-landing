@@ -952,6 +952,7 @@ function getUrlParams() {
     problem: params.get('problem'),
     token: params.get('token'),
     logout: params.get('logout') === '1',
+    order: params.get('order'), // Order invoice page: ?order=ORD-XXX
   };
 }
 
@@ -1086,7 +1087,11 @@ function App() {
   // always shows the Login screen (link paste). Returning users still skip SMS
   // via the 30-day session token on the ?pid=X&edit=1 redirect that follows.
 
-  const [view, setView] = useState((urlParams.pid || urlParams.slug) ? 'loading' : 'login');
+  const [view, setView] = useState(
+    urlParams.order ? 'order' :
+    (urlParams.pid || urlParams.slug) ? 'loading' :
+    'login'
+  );
   const [repCode, setRepCode] = useState(urlParams.pid || '');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
@@ -1429,6 +1434,7 @@ function App() {
           {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
           {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
           {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+          {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
         </>
       )}
     </div>
@@ -3520,6 +3526,199 @@ function VideoIntro({ url }) {
         border: 0,
         background: theme.ink,
       }} />
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ORDER INVOICE PAGE — Beautiful order summary opened via SMS link
+// Accessed via my.farmasi.ge/?order=ORD-XXX-XXX
+// Fetches order from backend by order_id and displays in elegant format.
+// ════════════════════════════════════════════════════════════════════════════
+
+function OrderInvoicePage({ orderId, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!orderId) {
+      setError(L('order_no_id', 'შეკვეთის ID არ მითითებულია'));
+      setLoading(false);
+      return;
+    }
+    api({ action: 'get_order', order_id: orderId })
+      .then(res => {
+        if (res.ok && res.order) {
+          setOrder(res.order);
+        } else {
+          setError(res.error || L('order_not_found', 'შეკვეთა ვერ მოიძებნა'));
+        }
+      })
+      .catch(e => setError(L('order_load_error', 'შეცდომა: ') + e.message))
+      .finally(() => setLoading(false));
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full border-4 animate-spin" style={{ borderColor: theme.gold + '33', borderTopColor: theme.wine }} />
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('order_loading', 'შეკვეთა იტვირთება...')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="font-display text-2xl mb-3" style={{ color: theme.ink }}>{L('order_not_found_title', 'შეკვეთა ვერ მოიძებნა')}</h2>
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{error || L('order_not_found_msg', 'შესაძლოა ID არასწორად დაიწერა ან შეკვეთა წაშლილია.')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Parse items if string
+  let items = order.items;
+  if (typeof items === 'string') {
+    try { items = JSON.parse(items); } catch { items = []; }
+  }
+  if (!Array.isArray(items)) items = [];
+
+  const orderDate = order.timestamp ? new Date(order.timestamp) : null;
+  const formattedDate = orderDate
+    ? orderDate.toLocaleString('ka-GE', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '';
+  const statusLabels = {
+    'new': '🆕 ახალი',
+    'processing': '⏳ მუშავდება',
+    'completed': '✅ დასრულდა',
+    'cancelled': '❌ გაუქმდა'
+  };
+  const statusLabel = statusLabels[order.status] || order.status;
+
+  return (
+    <div className="min-h-screen px-5 py-10 sm:py-16 grain" style={{ background: theme.cream }}>
+      {/* Subtle background glow */}
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
+
+      <div className="relative max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <img src="/farmasi-logo.png" alt="FARMASI"
+            className="mx-auto mb-5"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-2" style={{ color: theme.gold }}>
+            🛒 {L('order_eyebrow', 'შეკვეთა')}
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl mb-2" style={{ color: theme.ink }}>
+            {L('order_invoice_title', 'ინვოისი')}
+          </h1>
+          <p className="text-xs font-mono opacity-60" style={{ color: theme.ink }}>{order.order_id}</p>
+        </div>
+
+        {/* Invoice card */}
+        <div className="rounded-3xl overflow-hidden shadow-2xl"
+          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+          
+          {/* Status bar */}
+          <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-2"
+            style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`, color: theme.cream }}>
+            <span className="text-xs tracking-widest uppercase">{statusLabel}</span>
+            {formattedDate && (
+              <span className="text-xs opacity-80">{formattedDate}</span>
+            )}
+          </div>
+
+          {/* Customer info */}
+          <div className="px-6 py-6 sm:px-8 sm:py-8" style={{ borderBottom: `1px solid ${theme.gold}22` }}>
+            <p className="text-[10px] tracking-[0.3em] uppercase mb-4" style={{ color: theme.gold }}>
+              👤 {L('order_customer', 'კლიენტი')}
+            </p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs opacity-60 mb-1" style={{ color: theme.ink }}>{L('order_field_name', 'სახელი გვარი')}</p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>{order.customer_name}</p>
+              </div>
+              <div>
+                <p className="text-xs opacity-60 mb-1" style={{ color: theme.ink }}>{L('order_field_phone', 'ტელეფონი')}</p>
+                <a href={`tel:+995${order.customer_phone}`}
+                  className="font-display text-lg hover:underline inline-flex items-center gap-2"
+                  style={{ color: theme.wine }}>
+                  📱 {order.customer_phone}
+                </a>
+              </div>
+              <div>
+                <p className="text-xs opacity-60 mb-1" style={{ color: theme.ink }}>{L('order_field_address', 'მისამართი')}</p>
+                <p className="text-sm leading-relaxed" style={{ color: theme.ink }}>{order.customer_address}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Items */}
+          <div className="px-6 py-6 sm:px-8 sm:py-8" style={{ borderBottom: `1px solid ${theme.gold}22` }}>
+            <p className="text-[10px] tracking-[0.3em] uppercase mb-4" style={{ color: theme.gold }}>
+              🛍️ {L('order_items', 'შეძენილი პროდუქტები')}
+            </p>
+            <div className="space-y-3">
+              {items.map((it, idx) => (
+                <div key={idx} className="flex items-center gap-3 py-3"
+                  style={{ borderBottom: idx < items.length - 1 ? `1px dashed ${theme.gold}22` : 'none' }}>
+                  {it.image && (
+                    <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ background: theme.cream }}>
+                      <img src={it.image && it.image.startsWith('http') ? it.image : (it.image ? `/${it.image}` : '')} alt={it.name}
+                        className="max-w-full max-h-full object-contain" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm leading-tight mb-1" style={{ color: theme.ink }}>{it.name}</p>
+                    <p className="text-xs opacity-60" style={{ color: theme.ink }}>
+                      {it.quantity} × {it.price} ₾
+                    </p>
+                  </div>
+                  <p className="font-display text-base whitespace-nowrap" style={{ color: theme.wine }}>
+                    {(it.quantity * it.price).toFixed(2)} ₾
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between"
+            style={{ background: theme.cream }}>
+            <span className="text-sm tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>
+              {L('order_total', 'ჯამი:')}
+            </span>
+            <span className="font-display text-3xl font-bold" style={{ color: theme.wine }}>
+              {order.total} ₾
+            </span>
+          </div>
+
+          {/* Rep info footer */}
+          {order.rep_name && (
+            <div className="px-6 py-4 sm:px-8 text-center" style={{ background: theme.ivory, borderTop: `1px solid ${theme.gold}22` }}>
+              <p className="text-xs opacity-70" style={{ color: theme.ink }}>
+                {L('order_rep_label', 'წარმომადგენელი:')} <span className="font-medium">{order.rep_name}</span>
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer note */}
+        <p className="text-center text-xs mt-6 opacity-60" style={{ color: theme.ink }}>
+          {L('order_footer', '© FARMASI Georgia · ეს ლინკი დროებითია, არ გაუზიარო სხვებს')}
+        </p>
+      </div>
+    </div>
   );
 }
 
