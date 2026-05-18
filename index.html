@@ -5833,8 +5833,53 @@ function ProductDetailModal({ product, onClose, repWhatsapp, t = (k, fb) => fb, 
   const parseDescription = (text) => {
     if (!text) return [];
 
-    // Try newline split first
-    const lines = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    // ─── Pre-process: normalize flat imported text from FARMASI catalog ───
+    let normalized = text;
+
+    // 1. Fix missing space after period/colon when followed by capital letter or Georgian char
+    //    e.g. "ვიზუალს.გამოიყენეთ" → "ვიზუალს. გამოიყენეთ"
+    normalized = normalized.replace(/([.!?])([\u10A0-\u10FF\u2D00-\u2D2FA-Z])/g, '$1 $2');
+    //    Same for colons: "შემადგენლობა:წყალი" → "შემადგენლობა: წყალი"
+    normalized = normalized.replace(/(:)([\u10A0-\u10FF\u2D00-\u2D2FA-Z])/g, '$1 $2');
+
+    // 2. Insert paragraph breaks before known section markers
+    const sectionMarkers = [
+      'ძირითადი ინგრედიენტები',
+      'ძირითადი თვისებები',
+      'ძირითადი ინგრედიენტი',
+      'სრული შემადგენლობა',
+      'გამოყენების წესი',
+      'გამოყენების ინსტრუქცია',
+      'მიღების წესი',
+      'შენახვის პირობები',
+      'ფორმულა გამდიდრებულია',
+      'რეკომენდებულია',
+      'შემადგენლობა:',
+      'ინგრედიენტები:',
+      'პროდუქტის შესახებ',
+      'რატომ შეგიყვარდებათ',
+      'ნაკრებში შედის',
+      'გაფრთხილება',
+    ];
+    sectionMarkers.forEach(marker => {
+      // Insert \n\n before marker (unless already at start or after newline)
+      const re = new RegExp('([^\\n])\\s*(' + marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'g');
+      normalized = normalized.replace(re, '$1\n\n$2');
+    });
+
+    // 3. Auto-detect ingredient bullets: "სიტყვა - " or "სიტყვა — " at start of sentence
+    //    Pattern: after newline OR after period+space, word(s) followed by " - " or " — "
+    normalized = normalized.replace(
+      /(\n|^|\.\s+)([\u10A0-\u10FF\u2D00-\u2D2F][\u10A0-\u10FF\u2D00-\u2D2F\s()A-Za-z0-9-]{2,40})(\s[-—]\s)/g,
+      (match, before, word, dash) => {
+        // Skip if word looks like a sentence (too long or starts with lowercase Georgian)
+        if (word.length > 40) return match;
+        return (before === '\n' || before === '' ? '' : before) + '\n✦ ' + word.trim() + dash;
+      }
+    );
+
+    // Try newline split now
+    const lines = normalized.split(/\n+/).map(l => l.trim()).filter(Boolean);
     if (lines.length > 1) {
       return lines.map(l => l.startsWith('✦')
         ? { type: 'bullet', text: l.replace(/^✦\s*/, '') }
@@ -5842,11 +5887,11 @@ function ProductDetailModal({ product, onClose, repWhatsapp, t = (k, fb) => fb, 
     }
 
     // No newlines — split by ✦ markers
-    if (!text.includes('✦')) {
-      return [{ type: 'paragraph', text }];
+    if (!normalized.includes('✦')) {
+      return [{ type: 'paragraph', text: normalized }];
     }
 
-    const parts = text.split('✦').map(s => s.trim()).filter(Boolean);
+    const parts = normalized.split('✦').map(s => s.trim()).filter(Boolean);
     const sections = [];
 
     // INTRO (before first ✦) — try to detect leadout sentence ending with ":"
