@@ -1858,7 +1858,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
           }),
           error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
           React.createElement('button', {
-            onClick: handleRequestOtp,
+            onClick: () => handleRequestOtp(),
             disabled: loading || !phone.trim(),
             className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
           },
@@ -1889,7 +1889,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
           }),
           error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
           React.createElement('button', {
-            onClick: handleVerifyOtp,
+            onClick: () => handleVerifyOtp(),
             disabled: loading || otp.length !== 6,
             className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
           },
