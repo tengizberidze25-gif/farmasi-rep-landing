@@ -1178,6 +1178,7 @@ function App() {
           return Array.isArray(parsed) ? parsed : [];
         } catch { return []; }
       })(),
+      referralLink: rep?.referral_link || '',
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1308,6 +1309,7 @@ function App() {
                 return Array.isArray(parsed) ? parsed : [];
               } catch { return []; }
             })(),
+            referralLink: data.rep.referral_link || '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
@@ -2681,6 +2683,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     if (!rep.city || !rep.city.trim()) missing.push(L('validation_city', 'ქალაქი'));
     if (!rep.phone || !rep.phone.trim()) missing.push(L('validation_phone', 'ტელეფონის ნომერი'));
     if (!rep.facebook || !rep.facebook.trim()) missing.push(L('validation_facebook', 'Facebook ლინკი'));
+    if (!rep.referralLink || !rep.referralLink.trim()) missing.push(L('validation_referral_link', 'რეფერალური ლინკი'));
     if (missing.length > 0) {
       setMissingFieldsModal(missing);
       return;
@@ -2704,6 +2707,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         telegram: rep.telegram,
         video_url: rep.videoUrl || '',
         customer_videos: JSON.stringify(rep.customerVideos || []),
+        referral_link: rep.referralLink || '',
         // photo_url left out for now — base64 too large for JSONP, will handle separately
       });
       if (result.ok) {
@@ -3452,6 +3456,19 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             <Input icon="message-circle" label="WhatsApp" value={rep.whatsapp} onChange={upd('whatsapp')} placeholder="+995 555 123456" green />
           </div>
         </Card>
+
+        {/* ✅ NEW: Referral link section — required for "Buy" button */}
+        <Card>
+          <SectionLabel n="03b" t={L('profile_section_referral', 'რეფერალური ლინკი')} />
+          <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            {L('profile_referral_hint', 'ლინკი farmasi.ge-დან — "შეიძინე" ღილაკი მომხმარებლებს გადაამისამართებს ამ ლინკზე. მაგ: https://farmasi.ge/ka/signup/549244')}
+          </p>
+          <Input icon="link" label={L('profile_referral_link_label', 'რეფერალური ლინკი')}
+            value={rep.referralLink || ''} onChange={upd('referralLink')}
+            placeholder="https://farmasi.ge/ka/signup/549244"
+            required hasError={validationAttempted && !(rep.referralLink || '').trim()} />
+        </Card>
+
         <Card>
           <SectionLabel n="04" t={L('profile_section_4', 'სოციალური ქსელები')} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -3798,7 +3815,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const expandedRef = useRef(null);
   const heroPhotoTiltRef = useRef(null);
   const heroPhotoContainerRef = useRef(null);
-  const referralUrl = `https://farmasi.ge/ka/signup/${repCode}`;
+  // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
+  const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
   const goCatalog = () => window.open(CATALOG_URL, '_blank');
 
@@ -5871,7 +5889,8 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {} }) 
     const t = (key, fallback = '') => (labels && labels[key]) || fallback;
     const [chatOpen, setChatOpen] = useState(false);
     const [qty, setQty] = useState(1);
-    const referralUrl = `https://farmasi.ge/ka/signup/${repCode}`;
+    // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
+    const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
     const goShop = () => window.open(referralUrl, '_blank');
     const productUrl = `farmasi-rep.ge/r/${repCode}/p/${product.id}`;
     const Mockup = product.mockup ? Mockups[product.mockup] : null;
