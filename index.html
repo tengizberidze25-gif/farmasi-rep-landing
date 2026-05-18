@@ -1599,8 +1599,11 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
           setErr(L('welcome_phone_not_registered', 'ეს ნომერი არ არის რეგისტრირებული'));
         }
       } else if (res.error === 'phone_not_registered' || res.error === 'ეს ნომერი არ არის რეგისტრირებული') {
-        // ✅ Phone-based login but rep not yet registered → guide them to use PID/link
-        setErr(L('welcome_phone_not_registered_help', 'ეს ნომერი არ არის რეგისტრირებული. პირველი შესვლისთვის გამოიყენე PID ან სრული ლინკი.'));
+        // ✅ Phone-based login but rep not yet registered → guide them to use referral link / PID
+        setErr(L('welcome_phone_not_registered_help', 'გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
+      } else if (res.error && res.error.indexOf('SMS failed') !== -1) {
+        // ✅ Backend couldn't send SMS — fall back to suggesting referral link / PID
+        setErr(L('welcome_sms_failed_help', 'SMS ვერ გაიგზავნა. გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
       } else {
         setErr(res.error || L('welcome_error_failed', 'შეცდომა მოხდა'));
       }
@@ -1891,8 +1894,12 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
         setStep('phone');
         setError('');
       } else if (response.error === 'phone_not_registered' || response.error === 'ეს ნომერი არ არის რეგისტრირებული') {
-        // ✅ Phone-based login but rep not yet registered → guide them to use PID/link
-        setError(L('login_phone_not_registered_help', 'ეს ნომერი არ არის რეგისტრირებული. პირველი შესვლისთვის გამოიყენე PID ან სრული ლინკი.'));
+        // ✅ Phone-based login but rep not yet registered → guide them to use referral link / PID
+        setError(L('login_phone_not_registered_help', 'გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
+        setStep('pid');
+      } else if (response.error && response.error.indexOf('SMS failed') !== -1) {
+        // ✅ Backend couldn't send SMS — fall back to suggesting referral link / PID
+        setError(L('login_sms_failed_help', 'SMS ვერ გაიგზავნა. გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
         setStep('pid');
       } else {
         setError(response.error || L('login_pid_send_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
