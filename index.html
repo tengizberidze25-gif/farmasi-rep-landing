@@ -5413,6 +5413,7 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k
           onClose={() => setSelectedProduct(null)}
           repWhatsapp={repWhatsapp}
           t={t}
+          onAddToCart={cart ? (prod) => { cart.addItem({ product_id: prod.id, name: prod.name, price: prod.price, image: prod.image, quantity: 1 }); cart.setOpen(true); setSelectedProduct(null); } : null}
         />
       )}
     </section>
@@ -5420,7 +5421,7 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k
 }
 
 // ProductDetailModal — Full-screen product detail with long description
-function ProductDetailModal({ product, onClose, repWhatsapp, t = (k, fb) => fb }) {
+function ProductDetailModal({ product, onClose, repWhatsapp, t = (k, fb) => fb, onAddToCart }) {
   const accent = product.accent || theme.wine;
   const imageSrc = product.image
     ? (product.image.startsWith('http') ? product.image : `/${product.image}`)
@@ -5632,6 +5633,18 @@ function ProductDetailModal({ product, onClose, repWhatsapp, t = (k, fb) => fb }
                 })}
               </div>
             </div>
+          )}
+
+          {/* Add to Cart CTA (prominent, above WhatsApp) */}
+          {onAddToCart && product.price && (
+            <button onClick={() => onAddToCart(product)}
+              className="w-full flex items-center justify-center gap-2 sm:gap-3 px-6 py-3.5 sm:py-4 rounded-full font-medium text-xs tracking-[0.2em] uppercase transition hover:scale-[1.01] mb-3"
+              style={{ background: theme.cream, color: theme.ink, boxShadow: `0 20px 50px -15px ${theme.cream}55` }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ width: 16, height: 16 }}>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              კალათში დამატება
+            </button>
           )}
 
           {/* WhatsApp CTA */}
