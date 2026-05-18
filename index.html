@@ -1162,7 +1162,7 @@ function App() {
   const cartRemove = (productId) => setCartItems(items => items.filter(it => it.product_id !== productId));
   const cartClear = () => setCartItems([]);
   const cartCount = cartItems.reduce((sum, it) => sum + (it.quantity || 0), 0);
-  const cartTotal = cartItems.reduce((sum, it) => sum + ((it.quantity || 0) * (parseFloat(it.price) || 0)), 0);
+  const cartTotal = Math.round(cartItems.reduce((sum, it) => sum + ((it.quantity || 0) * (parseFloat(it.price) || 0)), 0) * 100) / 100;
   const [otpToken, setOtpToken] = useState(null); // OTP session token
 
   // ✅ Validate session against backend on mount (catches admin reset / Sheet row deletion)
@@ -2011,7 +2011,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-display text-lg" style={{ color: theme.wine }}>
-                        {o.total} ₾
+                        {Number(o.total).toFixed(2)} ₾
                       </p>
                     </div>
                   </div>
@@ -3808,7 +3808,7 @@ function OrderInvoicePage({ orderId, labels = {} }) {
               {L('order_total', 'ჯამი:')}
             </span>
             <span className="font-display text-3xl font-bold" style={{ color: theme.wine }}>
-              {order.total} ₾
+              {Number(order.total).toFixed(2)} ₾
             </span>
           </div>
 
@@ -3985,7 +3985,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                     <div className="mt-5 pt-4 flex items-center justify-between"
                       style={{ borderTop: `1px solid ${theme.gold}33` }}>
                       <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
-                      <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{total} GEL</span>
+                      <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{total.toFixed(2)} GEL</span>
                     </div>
                     
                     <button onClick={() => setStep('checkout')}
@@ -4033,7 +4033,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                 <div className="mt-4 pt-4 flex items-center justify-between"
                   style={{ borderTop: `1px solid ${theme.gold}33` }}>
                   <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
-                  <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{total} GEL</span>
+                  <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{total.toFixed(2)} GEL</span>
                 </div>
 
                 {error && <p className="text-xs mt-3" style={{ color: theme.rose }}>{error}</p>}
