@@ -1537,77 +1537,32 @@ function ViewSwitcher({ view, setView, hasRep }) {
 
 function Login({ onAuthSuccess, initialError, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
-  const [code, setCode] = useState('');      // raw input: PID/phone/link
-  const [pid, setPid] = useState('');        // resolved 6-digit PID
-  const [name, setName] = useState('');      // for new user registration
-  const [phone, setPhone] = useState('');    // for new user registration
-  const [otp, setOtp] = useState('');        // OTP code
-  const [step, setStep] = useState('input'); // 'input' | 'otp' | 'register'
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [phoneMask, setPhoneMask] = useState('');
-  const [repName, setRepName] = useState('');
   const [err, setErr] = useState(initialError || '');
   const [loading, setLoading] = useState(false);
 
-  // Detect input type: PID (6 digits), phone (9 digits starting with 5), or URL with embedded PID
-  const detectInput = (input) => {
-    const trimmed = String(input || '').trim();
-    if (!trimmed) return { type: 'invalid' };
-
-    // Phone check first (higher priority than 6-digit-substring match)
-    const digitsOnly = trimmed.replace(/\D/g, '');
-    let phoneN = digitsOnly;
-    if (phoneN.startsWith('995') && phoneN.length === 12) phoneN = phoneN.substring(3);
-    if (/^5\d{8}$/.test(phoneN) && (digitsOnly.length === 9 || digitsOnly.length === 12)) {
-      return { type: 'phone', value: phoneN };
-    }
-
-    // PID: 6 consecutive digits anywhere in the string
-    const pidMatch = trimmed.match(/(\d{6})(?!\d)/);
-    if (pidMatch) return { type: 'pid', value: pidMatch[1] };
-
-    return { type: 'invalid' };
-  };
-
-  // STEP 1 → request OTP (returning user) OR show registration form (new user)
-  const handleContinue = async () => {
-    const detected = detectInput(code);
-    if (detected.type === 'invalid') {
-      setErr(L('welcome_input_error', 'შეიყვანე PID (6 ციფრი), ნომერი (9 ციფრი) ან ლინკი'));
+  // Send SMS code to phone
+  const handleRequestOtp = async () => {
+    // Normalize: strip non-digits, remove 995 prefix if present
+    let normalized = phone.replace(/[^\d]/g, '');
+    if (normalized.startsWith('995') && normalized.length > 9) normalized = normalized.substring(3);
+    if (!/^5\d{8}$/.test(normalized)) {
+      setErr(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)'));
       return;
     }
     setLoading(true);
     setErr('');
     try {
-      const apiParams = detected.type === 'phone'
-        ? { action: 'request_otp', phone: detected.value }
-        : { action: 'request_otp', pid: detected.value };
-      const res = await api(apiParams);
-
+      const res = await api({ action: 'request_otp', phone: normalized });
       if (res.ok) {
-        // SMS sent → OTP step (returning user)
-        const resolvedPid = res.pid || detected.value;
-        setPid(resolvedPid);
-        setRepName(res.repName || '');
-        setPhoneMask(res.phoneMask || '');
-        try { localStorage.setItem('farmasi_last_pid', resolvedPid); } catch {}
+        setPhone(normalized);
+        setPhoneMask(res.phoneMask || '****' + normalized.slice(-4));
         setStep('otp');
-      } else if (res.error === 'first_time_setup_required' || res.error === 'Phone not found in profile') {
-        // First time → registration form (only works if user entered PID, not phone)
-        if (detected.type === 'pid') {
-          setPid(detected.value);
-          setStep('register');
-        } else {
-          // User tried to login with phone but no rep has that phone — show clearer error
-          setErr(L('welcome_phone_not_registered', 'ეს ნომერი არ არის რეგისტრირებული'));
-        }
-      } else if (res.error === 'phone_not_registered' || res.error === 'ეს ნომერი არ არის რეგისტრირებული') {
-        // ✅ Phone-based login but rep not yet registered → guide them to use referral link / PID
-        setErr(L('welcome_phone_not_registered_help', 'გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
-      } else if (res.error && res.error.indexOf('SMS failed') !== -1) {
-        // ✅ Backend couldn't send SMS — fall back to suggesting referral link / PID
-        setErr(L('welcome_sms_failed_help', 'SMS ვერ გაიგზავნა. გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
       } else {
-        setErr(res.error || L('welcome_error_failed', 'შეცდომა მოხდა'));
+        setErr(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
       }
     } catch (e) {
       setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
@@ -1615,7 +1570,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     setLoading(false);
   };
 
-  // STEP 'otp' → verify OTP and complete login
+  // Verify OTP and complete login
   const handleVerifyOtp = async (codeOverride) => {
     const otpCode = codeOverride || otp;
     if (!otpCode || otpCode.length !== 6) {
@@ -1625,8 +1580,9 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     setLoading(true);
     setErr('');
     try {
-      const res = await api({ action: 'verify_otp', pid: pid, otp: otpCode });
+      const res = await api({ action: 'verify_otp', phone: phone, otp: otpCode });
       if (res.ok && res.token) {
+        const pid = res.pid;
         localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
         localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
         localStorage.setItem('farmasi_current_pid', pid);
@@ -1635,39 +1591,6 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
         onAuthSuccess(pid, res.token, res.rep);
       } else {
         setErr(res.error || L('welcome_otp_invalid', 'არასწორი კოდი'));
-      }
-    } catch (e) {
-      setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
-    }
-    setLoading(false);
-  };
-
-  // STEP 'register' → new user fills name + phone, gets logged in (no SMS first time)
-  const handleRegister = async () => {
-    if (!name.trim()) {
-      setErr(L('welcome_name_required', 'შეიყვანე სახელი და გვარი'));
-      return;
-    }
-    let normalized = phone.replace(/[^\d]/g, '');
-    if (normalized.startsWith('995') && normalized.length > 9) normalized = normalized.substring(3);
-    if (!/^5\d{8}$/.test(normalized)) {
-      setErr(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)'));
-      return;
-    }
-
-    setLoading(true);
-    setErr('');
-    try {
-      const res = await api({ action: 'register_phone', pid: pid, phone: normalized, name: name.trim() });
-      if (res.ok && res.token) {
-        localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
-        localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
-        localStorage.setItem('farmasi_current_pid', pid);
-        localStorage.setItem('farmasi_last_pid', pid);
-        if (res.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(res.rep));
-        onAuthSuccess(pid, res.token, res.rep);
-      } else {
-        setErr(res.error || L('login_phone_register_failed', 'რეგისტრაცია ვერ მოხერხდა'));
       }
     } catch (e) {
       setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
@@ -1692,36 +1615,37 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
         <div className="rounded-2xl p-8 backdrop-blur-sm shadow-2xl"
           style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
 
-          {/* STEP 1: input — PID / phone / link */}
-          {step === 'input' && (
+          {/* STEP 1: phone */}
+          {step === 'phone' && (
             <>
               <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
                 <span>{L('welcome_step_1_label', 'ნაბიჯი 01')}</span>
                 <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
               </div>
-              <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_step_1_title', 'ლინკი, PID ან ნომერი')}</h2>
-              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_link_label', 'ჩასვი ლინკი, PID (6 ციფრი) ან ნომერი (9 ციფრი)')}</label>
+              <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_phone_title', 'შესვლა ტელეფონის ნომრით')}</h2>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_phone_label', 'ტელეფონის ნომერი')}</label>
               <div className="relative">
-                <input type="text" value={code} onChange={(e) => { setCode(e.target.value.slice(0, 80)); setErr(''); }}
-                  placeholder={L('welcome_link_placeholder', '123456 ან 599123456')}
+                <input type="tel" inputMode="numeric" value={phone}
+                  onChange={(e) => { setPhone(e.target.value); setErr(''); }}
+                  placeholder={L('welcome_phone_placeholder', '599 12 34 56')}
                   className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
                   style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleContinue()} />
+                  onKeyDown={(e) => e.key === 'Enter' && handleRequestOtp()} />
                 <Ic name="lock" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2" style={{ color: theme.gold }} />
               </div>
               {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
               <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
-                {L('welcome_link_hint', '💡 ლინკი იპოვი farmasi.ge-ზე — შენი პროფილი → "მოიწვიე მეგობარი"')}
+                {L('welcome_phone_hint', '💡 ნომერზე გამოგეგზავნება SMS კოდი')}
               </p>
-              <button onClick={handleContinue} disabled={loading || !code.trim()}
+              <button onClick={handleRequestOtp} disabled={loading || !phone.trim()}
                 className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50"
                 style={{ background: theme.ink, color: theme.cream }}>
-                {loading ? L('welcome_button_loading', 'ვამოწმებ...') : <>{L('welcome_button_continue', 'გაგრძელება')} <Ic name="arrow-right" className="w-4 h-4" /></>}
+                {loading ? L('welcome_button_loading', 'იგზავნება...') : <>{L('welcome_button_continue', 'გაგრძელება')} <Ic name="arrow-right" className="w-4 h-4" /></>}
               </button>
             </>
           )}
 
-          {/* STEP 2a: OTP — for returning users */}
+          {/* STEP 2: OTP */}
           {step === 'otp' && (
             <>
               <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
@@ -1729,11 +1653,6 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
                 <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
               </div>
               <h2 className="font-display text-2xl mb-2 mt-3" style={{ color: theme.ink }}>{L('welcome_otp_title', 'SMS კოდი')}</h2>
-              {repName && (
-                <p className="text-sm mb-1" style={{ color: theme.ink + '99' }}>
-                  {L('welcome_otp_hello', 'გამარჯობა,')} <span className="font-medium" style={{ color: theme.wine }}>{repName}</span>
-                </p>
-              )}
               {phoneMask && (
                 <p className="text-sm mb-6" style={{ color: theme.ink + '99' }}>
                   {L('welcome_otp_sent_to', '📱 კოდი გავიდა ')} <span className="font-mono" style={{ color: theme.wine }}>{phoneMask}</span> {L('welcome_otp_sent_suffix', '-ზე')}
@@ -1741,7 +1660,8 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
               )}
               <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_otp_label', 'შეიყვანე 6-ციფრიანი კოდი')}</label>
               <input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength="6"
-                value={otp} onChange={(e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }}
+                value={otp}
+                onChange={(e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }}
                 placeholder="000000"
                 className="w-full px-4 py-3.5 rounded-xl outline-none text-center text-2xl tracking-widest font-mono"
                 style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
@@ -1752,50 +1672,9 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
                 style={{ background: theme.wine, color: theme.cream }}>
                 {loading ? L('welcome_button_verifying', 'შემოწმება...') : <>{L('welcome_button_login', 'შესვლა')} <Ic name="arrow-right" className="w-4 h-4" /></>}
               </button>
-              <button onClick={() => { setStep('input'); setOtp(''); setErr(''); }}
+              <button onClick={() => { setStep('phone'); setOtp(''); setErr(''); }}
                 className="w-full mt-3 text-xs tracking-widest uppercase py-2"
-                style={{ color: theme.ink + '88' }}>{L('welcome_button_back', '← უკან')}</button>
-            </>
-          )}
-
-          {/* STEP 2b: register — for first-time users */}
-          {step === 'register' && (
-            <>
-              <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
-                <span>{L('welcome_step_register_label', 'ნაბიჯი 02 · რეგისტრაცია')}</span>
-                <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
-              </div>
-              <h2 className="font-display text-2xl mb-2 mt-3" style={{ color: theme.ink }}>{L('welcome_register_title', 'პირველი შესვლა')}</h2>
-              <p className="text-sm mb-6" style={{ color: theme.ink + '99' }}>
-                {L('welcome_register_subtitle', 'PID:')} <span className="font-mono" style={{ color: theme.wine }}>{pid}</span>
-              </p>
-
-              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_name_label', 'სახელი და გვარი')}</label>
-              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setErr(''); }}
-                placeholder={L('welcome_name_placeholder', 'მაგ: ნინო ცინცაძე')}
-                className="w-full px-4 py-3.5 rounded-xl outline-none text-sm mb-4"
-                style={{ background: theme.cream, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
-
-              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_phone_label', 'ტელეფონის ნომერი')}</label>
-              <input type="tel" inputMode="numeric" value={phone} onChange={(e) => { setPhone(e.target.value); setErr(''); }}
-                placeholder={L('welcome_phone_placeholder', '599 12 34 56')}
-                className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
-                style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
-                onKeyDown={(e) => e.key === 'Enter' && handleRegister()} />
-
-              {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
-              <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
-                {L('welcome_register_hint', '💡 ნომერი დარჩება შენთან — შემდეგ შესვლაზე ამ ნომერზე გამოგეგზავნება SMS კოდი')}
-              </p>
-
-              <button onClick={handleRegister} disabled={loading || !name.trim() || !phone.trim()}
-                className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 disabled:opacity-40 hover:scale-[1.01]"
-                style={{ background: theme.wine, color: theme.cream }}>
-                {loading ? L('welcome_button_registering', 'რეგისტრაცია...') : <>{L('welcome_button_register', 'რეგისტრაცია')} <Ic name="arrow-right" className="w-4 h-4" /></>}
-              </button>
-              <button onClick={() => { setStep('input'); setName(''); setPhone(''); setErr(''); }}
-                className="w-full mt-3 text-xs tracking-widest uppercase py-2"
-                style={{ color: theme.ink + '88' }}>{L('welcome_button_back', '← უკან')}</button>
+                style={{ color: theme.ink + '88' }}>{L('welcome_button_back', '← სხვა ნომერი')}</button>
             </>
           )}
 
@@ -1814,173 +1693,53 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
 
 function LoginScreen({ onLoginSuccess, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
-  
-  // ✅ Read PID from URL on mount — user already provided it via Login (link paste)
-  const urlPid = (() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('pid') || '';
-    } catch { return ''; }
-  })();
-  
-  // ✅ Skip PID step entirely when URL has PID — start in 'autoLoading' state
-  // This avoids the "2 second flash" of the PID input the user complained about.
-  const [step, setStep] = useState(() => {
-    return urlPid && /^\d{6}$/.test(urlPid) ? 'autoLoading' : 'pid';
-  });
-  const [pid, setPid] = useState(urlPid);
   const [phone, setPhone] = useState('');
-  const [phoneMask, setPhoneMask] = useState(''); // e.g. "****2266" — shown on OTP step
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState('phone'); // 'phone' | 'otp'
+  const [phoneMask, setPhoneMask] = useState('');
   const [error, setError] = useState('');
-  const [repName, setRepName] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Detect what the user entered: PID (6 digits), phone (9 digits starting with 5), or URL containing PID
-  const detectLoginInput = (input) => {
-    const trimmed = String(input || '').trim();
-    if (!trimmed) return { type: 'invalid' };
-
-    // Pure phone check: 9 digits starting with 5, optionally with 995 country code
-    const digitsOnly = trimmed.replace(/\D/g, '');
-    let phone = digitsOnly;
-    if (phone.startsWith('995') && phone.length === 12) {
-      phone = phone.substring(3);
-    }
-    // Phone only counts if input is "mostly digits" — 9-12 chars all digits, starts with 5 after stripping 995
-    if (/^5\d{8}$/.test(phone) && (digitsOnly.length === 9 || digitsOnly.length === 12)) {
-      return { type: 'phone', value: phone };
-    }
-
-    // PID extraction: 6 consecutive digits anywhere (works for plain "123456" and URLs like ".../signup/123456")
-    const pidMatch = trimmed.match(/(\d{6})(?!\d)/);
-    if (pidMatch) {
-      return { type: 'pid', value: pidMatch[1] };
-    }
-
-    return { type: 'invalid' };
-  };
-
-  const handleRequestOtp = async (pidOverride) => {
-    const rawInput = pidOverride || pid;
-    const detected = detectLoginInput(rawInput);
-
-    if (detected.type === 'invalid') {
-      setError(L('login_input_error', 'შეიყვანე PID (6 ციფრი), ნომერი (9 ციფრი) ან ლინკი'));
-      setStep('pid');
+  const handleRequestOtp = async () => {
+    let normalized = phone.replace(/[^\d]/g, '');
+    if (normalized.startsWith('995') && normalized.length > 9) normalized = normalized.substring(3);
+    if (!/^5\d{8}$/.test(normalized)) {
+      setError(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია (599XXXXXX)'));
       return;
     }
-
     setLoading(true);
     setError('');
     try {
-      const apiParams = detected.type === 'phone'
-        ? { action: 'request_otp', phone: detected.value }
-        : { action: 'request_otp', pid: detected.value };
-
-      const response = await api(apiParams);
+      const response = await api({ action: 'request_otp', phone: normalized });
       if (response.ok) {
-        // Backend returns the actual PID (especially important after phone-based lookup)
-        if (response.pid) setPid(response.pid);
-        else if (detected.type === 'pid') setPid(detected.value);
-        setRepName(response.repName || '');
-        setPhoneMask(response.phoneMask || '');
+        setPhone(normalized);
+        setPhoneMask(response.phoneMask || '****' + normalized.slice(-4));
         setStep('otp');
-        setError('');
-      } else if (response.error === 'first_time_setup_required' || response.needsPhone || response.error === 'Phone not found in profile') {
-        // ✅ First-time user — no phone registered yet. Show phone input step.
-        // ⚠️ SECURITY NOTE: PIDs are public. This flow allows ANYONE who knows an
-        // unclaimed PID to register a phone for it. Monitor REPS sheet for suspicious entries.
-        // For phone-based login this branch shouldn't trigger (we already verified phone exists).
-        if (detected.type === 'pid') setPid(detected.value);
-        setStep('phone');
-        setError('');
-      } else if (response.error === 'phone_not_registered' || response.error === 'ეს ნომერი არ არის რეგისტრირებული') {
-        // ✅ Phone-based login but rep not yet registered → guide them to use referral link / PID
-        setError(L('login_phone_not_registered_help', 'გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
-        setStep('pid');
-      } else if (response.error && response.error.indexOf('SMS failed') !== -1) {
-        // ✅ Backend couldn't send SMS — fall back to suggesting referral link / PID
-        setError(L('login_sms_failed_help', 'SMS ვერ გაიგზავნა. გთხოვთ შეიყვანოთ თქვენი რეფერალური ლინკი ან ამ ლინკის ბოლო 6 ნიშნა'));
-        setStep('pid');
       } else {
         setError(response.error || L('login_pid_send_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
-        setStep('pid'); // fall back to PID step so user can fix
       }
     } catch (err) {
       setError('Error: ' + err.message);
-      setStep('pid');
     }
     setLoading(false);
   };
 
-  // ✅ Auto-trigger OTP request when arriving with PID in URL (skip duplicate PID entry)
-  useEffect(() => {
-    if (urlPid && /^\d{6}$/.test(urlPid)) {
-      handleRequestOtp(urlPid);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // ✅ WebOTP API — auto-fill OTP from SMS on Android Chrome 84+
-  // iOS uses native QuickType bar suggestion (handled by autoComplete="one-time-code")
   useEffect(() => {
     if (step !== 'otp') return;
-    if (!('OTPCredential' in window)) return; // not supported (iOS, older browsers)
-
+    if (!('OTPCredential' in window)) return;
     const ac = new AbortController();
-    navigator.credentials.get({
-      otp: { transport: ['sms'] },
-      signal: ac.signal
-    }).then((otpCred) => {
-      if (otpCred && otpCred.code) {
-        setOtp(otpCred.code);
-        // Auto-submit after short delay so user sees the code populated
-        setTimeout(() => handleVerifyOtp(otpCred.code), 300);
-      }
-    }).catch((err) => {
-      // User denied or timeout — silent failure (fallback to manual entry)
-      console.log('WebOTP: ', err.message);
-    });
-
+    navigator.credentials.get({ otp: { transport: ['sms'] }, signal: ac.signal })
+      .then((otpCred) => {
+        if (otpCred && otpCred.code) {
+          setOtp(otpCred.code);
+          setTimeout(() => handleVerifyOtp(otpCred.code), 300);
+        }
+      })
+      .catch((err) => { console.log('WebOTP: ', err.message); });
     return () => ac.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
-
-  // ✅ First-time phone registration — saves phone + logs in directly (NO SMS)
-  // ⚠️ SECURITY: PIDs are public, this is a deliberate trade-off for onboarding ease.
-  const handleRegisterPhone = async () => {
-    // Strip non-digits and any leading 995
-    let normalized = phone.replace(/[^\d]/g, '');
-    if (normalized.startsWith('995') && normalized.length > 9) {
-      normalized = normalized.substring(3);
-    }
-    if (!/^5\d{8}$/.test(normalized)) {
-      setError(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)'));
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const response = await api({ action: 'register_phone', pid, phone: normalized });
-      if (response.ok && response.token) {
-        // Phone saved + session created → login directly (no SMS for first-time)
-        localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
-        localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
-        localStorage.setItem('farmasi_current_pid', pid);
-        localStorage.setItem('farmasi_last_pid', pid);
-        if (response.rep) {
-          localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(response.rep));
-        }
-        onLoginSuccess(pid, response.token, response.rep);
-      } else {
-        setError(response.error || L('login_phone_register_failed', 'ნომრის რეგისტრაცია ვერ მოხერხდა'));
-      }
-    } catch (err) {
-      setError('Error: ' + err.message);
-    }
-    setLoading(false);
-  };
 
   const handleVerifyOtp = async (codeOverride) => {
     const codeToVerify = codeOverride || otp;
@@ -1991,20 +1750,17 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     setLoading(true);
     setError('');
     try {
-      const response = await api({ action: 'verify_otp', pid, otp: codeToVerify });
-      if (response.ok) {
-        // Store session token + 30-day expiry (matches backend session TTL)
+      const response = await api({ action: 'verify_otp', phone: phone, otp: codeToVerify });
+      if (response.ok && response.token) {
+        const pid = response.pid;
         localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
         localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
         localStorage.setItem('farmasi_current_pid', pid);
         localStorage.setItem('farmasi_last_pid', pid);
-        if (response.rep) {
-          localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(response.rep));
-        }
-        // Call success callback
+        if (response.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(response.rep));
         onLoginSuccess(pid, response.token, response.rep);
       } else {
-        setError(response.error || 'Invalid OTP');
+        setError(response.error || L('login_otp_invalid', 'არასწორი კოდი'));
       }
     } catch (err) {
       setError('Error: ' + err.message);
@@ -2012,167 +1768,88 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     setLoading(false);
   };
 
-  return React.createElement('div', {
-    className: 'min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center px-4'
-  },
-    React.createElement('div', {
-      className: 'w-full max-w-md'
-    },
-      // Header — real FARMASI logo + login subtitle
-      React.createElement('div', { className: 'text-center mb-8' },
-        React.createElement('img', {
-          src: '/farmasi-logo.png',
-          alt: 'FARMASI',
-          className: 'mx-auto mb-4',
-          style: { height: 48, width: 'auto', objectFit: 'contain' }
-        }),
-        React.createElement('h1', { className: 'text-2xl font-bold text-slate-900 mb-1' },
+  return React.createElement('div', { className: 'min-h-screen flex items-center justify-center bg-slate-50 p-4' },
+    React.createElement('div', { className: 'w-full max-w-md bg-white rounded-2xl shadow-xl p-8' },
+      React.createElement('div', { className: 'text-center mb-6' },
+        React.createElement('img', { src: '/farmasi-logo.png', alt: 'FARMASI',
+          className: 'mx-auto mb-4', style: { height: 48, width: 'auto', objectFit: 'contain' } }),
+        React.createElement('h1', { className: 'text-2xl font-bold text-slate-800' },
           L('login_hero_title', 'წარმომადგენლის შესვლა')
         ),
-        React.createElement('p', { className: 'text-pink-600 italic text-sm' },
-          L('login_hero_subtitle', 'FARMASI Georgia')
-        )
+        React.createElement('p', { className: 'text-pink-600 italic mt-1' }, L('login_hero_subtitle', 'FARMASI Georgia'))
       ),
 
-      // Login Form
-      React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-8' },
-        step === 'autoLoading' ? (
-          // ✅ NEW: Skip-the-flash loading state — shown when URL has PID and we're auto-requesting OTP
-          React.createElement('div', { className: 'flex flex-col items-center justify-center py-8' },
-            React.createElement('div', {
-              className: 'w-12 h-12 border-4 border-pink-200 border-t-pink-600 rounded-full',
-              style: { animation: 'spin 0.8s linear infinite' }
-            }),
-            React.createElement('p', { className: 'text-slate-600 text-sm mt-4' },
-              L('login_auto_loading', 'SMS კოდი მზადდება...')
-            ),
-            error && React.createElement('p', { className: 'text-red-500 text-sm mt-3 text-center' }, error)
+      step === 'phone' ? (
+        // PHONE Input
+        React.createElement('div', {},
+          React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
+            L('login_phone_label', 'ტელეფონის ნომერი')
+          ),
+          React.createElement('input', {
+            type: 'tel',
+            inputMode: 'numeric',
+            value: phone,
+            onChange: (e) => { setPhone(e.target.value); if (error) setError(''); },
+            onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
+            placeholder: L('login_phone_placeholder', '599 12 34 56'),
+            disabled: loading,
+            maxLength: '15',
+            className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
+          }),
+          error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
+          React.createElement('button', {
+            onClick: handleRequestOtp,
+            disabled: loading || !phone.trim(),
+            className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
+          },
+            loading ? L('login_loading_send', 'იგზავნება...') : L('login_phone_button', 'გაგრძელება')
           )
-        ) : step === 'pid' ? (
-          // PID / Phone / Link Input — auto-detected
-          React.createElement('div', {},
-            React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-              L('login_pid_label', 'PID, ნომერი ან ლინკი')
-            ),
-            React.createElement('input', {
-              type: 'text',
-              value: pid,
-              onChange: (e) => { setPid(e.target.value.slice(0, 80)); if (error) setError(''); },
-              onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
-              placeholder: L('login_pid_placeholder', '123456 ან 599123456'),
-              disabled: loading,
-              maxLength: '80',
-              className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
-            }),
-            error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
-            React.createElement('button', {
-              onClick: handleRequestOtp,
-              disabled: loading || !pid,
-              className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
-            },
-              loading ? L('login_loading_send', 'იგზავნება...') : L('login_pid_button', 'კოდი გამოაგზავნე')
-            )
-          )
-        ) : step === 'phone' ? (
-          // ✅ NEW: Phone registration (first-time setup)
-          React.createElement('div', {},
-            React.createElement('div', { className: 'mb-4 p-3 rounded-lg bg-pink-50 border border-pink-200' },
-              React.createElement('p', { className: 'text-sm text-slate-700 font-medium mb-1' },
-                L('login_phone_welcome', '👋 გამარჯობა! პირველად ხარ აქ.')
-              ),
-              React.createElement('p', { className: 'text-xs text-slate-600 mb-2' },
-                L('login_phone_description', 'PID ' + pid + ' — დარეგისტრირე შენი ტელეფონის ნომერი. SMS კოდი მოგივა ვერიფიკაციისთვის.').replace('{pid}', pid)
-              ),
-              React.createElement('p', { className: 'text-[11px] text-slate-500 italic' },
-                L('login_phone_warning', 'ნომერი მხოლოდ ერთხელ რეგისტრირდება — შემდეგ შესაცვლელად ადმინთან დაუკავშირდი.')
-              )
-            ),
-            React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-              L('login_phone_label', 'ტელეფონის ნომერი')
-            ),
-            React.createElement('div', { className: 'flex gap-2' },
-              React.createElement('span', {
-                className: 'inline-flex items-center px-3 py-3 rounded-lg bg-slate-100 border border-slate-300 text-slate-700 text-sm font-medium'
-              }, '+995'),
-              React.createElement('input', {
-                type: 'tel',
-                value: phone,
-                onChange: (e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); if (error) setError(''); },
-                onKeyPress: (e) => e.key === 'Enter' && handleRegisterPhone(),
-                placeholder: L('login_phone_placeholder', '599 12 34 56'),
-                disabled: loading,
-                maxLength: '9',
-                className: 'flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100 text-lg tracking-wider'
-              })
-            ),
-            error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
-            React.createElement('button', {
-              onClick: handleRegisterPhone,
-              disabled: loading || phone.length !== 9,
-              className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
-            },
-              loading ? L('login_loading_send', 'იგზავნება...') : L('login_phone_button', 'რეგისტრაცია და SMS კოდი')
-            ),
-            React.createElement('button', {
-              onClick: () => { setStep('pid'); setPhone(''); setError(''); },
-              disabled: loading,
-              className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
-            },
-              L('login_back', 'უკან')
-            )
-          )
-        ) : (
-          // OTP Input
-          React.createElement('div', {},
-            React.createElement('p', { className: 'text-slate-600 text-sm mb-2' },
-              repName ? L('login_otp_greeting', 'კი, ') + repName + '!' : L('login_otp_subtitle', 'კოდი გამოწერილი')
-            ),
-            phoneMask && React.createElement('p', { className: 'text-pink-600 text-xs mb-4 font-medium' },
-              L('login_otp_phone_mask', '📱 კოდი გავიდა ') + phoneMask + L('login_otp_phone_mask_suffix', '-ზე')
-            ),
-            React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-              L('login_otp_label', 'დამადასტურებელი კოდი (SMS)')
-            ),
-            React.createElement('input', {
-              type: 'text',
-              value: otp,
-              onChange: (e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); if (error) setError(''); },
-              onKeyPress: (e) => e.key === 'Enter' && handleVerifyOtp(),
-              placeholder: L('login_otp_placeholder', '000000'),
-              disabled: loading,
-              maxLength: '6',
-              inputMode: 'numeric',
-              autoComplete: 'one-time-code',
-              pattern: '[0-9]*',
-              className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none text-center text-2xl tracking-widest disabled:bg-slate-100'
-            }),
-            error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
-            React.createElement('button', {
-              onClick: handleVerifyOtp,
-              disabled: loading || otp.length !== 6,
-              className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
-            },
-              loading ? L('login_loading_verify', 'დამდასტურდება...') : L('login_otp_button', 'შეხვედი')
-            ),
-            React.createElement('button', {
-              onClick: () => { setStep('pid'); setPid(''); setPhone(''); setOtp(''); setError(''); setRepName(''); },
-              disabled: loading,
-              className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
-            },
-              L('login_back', 'უკან')
-            )
-          )
-        ),
-
-        // Footer
-        React.createElement('p', { className: 'text-xs text-slate-500 text-center mt-6' },
-          L('login_footer', 'ეს გვერდი დაცული. მხოლოდ SMS კოდით შეიძლება შესვლა.')
         )
+      ) : (
+        // OTP Input
+        React.createElement('div', {},
+          phoneMask && React.createElement('p', { className: 'text-pink-600 text-xs mb-4 font-medium text-center' },
+            L('login_otp_phone_mask', '📱 კოდი გავიდა ') + phoneMask + L('login_otp_phone_mask_suffix', '-ზე')
+          ),
+          React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
+            L('login_otp_label', 'დამადასტურებელი კოდი (SMS)')
+          ),
+          React.createElement('input', {
+            type: 'text',
+            value: otp,
+            onChange: (e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); if (error) setError(''); },
+            onKeyPress: (e) => e.key === 'Enter' && handleVerifyOtp(),
+            placeholder: L('login_otp_placeholder', '000000'),
+            disabled: loading,
+            maxLength: '6',
+            inputMode: 'numeric',
+            autoComplete: 'one-time-code',
+            pattern: '[0-9]*',
+            className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none text-center text-2xl tracking-widest disabled:bg-slate-100'
+          }),
+          error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
+          React.createElement('button', {
+            onClick: handleVerifyOtp,
+            disabled: loading || otp.length !== 6,
+            className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
+          },
+            loading ? L('login_loading_verify', 'დამდასტურდება...') : L('login_otp_button', 'შესვლა')
+          ),
+          React.createElement('button', {
+            onClick: () => { setStep('phone'); setOtp(''); setError(''); },
+            disabled: loading,
+            className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
+          },
+            L('login_back', '← სხვა ნომერი')
+          )
+        )
+      ),
+      React.createElement('p', { className: 'text-xs text-slate-400 text-center mt-4' },
+        L('login_security_note', 'ეს გვერდი დაცულია. მხოლოდ SMS კოდით შეიძლება შესვლა.')
       )
     )
   );
 }
-
 // ════════════════════════════════════════════════════════════════════════════
 
 function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {} }) {
