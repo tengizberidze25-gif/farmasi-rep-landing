@@ -1667,18 +1667,53 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const [error, setError] = useState('');
   const [repName, setRepName] = useState('');
 
+  // Detect what the user entered: PID (6 digits), phone (9 digits starting with 5), or URL containing PID
+  const detectLoginInput = (input) => {
+    const trimmed = String(input || '').trim();
+    if (!trimmed) return { type: 'invalid' };
+
+    // Pure phone check: 9 digits starting with 5, optionally with 995 country code
+    const digitsOnly = trimmed.replace(/\D/g, '');
+    let phone = digitsOnly;
+    if (phone.startsWith('995') && phone.length === 12) {
+      phone = phone.substring(3);
+    }
+    // Phone only counts if input is "mostly digits" — 9-12 chars all digits, starts with 5 after stripping 995
+    if (/^5\d{8}$/.test(phone) && (digitsOnly.length === 9 || digitsOnly.length === 12)) {
+      return { type: 'phone', value: phone };
+    }
+
+    // PID extraction: 6 consecutive digits anywhere (works for plain "123456" and URLs like ".../signup/123456")
+    const pidMatch = trimmed.match(/(\d{6})(?!\d)/);
+    if (pidMatch) {
+      return { type: 'pid', value: pidMatch[1] };
+    }
+
+    return { type: 'invalid' };
+  };
+
   const handleRequestOtp = async (pidOverride) => {
-    const targetPid = pidOverride || pid;
-    if (!targetPid || !/^\d{6}$/.test(targetPid)) {
-      setError(L('login_pid_error', 'PID უნდა იყოს 6 ციფრიანი'));
+    const rawInput = pidOverride || pid;
+    const detected = detectLoginInput(rawInput);
+
+    if (detected.type === 'invalid') {
+      setError(L('login_input_error', 'შეიყვანე PID (6 ციფრი), ნომერი (9 ციფრი) ან ლინკი'));
       setStep('pid');
       return;
     }
+
     setLoading(true);
     setError('');
     try {
-      const response = await api({ action: 'request_otp', pid: targetPid });
+      const apiParams = detected.type === 'phone'
+        ? { action: 'request_otp', phone: detected.value }
+        : { action: 'request_otp', pid: detected.value };
+
+      const response = await api(apiParams);
       if (response.ok) {
+        // Backend returns the actual PID (especially important after phone-based lookup)
+        if (response.pid) setPid(response.pid);
+        else if (detected.type === 'pid') setPid(detected.value);
         setRepName(response.repName || '');
         setPhoneMask(response.phoneMask || '');
         setStep('otp');
@@ -1687,6 +1722,8 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
         // ✅ First-time user — no phone registered yet. Show phone input step.
         // ⚠️ SECURITY NOTE: PIDs are public. This flow allows ANYONE who knows an
         // unclaimed PID to register a phone for it. Monitor REPS sheet for suspicious entries.
+        // For phone-based login this branch shouldn't trigger (we already verified phone exists).
+        if (detected.type === 'pid') setPid(detected.value);
         setStep('phone');
         setError('');
       } else {
@@ -1835,19 +1872,19 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
             error && React.createElement('p', { className: 'text-red-500 text-sm mt-3 text-center' }, error)
           )
         ) : step === 'pid' ? (
-          // PID Input
+          // PID / Phone / Link Input — auto-detected
           React.createElement('div', {},
             React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-              L('login_pid_label', 'FARMASI PID')
+              L('login_pid_label', 'PID, ნომერი ან ლინკი')
             ),
             React.createElement('input', {
               type: 'text',
               value: pid,
-              onChange: (e) => { setPid(e.target.value.replace(/\D/g, '').slice(0, 6)); if (error) setError(''); },
+              onChange: (e) => { setPid(e.target.value.slice(0, 80)); if (error) setError(''); },
               onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
-              placeholder: L('login_pid_placeholder', '123456'),
+              placeholder: L('login_pid_placeholder', '123456 ან 599123456'),
               disabled: loading,
-              maxLength: '6',
+              maxLength: '80',
               className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
             }),
             error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
