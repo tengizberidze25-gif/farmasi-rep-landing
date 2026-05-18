@@ -1427,7 +1427,7 @@ function App() {
       {/* Normal views — only visible if not in OTP login flow */}
       {!(urlParams.edit && !otpToken) && !validatingSession && (
         <>
-          {(urlParams.edit || (!urlParams.pid && !urlParams.slug)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
+          {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
           {view === 'loading' && <LoadingScreen labels={labels} />}
           {view === 'notfound' && <NotFoundScreen labels={labels} />}
           {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
