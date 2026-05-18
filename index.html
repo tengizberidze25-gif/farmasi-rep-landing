@@ -1918,6 +1918,113 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
 }
 // ════════════════════════════════════════════════════════════════════════════
 
+// ════════════════════════════════════════════════════════════════════════════
+// MY ORDERS SECTION — Dashboard card listing rep's orders with invoice links
+// Fetches orders from backend (get_rep_orders) and displays as scrollable list.
+// ════════════════════════════════════════════════════════════════════════════
+
+function MyOrdersSection({ repCode, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadOrders = () => {
+    if (!repCode) return;
+    setLoading(true);
+    setError('');
+    api({ action: 'get_rep_orders', pid: repCode })
+      .then(res => {
+        if (res.ok && Array.isArray(res.orders)) {
+          setOrders(res.orders);
+        } else {
+          setError(res.error || L('orders_load_failed', 'შეცდომა შეკვეთების ჩატვირთვისას'));
+        }
+      })
+      .catch(e => setError(L('orders_load_error', 'ქსელის შეცდომა: ') + e.message))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadOrders(); }, [repCode]);
+
+  const statusBadges = {
+    'new': { label: '🆕 ახალი', color: theme.wine },
+    'processing': { label: '⏳ მუშავდება', color: theme.gold },
+    'completed': { label: '✅ დასრულდა', color: '#22c55e' },
+    'cancelled': { label: '❌ გაუქმდა', color: theme.rose }
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-4">
+        <SectionLabel n="🛒" t={L('orders_section_title', 'ჩემი შეკვეთები')} />
+        <button onClick={loadOrders} disabled={loading}
+          className="text-xs px-3 py-1.5 rounded-full hover:scale-105 transition-transform disabled:opacity-50"
+          style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>
+          {loading ? '⏳' : '🔄 განახლება'}
+        </button>
+      </div>
+
+      {loading && orders.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="w-10 h-10 mx-auto mb-3 rounded-full border-4 animate-spin" style={{ borderColor: theme.gold + '33', borderTopColor: theme.wine }} />
+          <p className="text-xs" style={{ color: theme.ink + '99' }}>{L('orders_loading', 'შეკვეთები იტვირთება...')}</p>
+        </div>
+      ) : error ? (
+        <p className="text-sm py-4" style={{ color: theme.rose }}>{error}</p>
+      ) : orders.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-5xl mb-3 opacity-30">📦</div>
+          <p className="text-sm mb-1" style={{ color: theme.ink }}>{L('orders_empty_title', 'ჯერ არ გაქვს შეკვეთები')}</p>
+          <p className="text-xs" style={{ color: theme.ink + '88' }}>{L('orders_empty_hint', 'როცა კლიენტი შენი გვერდიდან გააფორმებს შეკვეთას, აქ ნახავ')}</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-xs mb-4" style={{ color: theme.ink + '88' }}>
+            {L('orders_count_label', 'სულ:')} <span className="font-bold" style={{ color: theme.wine }}>{orders.length}</span> {L('orders_count_word', 'შეკვეთა')}
+          </p>
+          <div className="space-y-2.5" style={{ maxHeight: 480, overflowY: 'auto' }}>
+            {orders.map((o, idx) => {
+              const status = statusBadges[o.status] || { label: o.status, color: theme.ink };
+              const date = o.timestamp ? new Date(o.timestamp) : null;
+              const formattedDate = date ? date.toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+              const invoiceUrl = `${window.location.origin}/?order=${o.order_id}`;
+              return (
+                <a key={o.order_id || idx} href={invoiceUrl} target="_blank" rel="noopener"
+                  className="block rounded-xl p-3.5 hover:scale-[1.01] transition-transform"
+                  style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                  <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                    <span className="text-[10px] tracking-widest uppercase font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: status.color + '22', color: status.color }}>
+                      {status.label}
+                    </span>
+                    <span className="text-[10px] opacity-60" style={{ color: theme.ink }}>{formattedDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm leading-tight truncate" style={{ color: theme.ink }}>
+                        {o.customer_name || '(ანონიმური)'}
+                      </p>
+                      <p className="text-xs mt-0.5 opacity-70" style={{ color: theme.ink }}>
+                        📱 {o.customer_phone} · {(Array.isArray(o.items) ? o.items.length : 0)} ც.
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-display text-lg" style={{ color: theme.wine }}>
+                        {o.total} ₾
+                      </p>
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {} }) {
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
@@ -3079,6 +3186,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             {L('card_hint', '💡 პირველ ჯერზე ცოტა ხანი დასჭირდება — გადმოიწერება საჭირო ფაილები (~150KB)')}
           </p>
         </Card>
+
+        <MyOrdersSection repCode={repCode} labels={labels} />
 
         <Card>
           <SectionLabel n="01" t={L('profile_section_1', 'ფოტო და სახელი')} />
