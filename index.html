@@ -5190,6 +5190,57 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </div>
       </section>
 
+      {/* ═══ CATALOG CTA — Full FARMASI Catalog (PDF Flipbook) ═══ */}
+      <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-28"
+        style={{ background: `linear-gradient(135deg, ${theme.cream}, ${theme.ivory})` }}>
+        {/* Decorative glows */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none"
+          style={{ background: theme.gold }} />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none"
+          style={{ background: theme.wine }} />
+
+        <div className="relative max-w-3xl mx-auto text-center">
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-4" style={{ color: theme.gold }}>
+            ✦ {t('catalog_eyebrow', 'სრული კატალოგი')} ✦
+          </p>
+          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl mb-5 leading-tight" style={{ color: theme.ink }}>
+            {t('catalog_title', 'ნახე FARMASI-ის მთლიანი კოლექცია')}
+          </h2>
+          <p className="text-base sm:text-lg mb-10 leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
+            {t('catalog_subtitle', 'ოფიციალური ციფრული კატალოგი — 700+ პროდუქტი ერთ ფურცელში. გადახედე და დამიკავშირდი.')}
+          </p>
+
+          {/* Mock catalog preview cards */}
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-lg rotate-[-8deg] transition hover:rotate-0"
+              style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
+              <div className="h-full flex items-center justify-center text-3xl">📖</div>
+            </div>
+            <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl transition hover:scale-105 z-10"
+              style={{ background: `linear-gradient(135deg, ${theme.gold}, ${theme.rose})`, boxShadow: `0 20px 40px -10px ${theme.gold}AA` }}>
+              <div className="h-full flex items-center justify-center text-5xl">💎</div>
+            </div>
+            <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-lg rotate-[8deg] transition hover:rotate-0"
+              style={{ background: `linear-gradient(135deg, ${theme.rose}, ${theme.wine})`, boxShadow: `0 10px 30px -8px ${theme.rose}88` }}>
+              <div className="h-full flex items-center justify-center text-3xl">✨</div>
+            </div>
+          </div>
+
+          <a href={t('catalog_url', 'https://online.fliphtml5.com/mabrw/emtm/')}
+            target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 py-4 px-8 sm:px-10 rounded-full font-medium text-sm sm:text-base tracking-wider uppercase transition hover:scale-[1.03]"
+            style={{ background: theme.ink, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.ink}AA` }}>
+            <Ic name="book-open" className="w-5 h-5" />
+            {t('catalog_cta', 'გახსენი კატალოგი')}
+            <Ic name="external-link" className="w-4 h-4 opacity-70" />
+          </a>
+
+          <p className="text-xs mt-5 opacity-60" style={{ color: theme.ink }}>
+            {t('catalog_hint', '700+ პროდუქტი · ფასები · აღწერა · ფოტოები')}
+          </p>
+        </div>
+      </section>
+
       {/* ═══ FOOTER — Editorial Sign-off ═══ */}
       <footer className="relative overflow-hidden" style={{ background: theme.ink, color: theme.cream }}>
         {/* Atmospheric glow */}
