@@ -1664,6 +1664,25 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     setLoading(false);
   };
 
+  // Android Chrome Web OTP API — auto-read SMS code when received
+  // (iOS Safari handles this natively via autocomplete="one-time-code" on input)
+  useEffect(() => {
+    if (step !== 'otp') return;
+    if (!('OTPCredential' in window)) return;
+    const ac = new AbortController();
+    navigator.credentials.get({
+      otp: { transport: ['sms'] },
+      signal: ac.signal
+    }).then(cred => {
+      if (cred && cred.code) {
+        setOtp(cred.code);
+        // Auto-submit when code is received
+        setTimeout(() => handleVerifyOtp(cred.code), 300);
+      }
+    }).catch(() => { /* user cancelled or no SMS received */ });
+    return () => ac.abort();
+  }, [step]);
+
   return (
     <div className="min-h-screen flex items-center justify-center px-5 py-20 grain relative" style={{ background: theme.cream }}>
       <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
@@ -3042,7 +3061,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                   ))}
                 </div>
 
-                {myProducts.length < 6 && (
+                {myProducts.length < 20 && (
                   <button onClick={openProductPicker}
                     className="w-full mt-4 py-3 rounded-xl text-sm tracking-wider uppercase font-medium hover:scale-[1.01] transition"
                     style={{ background: theme.wine + '11', color: theme.wine, border: `1.5px dashed ${theme.wine}55` }}>
