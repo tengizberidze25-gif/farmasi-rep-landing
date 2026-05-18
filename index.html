@@ -1764,7 +1764,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const handleVerifyOtp = async (codeOverride) => {
     const codeToVerify = codeOverride || otp;
     if (!codeToVerify || codeToVerify.length !== 6) {
-      setError('OTP must be 6 digits');
+      setError(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
       return;
     }
     setLoading(true);
@@ -1836,7 +1836,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
             React.createElement('input', {
               type: 'text',
               value: pid,
-              onChange: (e) => setPid(e.target.value.replace(/\D/g, '').slice(0, 6)),
+              onChange: (e) => { setPid(e.target.value.replace(/\D/g, '').slice(0, 6)); if (error) setError(''); },
               onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
               placeholder: L('login_pid_placeholder', '123456'),
               disabled: loading,
@@ -1876,7 +1876,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               React.createElement('input', {
                 type: 'tel',
                 value: phone,
-                onChange: (e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)),
+                onChange: (e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); if (error) setError(''); },
                 onKeyPress: (e) => e.key === 'Enter' && handleRegisterPhone(),
                 placeholder: L('login_phone_placeholder', '599 12 34 56'),
                 disabled: loading,
@@ -1915,7 +1915,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
             React.createElement('input', {
               type: 'text',
               value: otp,
-              onChange: (e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)),
+              onChange: (e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); if (error) setError(''); },
               onKeyPress: (e) => e.key === 'Enter' && handleVerifyOtp(),
               placeholder: L('login_otp_placeholder', '000000'),
               disabled: loading,
