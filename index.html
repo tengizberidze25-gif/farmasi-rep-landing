@@ -4698,6 +4698,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             problem={selectedProblem}
             repWhatsapp={rep.whatsapp}
             t={t}
+            cart={cart}
           />
 
         </div>
@@ -5330,7 +5331,7 @@ function PainBridge({ rep, problem, onProceed, onBack }) {
 
 // ProblemProductShowcase — Editorial product display for non-hair-loss problems (from Sheet)
 // Shows products in elegant cinematic style without the heavy hair-loss-specific narrative
-function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k, fb) => fb }) {
+function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k, fb) => fb, cart }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   if (!products || products.length === 0) return null;
