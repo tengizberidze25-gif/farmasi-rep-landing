@@ -209,6 +209,29 @@ const theme = {
 const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
 const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
 
+// Licensed commercial banks operating in Georgia (Banking Association of Georgia members).
+// Source: https://www.association.ge/members/banks — verified 2026.
+// Order: most popular consumer banks first (TBC + BoG combined ~70%+ retail share),
+// then mid-tier banks, then specialized/smaller. Used as datalist suggestions —
+// rep can still type a custom name if their bank isn't listed.
+const GEORGIAN_BANKS = [
+  'თიბისი ბანკი',
+  'საქართველოს ბანკი',
+  'ლიბერთი ბანკი',
+  'კრედო ბანკი',
+  'ბაზის ბანკი',
+  'ბანკი ქართუ',
+  'ტერა ბანკი',
+  'პროკრედიტ ბანკი',
+  'ხალიკ ბანკი',
+  'ზირაათ ბანკი',
+  'იშბანკი',
+  'პაშა ბანკი',
+  'სილქ ბანკი',
+  'პეისერა ბანკი საქართველო',
+  'მიკრობანკი კრისტალი',
+];
+
 const Mockups = {
   serum: ({ accent = '#7A1E2C' }) => (
     <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
@@ -3607,6 +3630,12 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             {L('profile_bank_hint', 'მიაწოდე ერთი ან რამდენიმე ბანკი — კლიენტი ნახავს ყველას ინვოისზე და გადარიცხავს მისთვის მოსახერხებელით.')}
           </p>
 
+          {/* Shared datalist — Georgian banks (used by all bank cards' bank-name inputs).
+              Renders dropdown suggestions but still accepts free text for unlisted banks. */}
+          <datalist id="georgian-banks-list">
+            {GEORGIAN_BANKS.map(b => <option key={b} value={b} />)}
+          </datalist>
+
           {/* List of existing accounts */}
           {(rep.bankAccounts || []).length > 0 && (
             <div className="space-y-3 mb-3">
@@ -3629,7 +3658,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                   </div>
                   <div className="space-y-2">
                     <Input icon="briefcase"
-                      label={L('profile_bank_name_label', 'ბანკის სახელი')}
+                      label={L('profile_bank_name_label', 'ბანკი')}
                       value={acc.bank || ''}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -3639,7 +3668,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                           return { ...r, bankAccounts: list };
                         });
                       }}
-                      placeholder="TBC ბანკი" small />
+                      list="georgian-banks-list"
+                      placeholder={L('profile_bank_name_placeholder', 'აირჩიე ან ჩაწერე')} small />
                     <Input icon="user"
                       label={L('profile_bank_recipient_label', 'მიმღების სახელი/გვარი')}
                       value={acc.recipient || ''}
@@ -3873,7 +3903,7 @@ function SectionLabel({ n, t }) {
   );
 }
 
-function Input({ label, value, onChange, placeholder, icon, iconType, small, green, required, hasError }) {
+function Input({ label, value, onChange, placeholder, icon, iconType, small, green, required, hasError, list }) {
   const IconComp = iconType === 'social' ? SocialIcon : Ic;
   // Brand colors for social media icons — applied when iconType === 'social'
   const SOCIAL_BRAND_COLORS = {
@@ -3895,7 +3925,7 @@ function Input({ label, value, onChange, placeholder, icon, iconType, small, gre
       <div className="relative">
         {icon && <IconComp name={icon} className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
           style={{ color: iconColor }} />}
-        <input type="text" value={value} onChange={onChange} placeholder={placeholder}
+        <input type="text" value={value} onChange={onChange} placeholder={placeholder} list={list}
           className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 ${small ? 'py-2' : 'py-2.5'} rounded-xl outline-none text-sm transition-colors`}
           style={{ background: theme.cream, border: `1.5px solid ${hasError ? '#DC2626' : theme.gold + '33'}`, color: theme.ink }} />
       </div>
