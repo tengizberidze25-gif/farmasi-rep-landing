@@ -1191,7 +1191,7 @@ function App() {
   const [rep, setRep] = useState({
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
     instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
-    referralLink: '', bankAccount: '', bankRecipient: '',
+    referralLink: '', bankAccounts: [],
   });
 
   // ─── Shopping cart state ───
@@ -1334,8 +1334,20 @@ function App() {
         } catch { return []; }
       })(),
       referralLink: rep?.referral_link || '',
-      bankAccount: rep?.bank_account || '',
-      bankRecipient: rep?.bank_recipient || '',
+      bankAccounts: (() => {
+        try {
+          const raw = rep?.bank_accounts;
+          if (raw) {
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch {}
+        // Legacy fallback — migrate old single-account columns to array
+        const legacyAcc = String(rep?.bank_account || '').trim();
+        const legacyRec = String(rep?.bank_recipient || '').trim();
+        if (legacyAcc || legacyRec) return [{ bank: '', account: legacyAcc, recipient: legacyRec }];
+        return [];
+      })(),
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1467,8 +1479,20 @@ function App() {
               } catch { return []; }
             })(),
             referralLink: data.rep.referral_link || '',
-            bankAccount: data.rep.bank_account || '',
-            bankRecipient: data.rep.bank_recipient || '',
+            bankAccounts: (() => {
+              try {
+                const raw = data.rep.bank_accounts;
+                if (raw) {
+                  const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                  if (Array.isArray(parsed)) return parsed;
+                }
+              } catch {}
+              // Legacy fallback — migrate old single-account columns to array
+              const legacyAcc = String(data.rep.bank_account || '').trim();
+              const legacyRec = String(data.rep.bank_recipient || '').trim();
+              if (legacyAcc || legacyRec) return [{ bank: '', account: legacyAcc, recipient: legacyRec }];
+              return [];
+            })(),
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
@@ -2677,8 +2701,9 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         video_url: rep.videoUrl || '',
         customer_videos: JSON.stringify(rep.customerVideos || []),
         referral_link: rep.referralLink || '',
-        bank_account: rep.bankAccount || '',
-        bank_recipient: rep.bankRecipient || '',
+        bank_accounts: JSON.stringify(
+          (rep.bankAccounts || []).filter(a => (a.account || '').trim() || (a.recipient || '').trim() || (a.bank || '').trim())
+        ),
         // photo_url left out for now — base64 too large for JSONP, will handle separately
       });
       if (result.ok) {
@@ -3575,22 +3600,94 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             required hasError={validationAttempted && !(rep.referralLink || '').trim()} />
         </Card>
 
-        {/* 🆕 BANK DETAILS — for customers who choose bank transfer at checkout */}
+        {/* 🆕 BANK DETAILS — supports multiple bank accounts per rep */}
         <Card>
           <SectionLabel n="03c" t={L('profile_section_bank', 'საბანკო რეკვიზიტები')} />
-          <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
-            {L('profile_bank_hint', 'როცა მომხმარებელი აირჩევს "საბანკო გადარიცხვას" — შენი ანგარიში გამოჩნდება ინვოისზე. თუ ცარიელია, კლიენტი ვერ გადაირიცხავს თანხას ბანკით.')}
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            {L('profile_bank_hint', 'მიაწოდე ერთი ან რამდენიმე ბანკი — კლიენტი ნახავს ყველას ინვოისზე და გადარიცხავს მისთვის მოსახერხებელით.')}
           </p>
-          <div className="space-y-3">
-            <Input icon="user" label={L('profile_bank_recipient_label', 'მიმღების სახელი/გვარი')}
-              value={rep.bankRecipient || ''} onChange={upd('bankRecipient')}
-              placeholder="TENGIZ BERIDZE" />
-            <Input icon="credit-card" label={L('profile_bank_account_label', 'საბანკო ანგარიში (IBAN)')}
-              value={rep.bankAccount || ''} onChange={upd('bankAccount')}
-              placeholder="GE12TB7777777777777777" />
-          </div>
+
+          {/* List of existing accounts */}
+          {(rep.bankAccounts || []).length > 0 && (
+            <div className="space-y-3 mb-3">
+              {(rep.bankAccounts || []).map((acc, idx) => (
+                <div key={idx} className="rounded-2xl p-4"
+                  style={{ background: theme.cream, border: `1px solid ${theme.gold}33` }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] tracking-[0.3em] uppercase font-medium" style={{ color: theme.gold }}>
+                      🏦 {L('profile_bank_card_label', 'ბანკი')} #{idx + 1}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setRep(r => ({ ...r, bankAccounts: (r.bankAccounts || []).filter((_, i) => i !== idx) }));
+                      }}
+                      aria-label={L('profile_bank_remove_aria', 'წაშლა')}
+                      className="text-xs flex items-center gap-1 transition hover:scale-110"
+                      style={{ color: theme.rose }}>
+                      <Ic name="trash-2" className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    <Input icon="briefcase"
+                      label={L('profile_bank_name_label', 'ბანკის სახელი')}
+                      value={acc.bank || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRep(r => {
+                          const list = [...(r.bankAccounts || [])];
+                          list[idx] = { ...list[idx], bank: val };
+                          return { ...r, bankAccounts: list };
+                        });
+                      }}
+                      placeholder="TBC ბანკი" small />
+                    <Input icon="user"
+                      label={L('profile_bank_recipient_label', 'მიმღების სახელი/გვარი')}
+                      value={acc.recipient || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRep(r => {
+                          const list = [...(r.bankAccounts || [])];
+                          list[idx] = { ...list[idx], recipient: val };
+                          return { ...r, bankAccounts: list };
+                        });
+                      }}
+                      placeholder="TENGIZ BERIDZE" small />
+                    <Input icon="credit-card"
+                      label={L('profile_bank_account_label', 'ანგარიში (IBAN)')}
+                      value={acc.account || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRep(r => {
+                          const list = [...(r.bankAccounts || [])];
+                          list[idx] = { ...list[idx], account: val };
+                          return { ...r, bankAccounts: list };
+                        });
+                      }}
+                      placeholder="GE12TB7777777777777777" small />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add new account button */}
+          <button
+            onClick={() => {
+              setRep(r => ({
+                ...r,
+                bankAccounts: [...(r.bankAccounts || []), { bank: '', account: '', recipient: '' }]
+              }));
+            }}
+            className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition hover:scale-[1.01]"
+            style={{ background: theme.ivory, color: theme.wine, border: `1.5px dashed ${theme.gold}66` }}>
+            <Ic name="plus" className="w-4 h-4" />
+            {(rep.bankAccounts || []).length === 0
+              ? L('profile_bank_add_first', 'ბანკის ანგარიშის დამატება')
+              : L('profile_bank_add_more', 'კიდევ ერთი ბანკის დამატება')}
+          </button>
+
           <p className="text-[10px] mt-3 leading-relaxed italic" style={{ color: theme.ink + '77' }}>
-            💡 {L('profile_bank_security_note', 'არავინ ვერ ნახავს ანგარიშის ნომერს, სანამ რეალური შეკვეთა არ მოვა და კლიენტი არ აირჩევს ბანკით გადახდას.')}
+            💡 {L('profile_bank_security_note', 'ანგარიშები მხოლოდ რეალური შეკვეთის შემდეგ ჩანს კლიენტს — საჯაროდ არსად არ ჩანს.')}
           </p>
         </Card>
 
@@ -4135,61 +4232,92 @@ function OrderInvoicePage({ orderId, labels = {} }) {
                         {L('order_payment_bank_title', 'საბანკო გადარიცხვა')}
                       </p>
                       <p className="text-sm" style={{ color: theme.ink + '99' }}>
-                        {L('order_payment_bank_desc', 'გადარიცხე ანგარიშზე და დაუკავშირდი წარმომადგენელს.')}
+                        {(() => {
+                          const accounts = Array.isArray(order.bank_accounts) ? order.bank_accounts : [];
+                          if (accounts.length > 1) return L('order_payment_bank_desc_multi', 'აირჩიე მოსახერხებელი ბანკი და გადარიცხე ანგარიშზე.');
+                          return L('order_payment_bank_desc', 'გადარიცხე ანგარიშზე და დაუკავშირდი წარმომადგენელს.');
+                        })()}
                       </p>
                     </div>
                   </div>
-                  {/* Bank account details — comes from rep's profile (Reps sheet) */}
-                  {(order.bank_account || order.bank_recipient) ? (
-                    <div className="rounded-2xl p-4 space-y-3"
-                      style={{ background: theme.cream, border: `1.5px dashed ${theme.gold}66` }}>
-                      {order.bank_recipient && (
-                        <div>
-                          <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
-                            {L('order_bank_recipient', 'მიმღები')}
-                          </p>
-                          <p className="font-medium text-sm" style={{ color: theme.ink }}>{order.bank_recipient}</p>
-                        </div>
-                      )}
-                      {order.bank_account && (
-                        <div>
-                          <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
-                            {L('order_bank_account', 'ანგარიში')}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <p className="font-mono text-sm flex-1 break-all" style={{ color: theme.ink }}>{order.bank_account}</p>
-                            <button
-                              onClick={() => {
-                                if (navigator.clipboard) {
-                                  navigator.clipboard.writeText(order.bank_account);
-                                  const btn = event.currentTarget;
-                                  const orig = btn.textContent;
-                                  btn.textContent = '✓';
-                                  setTimeout(() => { btn.textContent = orig; }, 1500);
-                                }
-                              }}
-                              className="flex-shrink-0 text-xs px-2 py-1 rounded-md transition hover:scale-105"
-                              style={{ background: theme.wine, color: theme.cream }}>
-                              📋
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      <div>
-                        <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
-                          {L('order_bank_amount', 'თანხა')}
+
+                  {/* Bank accounts list — supports 1, 2, 3+ accounts */}
+                  {(() => {
+                    const accounts = Array.isArray(order.bank_accounts) ? order.bank_accounts : [];
+                    // Filter out completely empty accounts (just in case)
+                    const valid = accounts.filter(a => (a && (a.account || a.recipient || a.bank)));
+
+                    if (valid.length === 0) {
+                      return (
+                        <p className="text-xs italic" style={{ color: theme.ink + '88' }}>
+                          {L('order_bank_contact_rep', 'ანგარიშის რეკვიზიტებისთვის დაუკავშირდი წარმომადგენელს.')}
                         </p>
-                        <p className="font-display text-xl" style={{ color: theme.wine }}>{Number(order.total).toFixed(2)} ₾</p>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-3">
+                        {valid.map((acc, idx) => (
+                          <div key={idx} className="rounded-2xl p-4 space-y-3"
+                            style={{ background: theme.cream, border: `1.5px dashed ${theme.gold}66` }}>
+                            {/* Bank name as header (if provided) */}
+                            {acc.bank && (
+                              <div className="flex items-center gap-2 pb-2" style={{ borderBottom: `1px dashed ${theme.gold}33` }}>
+                                <span className="text-base">🏦</span>
+                                <p className="font-display text-base" style={{ color: theme.ink }}>{acc.bank}</p>
+                              </div>
+                            )}
+                            {acc.recipient && (
+                              <div>
+                                <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
+                                  {L('order_bank_recipient', 'მიმღები')}
+                                </p>
+                                <p className="font-medium text-sm" style={{ color: theme.ink }}>{acc.recipient}</p>
+                              </div>
+                            )}
+                            {acc.account && (
+                              <div>
+                                <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
+                                  {L('order_bank_account', 'ანგარიში')}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-mono text-sm flex-1 break-all" style={{ color: theme.ink }}>{acc.account}</p>
+                                  <button
+                                    onClick={(e) => {
+                                      if (navigator.clipboard) {
+                                        navigator.clipboard.writeText(acc.account);
+                                        const btn = e.currentTarget;
+                                        const orig = btn.textContent;
+                                        btn.textContent = '✓';
+                                        setTimeout(() => { btn.textContent = orig; }, 1500);
+                                      }
+                                    }}
+                                    className="flex-shrink-0 text-xs px-2 py-1 rounded-md transition hover:scale-105"
+                                    style={{ background: theme.wine, color: theme.cream }}>
+                                    📋
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Amount + order ID — single block for all accounts */}
+                        <div className="rounded-2xl p-4 space-y-3"
+                          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+                          <div>
+                            <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
+                              {L('order_bank_amount', 'თანხა')}
+                            </p>
+                            <p className="font-display text-xl" style={{ color: theme.wine }}>{Number(order.total).toFixed(2)} ₾</p>
+                          </div>
+                          <p className="text-[11px] italic pt-2" style={{ color: theme.ink + 'AA', borderTop: `1px dashed ${theme.gold}33` }}>
+                            💡 {L('order_bank_note', 'გადარიცხვისას მიუთითე შეკვეთის ID:')} <span className="font-mono">{order.order_id}</span>
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-[11px] italic pt-2" style={{ color: theme.ink + 'AA', borderTop: `1px dashed ${theme.gold}33` }}>
-                        💡 {L('order_bank_note', 'გადარიცხვისას მიუთითე შეკვეთის ID:')} <span className="font-mono">{order.order_id}</span>
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-xs italic" style={{ color: theme.ink + '88' }}>
-                      {L('order_bank_contact_rep', 'ანგარიშის რეკვიზიტებისთვის დაუკავშირდი წარმომადგენელს.')}
-                    </p>
-                  )}
+                    );
+                  })()}
                 </div>
               )}
             </div>
