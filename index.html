@@ -3067,12 +3067,17 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                   ))}
                 </div>
 
-                {myProducts.length < 20 && (
+                {myProducts.length < 10 ? (
                   <button onClick={openProductPicker}
                     className="w-full mt-4 py-3 rounded-xl text-sm tracking-wider uppercase font-medium hover:scale-[1.01] transition"
                     style={{ background: theme.wine + '11', color: theme.wine, border: `1.5px dashed ${theme.wine}55` }}>
-                    + {L('myprods_button_add_more', 'მეტი პროდუქტი')}
+                    + {L('myprods_button_add_more', 'მეტი პროდუქტი')} ({myProducts.length}/10)
                   </button>
+                ) : (
+                  <div className="w-full mt-4 py-3 px-4 rounded-xl text-center text-xs leading-relaxed"
+                    style={{ background: theme.gold + '15', color: theme.gold, border: `1px dashed ${theme.gold}66` }}>
+                    {L('myprods_limit_reached', '✦ მიაღწიე მაქსიმუმ 10 პროდუქტს — წაშალე ერთი ახლის დასამატებლად')}
+                  </div>
                 )}
               </>
             )}
