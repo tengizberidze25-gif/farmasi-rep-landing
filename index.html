@@ -230,6 +230,7 @@ const theme = {
 
 const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
 const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
+const SHIPPING_FEE = 5;
 
 const Mockups = {
   serum: ({ accent = '#7A1E2C' }) => (
@@ -4076,6 +4077,8 @@ function OrderInvoicePage({ orderId, labels = {} }) {
 
 function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, remove, clear, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
+  const shippingFee = items.length > 0 ? SHIPPING_FEE : 0;
+  const grandTotal = Math.round((total + shippingFee) * 100) / 100;
   const [step, setStep] = useState('cart'); // 'cart' | 'checkout' | 'success'
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -4115,12 +4118,20 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
         customer_name: customerName.trim(),
         customer_phone: normalizedPhone,
         customer_address: customerAddress.trim(),
-        items: JSON.stringify(items.map(it => ({
-          product_id: it.product_id,
-          name: it.name,
-          quantity: it.quantity,
-          price: it.price
-        })))
+        items: JSON.stringify([
+          ...items.map(it => ({
+            product_id: it.product_id,
+            name: it.name,
+            quantity: it.quantity,
+            price: it.price
+          })),
+          {
+            product_id: 'shipping_georgia',
+            name: L('shipping_item_name', 'საკურიერო მომსახურება მთელი საქართველოს მასშტაბით'),
+            quantity: 1,
+            price: SHIPPING_FEE
+          }
+        ])
       });
       if (res.ok) {
         setOrderId(res.order_id || '');
@@ -4218,10 +4229,23 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                       ))}
                     </div>
                     
-                    <div className="mt-5 pt-4 flex items-center justify-between"
+                    <div className="mt-5 pt-4 space-y-2"
                       style={{ borderTop: `1px solid ${theme.gold}33` }}>
-                      <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
-                      <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{total.toFixed(2)} GEL</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'პროდუქტები:')}</span>
+                        <span className="text-sm font-semibold" style={{ color: theme.ink }}>{total.toFixed(2)} GEL</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_shipping_label', 'საკურიერო მომსახურება:')}</span>
+                        <span className="text-sm font-semibold" style={{ color: theme.ink }}>{shippingFee.toFixed(2)} GEL</span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed" style={{ color: theme.ink + '70' }}>
+                        {L('cart_shipping_note', 'მიწოდება მთელი საქართველოს მასშტაბით')}
+                      </p>
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                        <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{grandTotal.toFixed(2)} GEL</span>
+                      </div>
                     </div>
                     
                     <button onClick={() => setStep('checkout')}
@@ -4266,10 +4290,23 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                   className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
                   style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
 
-                <div className="mt-4 pt-4 flex items-center justify-between"
+                <div className="mt-4 pt-4 space-y-2"
                   style={{ borderTop: `1px solid ${theme.gold}33` }}>
-                  <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
-                  <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{total.toFixed(2)} GEL</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'პროდუქტები:')}</span>
+                    <span className="text-sm font-semibold" style={{ color: theme.ink }}>{total.toFixed(2)} GEL</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_shipping_label', 'საკურიერო მომსახურება:')}</span>
+                    <span className="text-sm font-semibold" style={{ color: theme.ink }}>{shippingFee.toFixed(2)} GEL</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed" style={{ color: theme.ink + '70' }}>
+                    {L('cart_shipping_note', 'მიწოდება მთელი საქართველოს მასშტაბით')}
+                  </p>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                    <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{grandTotal.toFixed(2)} GEL</span>
+                  </div>
                 </div>
 
                 {error && <p className="text-xs mt-3" style={{ color: theme.rose }}>{error}</p>}
