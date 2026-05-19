@@ -1,1 +1,8065 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
+import { createPortal } from 'react-dom';
+import * as lucide from 'lucide';
+
+window.lucide = lucide;
+
+function Ic({ name, className = '', style = {} }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current && window.lucide) {
+      ref.current.innerHTML = '';
+      const key = name.split('-').map(s => s[0].toUpperCase() + s.slice(1)).join('');
+      const icon = window.lucide[key] || window.lucide[name];
+      if (icon) {
+        const svg = window.lucide.createElement(icon);
+        if (svg) ref.current.appendChild(svg);
+      }
+    }
+  }, [name]);
+  return <span ref={ref} className={className} style={{ display: 'inline-flex', ...style }} />;
+}
+
+// ── Social network brand icons (proper logos, no CDN dependency) ──
+const SocialPaths = {
+  instagram: 'M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z',
+  facebook:  'M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z',
+  tiktok:    'M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.07A6.33 6.33 0 005.8 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1.84-.1z',
+  youtube:   'M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z',
+  telegram:  'M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212-.07-.062-.174-.041-.249-.024-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z',
+  whatsapp:  'M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.464 3.488',
+};
+
+function SocialIcon({ name, className = '', style = {} }) {
+  const path = SocialPaths[name];
+  if (!path) return null;
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}
+      style={{ display: 'block', ...style }}>
+      <path d={path} />
+    </svg>
+  );
+}
+
+const theme = {
+  cream: '#FFFCF8',
+  ivory: '#F7F2EA',
+  wine:  '#B5164F',
+  rose:  '#D86A8D',
+  blush: '#F8E1E7',
+  gold:  '#B58A42',
+  ink:   '#101312',
+  mist:  '#E8EFEA',
+  sage:  '#667B6A',
+  cocoa: '#5A3E32',
+};
+
+const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
+const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
+const SHIPPING_FEE = 5;
+const FREE_SHIPPING_THRESHOLD = 150;
+
+const Mockups = {
+  serum: ({ accent = '#7A1E2C' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="bottle1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.9"/>
+          <stop offset="0.5" stopColor={accent} stopOpacity="0.85"/>
+          <stop offset="1" stopColor={accent} stopOpacity="1"/>
+        </linearGradient>
+        <linearGradient id="cap1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#2a1a14"/><stop offset="1" stopColor="#0a0604"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="55" ry="6" fill="#000" opacity="0.15"/>
+      <rect x="80" y="20" width="40" height="8" rx="2" fill="url(#cap1)"/>
+      <rect x="84" y="28" width="32" height="34" rx="3" fill="url(#cap1)"/>
+      <rect x="88" y="62" width="24" height="8" fill="#1a0e0a"/>
+      <path d="M 70 70 L 130 70 L 135 90 L 135 210 Q 135 220 125 220 L 75 220 Q 65 220 65 210 L 65 90 Z" fill="url(#bottle1)"/>
+      <rect x="75" y="120" width="50" height="70" fill="#fff" opacity="0.95" rx="2"/>
+      <text x="100" y="145" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="11" fontStyle="italic" fill={accent} fontWeight="600">FARMASI</text>
+      <line x1="82" y1="152" x2="118" y2="152" stroke={accent} strokeWidth="0.5" opacity="0.4"/>
+      <text x="100" y="168" textAnchor="middle" fontFamily="serif" fontSize="6" fill="#231712" letterSpacing="1">SERUM</text>
+      <text x="100" y="180" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.7">30 ml</text>
+      <path d="M 75 80 L 75 200 Q 75 210 80 210 L 82 210 Q 78 210 78 200 L 78 90 Q 78 80 82 80 Z" fill="#fff" opacity="0.4"/>
+    </svg>
+  ),
+  lipstick: ({ accent = '#C9536B' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="lipBody" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#1a0e0a"/><stop offset="0.5" stopColor="#3a2218"/><stop offset="1" stopColor="#0a0604"/>
+        </linearGradient>
+        <linearGradient id="lipColor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={accent}/><stop offset="1" stopColor="#7A1E2C"/>
+        </linearGradient>
+        <linearGradient id="goldRing" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#d4a960"/><stop offset="0.5" stopColor="#f5e0a8"/><stop offset="1" stopColor="#a87a3a"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="35" ry="5" fill="#000" opacity="0.15"/>
+      <rect x="80" y="120" width="40" height="100" rx="2" fill="url(#lipBody)"/>
+      <rect x="78" y="116" width="44" height="8" fill="url(#goldRing)"/>
+      <rect x="78" y="124" width="44" height="2" fill="#a87a3a" opacity="0.5"/>
+      <rect x="82" y="60" width="36" height="58" rx="1" fill="url(#lipBody)"/>
+      <path d="M 88 60 L 88 30 Q 88 20 95 18 L 105 22 Q 112 28 112 40 L 112 60 Z" fill="url(#lipColor)"/>
+      <path d="M 88 60 L 88 35 Q 88 28 92 28 L 92 60 Z" fill="#fff" opacity="0.2"/>
+      <rect x="83" y="63" width="2" height="50" fill="#fff" opacity="0.3"/>
+      <rect x="83" y="125" width="2" height="90" fill="#fff" opacity="0.2"/>
+      <text x="100" y="170" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="9" fontStyle="italic" fill="#d4a960" fontWeight="500">FARMASI</text>
+      <line x1="86" y1="178" x2="114" y2="178" stroke="#d4a960" strokeWidth="0.3" opacity="0.6"/>
+      <text x="100" y="195" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#d4a960" letterSpacing="2">MATTE</text>
+    </svg>
+  ),
+  perfume: ({ accent = '#B8924E' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="perfBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.95"/>
+          <stop offset="0.4" stopColor="#fff5e0" stopOpacity="0.9"/>
+          <stop offset="1" stopColor={accent} stopOpacity="0.8"/>
+        </linearGradient>
+        <linearGradient id="perfCap" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a2a14"/><stop offset="1" stopColor="#1a0e04"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="55" ry="6" fill="#000" opacity="0.15"/>
+      <rect x="92" y="20" width="16" height="6" fill="url(#perfCap)"/>
+      <rect x="78" y="26" width="44" height="20" rx="1" fill="url(#perfCap)"/>
+      <rect x="78" y="44" width="44" height="3" fill="#0a0604"/>
+      <rect x="86" y="47" width="28" height="12" fill="url(#perfBody)" opacity="0.7"/>
+      <rect x="55" y="59" width="90" height="155" rx="6" fill="url(#perfBody)"/>
+      <rect x="60" y="65" width="6" height="140" rx="3" fill="#fff" opacity="0.6"/>
+      <rect x="135" y="80" width="3" height="100" rx="1.5" fill="#fff" opacity="0.4"/>
+      <text x="100" y="125" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="18" fontStyle="italic" fill={accent} fontWeight="500">Tantalize</text>
+      <line x1="75" y1="135" x2="125" y2="135" stroke={accent} strokeWidth="0.4"/>
+      <text x="100" y="148" textAnchor="middle" fontFamily="serif" fontSize="5" fill="#231712" letterSpacing="3" opacity="0.7">EAU DE PARFUM</text>
+      <text x="100" y="180" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="7" fontStyle="italic" fill="#231712" opacity="0.5">FARMASI</text>
+      <text x="100" y="200" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.5">50 ml ⋅ 1.7 fl.oz</text>
+    </svg>
+  ),
+  cream: ({ accent = '#E8C9C0' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="jarBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.95"/><stop offset="1" stopColor={accent}/>
+        </linearGradient>
+        <linearGradient id="jarLid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#d4a960"/><stop offset="0.5" stopColor="#f5e0a8"/><stop offset="1" stopColor="#a87a3a"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="65" ry="7" fill="#000" opacity="0.15"/>
+      <ellipse cx="100" cy="60" rx="65" ry="10" fill="url(#jarLid)"/>
+      <rect x="35" y="60" width="130" height="22" fill="url(#jarLid)"/>
+      <ellipse cx="100" cy="82" rx="65" ry="6" fill="#a87a3a" opacity="0.4"/>
+      <path d="M 38 82 L 162 82 L 158 215 Q 158 222 150 222 L 50 222 Q 42 222 42 215 Z" fill="url(#jarBody)"/>
+      <ellipse cx="100" cy="82" rx="62" ry="5" fill="#fff" opacity="0.6"/>
+      <rect x="55" y="120" width="90" height="65" fill="#fff" opacity="0.85" rx="2"/>
+      <text x="100" y="142" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="12" fontStyle="italic" fill="#7A1E2C" fontWeight="500">FARMASI</text>
+      <line x1="70" y1="150" x2="130" y2="150" stroke="#7A1E2C" strokeWidth="0.3" opacity="0.5"/>
+      <text x="100" y="163" textAnchor="middle" fontFamily="serif" fontSize="6" fill="#231712" letterSpacing="2">ROYAL JELLY</text>
+      <text x="100" y="174" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.7">NIGHT CREAM</text>
+      <text x="100" y="183" textAnchor="middle" fontFamily="serif" fontSize="3.5" fill="#231712" opacity="0.5">50 ml</text>
+      <path d="M 48 90 L 48 210 Q 48 215 52 215 L 54 215 Q 50 215 50 210 L 50 95 Q 50 90 54 90 Z" fill="#fff" opacity="0.5"/>
+    </svg>
+  ),
+  palette: ({ accent = '#C9536B' }) => (
+    <svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="palBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1a0e0a"/><stop offset="0.5" stopColor="#3a2218"/><stop offset="1" stopColor="#0a0604"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="120" cy="185" rx="80" ry="6" fill="#000" opacity="0.18"/>
+      <rect x="30" y="50" width="180" height="130" rx="6" fill="url(#palBody)"/>
+      <rect x="30" y="50" width="180" height="3" fill="#d4a960"/>
+      <rect x="30" y="177" width="180" height="3" fill="#a87a3a"/>
+      <rect x="40" y="58" width="160" height="50" fill="#2a1610" rx="2"/>
+      <text x="120" y="80" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="14" fontStyle="italic" fill="#d4a960" fontWeight="500">FARMASI</text>
+      <text x="120" y="95" textAnchor="middle" fontFamily="serif" fontSize="5" fill="#d4a960" letterSpacing="3" opacity="0.8">BLUSH PALETTE</text>
+      {[
+        { x: 50, c: '#fce7f3' }, { x: 90, c: '#f9a8d4' }, { x: 130, c: '#ec4899' }, { x: 170, c: '#be185d' },
+        { x: 50, c: '#fbcfe8', y: 145 }, { x: 90, c: '#f472b6', y: 145 }, { x: 130, c: '#db2777', y: 145 }, { x: 170, c: '#9d174d', y: 145 },
+      ].map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x + 15} cy={(p.y || 130) + 5} r="14" fill="#0a0604"/>
+          <circle cx={p.x + 15} cy={(p.y || 130) + 5} r="12" fill={p.c}/>
+          <ellipse cx={p.x + 12} cy={(p.y || 130) + 2} rx="4" ry="2" fill="#fff" opacity="0.3"/>
+        </g>
+      ))}
+    </svg>
+  ),
+  lotion: ({ accent = '#EFE5D8' }) => (
+    <svg viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+      <defs>
+        <linearGradient id="lotBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.95"/><stop offset="1" stopColor={accent}/>
+        </linearGradient>
+        <linearGradient id="lotPump" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a2a14"/><stop offset="1" stopColor="#1a0e04"/>
+        </linearGradient>
+      </defs>
+      <ellipse cx="100" cy="225" rx="55" ry="6" fill="#000" opacity="0.15"/>
+      <rect x="78" y="14" width="20" height="8" rx="1" fill="url(#lotPump)"/>
+      <rect x="92" y="22" width="22" height="14" rx="2" fill="url(#lotPump)"/>
+      <rect x="86" y="36" width="28" height="14" rx="1" fill="url(#lotPump)"/>
+      <rect x="60" y="50" width="80" height="170" rx="4" fill="url(#lotBody)"/>
+      <rect x="65" y="60" width="4" height="150" rx="2" fill="#fff" opacity="0.7"/>
+      <rect x="132" y="80" width="2" height="120" rx="1" fill="#fff" opacity="0.4"/>
+      <rect x="68" y="115" width="64" height="80" fill="#fff" opacity="0.4" rx="1"/>
+      <text x="100" y="135" textAnchor="middle" fontFamily="Cormorant Garamond, serif" fontSize="11" fontStyle="italic" fill="#7A1E2C" fontWeight="500">FARMASI</text>
+      <line x1="78" y1="142" x2="122" y2="142" stroke="#7A1E2C" strokeWidth="0.3" opacity="0.5"/>
+      <text x="100" y="158" textAnchor="middle" fontFamily="serif" fontSize="6" fill="#231712" letterSpacing="2">BODY SILK</text>
+      <text x="100" y="170" textAnchor="middle" fontFamily="serif" fontSize="4" fill="#231712" opacity="0.7">LOTION</text>
+      <text x="100" y="185" textAnchor="middle" fontFamily="serif" fontSize="3.5" fill="#231712" opacity="0.5">250 ml</text>
+    </svg>
+  ),
+};
+
+const products = [
+  {
+    id: 909,
+    name: 'Dr. C. Tuna ნივრის შამპუნი',
+    fullName: 'Vitalizing Hair Care · Garlic & Capixyl™',
+    cat: 'თმის მოვლა · 500 მლ',
+    headline: 'ფუფუნება ყოველ ღერში',
+    subheadline: 'არ არის უბრალოდ თმის მოვლა — ეს არის Dr. C. Tuna-ს ლაბორატორიებში შექმნილი რიტუალი, რომელიც თქვენს თმას ბუნებრივ დიდებულებას უბრუნებს.',
+    price: 19.99, tag: 'ბესტსელერი',
+    image: 'vitalizing-shampoo.png',
+    heroImage: 'vitalizing-before-after-hero.png',
+    description: 'ნივრის ექსტრაქტისა და ინოვაციური Capixyl™ კომპლექსის სინერგია უზრუნველყოფს თმის შეუდარებელ სიმკვრივესა და სიჯანსაღეს — სასიამოვნო, ნაზი არომატით.',
+    bg: ['#FCE7F3', '#FFFFFF'], accent: '#E50571',
+    sku: '1000667',
+    rating: 4.8,
+    reviewCount: 247,
+    benefits: [
+      { ic: 'shield-check', t: 'თმის ცვენის შეჩერება', d: 'ნივრის ექსტრაქტი აძლიერებს ფოლიკულებს და საგრძნობლად ამცირებს ცვენას' },
+      { ic: 'trending-up',  t: 'ზრდის სტიმულირება',     d: 'CAPIXYL™ კომპლექსი — ცვენის წინააღმდეგ ბრძოლის ოქროს სტანდარტი' },
+      { ic: 'sparkles',     t: 'ფუფუნება ყოველ ღერში',  d: 'B5 ვიტამინი თმას ხდის აბრეშუმისებრს, დამყოლს და გამომხატველს' },
+      { ic: 'wind',         t: 'უსიამოვნო სუნის გარეშე', d: 'ნივრის ძალა — მხოლოდ სარგებელი და ბზინვარება' },
+    ],
+    problems: {
+      headline: 'ნაცნობი გრძნობაა?',
+      subtitle: 'თუ ერთს მაინც ცნობ — Vitalizing შენთვისაა',
+      items: [
+        { ic: 'frown',     t: 'სარკეში თმის ცვენას ვხედავ',     d: 'ყოველი დაბანის შემდეგ თმის ღერები სავარცხელზე და სამოსზე რჩება' },
+        { ic: 'cloud',     t: 'თმა სიცოცხლე დაკარგა',           d: 'უსიცოცხლო, გაცვეთილი, ბრწყინვალების გარეშე — სტრესი და დროა მიზეზი' },
+        { ic: 'alert-circle', t: 'ფესვები სუსტდება',            d: 'მოცულობა იკლებს, თხელი ღერები აღარ აქვს ის სიმკვრივე, რაც ადრე' },
+        { ic: 'heart-crack', t: 'თავდაჯერებულობა მცირდება',     d: 'ვცდილობ თმა დავფარო, თავი არასასიამოვნოდ ვიგრძნო ფოტოებზე' },
+      ],
+    },
+    ingredients: [
+      { name: 'ნივრის ექსტრაქტი', desc: 'ბუნებრივი ანტიბაქტერიული, ამაგრებს თმის ფოლიკულებს' },
+      { name: 'CAPIXYL™ კომპლექსი', desc: 'ხელს უშლის თმის ცვენას, ასტიმულირებს ზრდას' },
+      { name: 'B5 ვიტამინი', desc: 'კვებავს თავის კანს, ანიჭებს ბრწყინვალებას' },
+      { name: 'პროტეინები', desc: 'აღადგენს დაზიანებულ თმის სტრუქტურას' },
+    ],
+    howItWorks: [
+      { step: 1, ic: 'sun',     title: 'გამოღვიძება', desc: 'ასტიმულირებს მიკროცირკულაციას თავის კანზე' },
+      { step: 2, ic: 'shield',  title: 'გამაგრება',   desc: 'ამაგრებს თმის ღერს ფესვიდან ბოლოებამდე' },
+      { step: 3, ic: 'umbrella', title: 'დაცვა',      desc: 'ქმნის დამცავ ბარიერს გარემო ფაქტორების წინააღმდეგ' },
+    ],
+    howToUse: [
+      { step: 1, title: 'დაასველე', desc: 'სველ თმას წაუსვი მცირე რაოდენობა' },
+      { step: 2, title: 'მასაჟი', desc: 'მსუბუქი მასაჟით განანაწილე თავის კანზე' },
+      { step: 3, title: 'ჩამოიბანე', desc: 'ჩამოიბანე უხვი წყლით, საჭიროებისას გაიმეორე' },
+    ],
+    suitableFor: ['თმის ცვენისთვის', 'ცხიმიანი თმისთვის', 'ქერტლიანი თავის კანისთვის', 'ყველა ტიპის თმისთვის'],
+    features: [
+      { ic: 'leaf',         t: 'არ შეიცავს პარაბენებს' },
+      { ic: 'shield-check', t: 'დერმატოლოგიურად დადასტურებული' },
+      { ic: 'heart',        t: 'არ იტესტება ცხოველებზე' },
+      { ic: 'sparkles',     t: 'უპარაბენო ფორმულა' },
+    ],
+    fullIngredients: 'Aqua, Sodium Laureth Sulfate, Cocamidopropyl Betaine, Sodium Chloride, Allium Sativum (Garlic) Bulb Extract, Acetyl Tetrapeptide-3, Trifolium Pratense (Clover) Flower Extract, Panthenol, Hydrolyzed Wheat Protein, Niacinamide, Biotin, Glycerin, Citric Acid, Parfum, Phenoxyethanol, Sodium Benzoate.',
+    reviews: [
+      { name: 'ანი, 28', stars: 5, text: 'წლებია თმის ცვენას ვებრძვი. Dr. C. Tuna-ს შამპუნმა შედეგი 2 კვირაში მაჩვენა. თმა ბევრად უფრო სქელი და ცოცხალი ჩანს!', date: '2 კვირის წინ' },
+      { name: 'მარიამ, 34', stars: 5, text: 'სუნი ნელ-ნელა იხდის თავს, ეფექტი კი თვალნათლივ ჩანს. ყოველთვის ვიყიდი.', date: '1 თვის წინ' },
+      { name: 'თამარ, 41', stars: 4, text: 'კარგი პროდუქტია, თავის კანი აღარ მექავება. ერთადერთი — ცოტა ბევრი ჩამობანა მჭირდება.', date: '3 კვირის წინ' },
+    ],
+    faqs: [
+      { q: 'რამდენ ხანში ჩანს შედეგი?', a: 'რეგულარული გამოყენების შემთხვევაში 2-4 კვირაში შეამჩნევთ თმის ცვენის შესამჩნევ შემცირებას, ხოლო სრული ეფექტი — 8 კვირაში.' },
+      { q: 'შემიძლია ყოველდღე გამოვიყენო?', a: 'დიახ, შამპუნი მსუბუქი ფორმულისაა და ყოველდღიური გამოყენებისთვისაა განკუთვნილი.' },
+      { q: 'შეღებილ თმაზე ვარგა?', a: 'დიახ, შესაფერისია ყველა ტიპის თმისთვის, შეღებილის ჩათვლით. ფერი არ ზიანდება.' },
+      { q: 'ნიორის სუნი რჩება?', a: 'არა, ფორმულა შემუშავებულია ისე, რომ მაქსიმალურად შემცირებულია ნივრის უსიამოვნო სუნი — დარჩება მხოლოდ ნაზი არომატი.' },
+    ],
+    beforeAfter: [
+      {
+        image: 'before-after-women.png',
+        title: '8 კვირის შემდეგ',
+        subtitle: 'ანი ბერიძე, 28',
+        note: 'შამპუნი + თმის ნიღაბი, კვირაში 3-ჯერ',
+        result: 'თმის სიხშირის +40%'
+      },
+      {
+        image: 'before-after-women-2.png',
+        title: '12 კვირის შემდეგ',
+        subtitle: 'ნათია გ., 32',
+        note: 'შამპუნი + ზეთი + ნიღაბი, რეგულარული რიტუალი',
+        result: 'ცვენის შემცირება -85%'
+      },
+      {
+        image: 'before-after-women-3.png',
+        title: '10 კვირის შემდეგ',
+        subtitle: 'თამარ კ., 38',
+        note: 'სრული რიტუალი + ყოველდღიური ვიტამინები',
+        result: 'მოცულობის +50%'
+      },
+      {
+        image: 'before-after-men.png',
+        title: '16 კვირის შემდეგ',
+        subtitle: 'გიორგი მ., 35',
+        note: 'შამპუნი + ზეთი, ყოველდღიური მოვლა',
+        result: 'სიხშირის +60%'
+      },
+    ],
+    videos: [
+      {
+        src: 'video-shampoo-benefits.mp4',
+        title: 'პროდუქტის უპირატესობები',
+        subtitle: 'რა ხდის Vitalizing-ს უნიკალურს',
+        poster: 'before-after-women.png',
+      },
+      {
+        src: 'video-hair-routine.mp4',
+        title: 'სრული თმის რიტუალი',
+        subtitle: 'შამპუნი + ნიღაბი + ზეთი — როგორ მუშაობს ერთად',
+        poster: 'before-after-women-2.png',
+      },
+    ],
+    ritual: {
+      headline: 'თქვენი რიტუალი იწყება აქ',
+      subtitle: 'სამი პროდუქტი — ერთი მიზანი. შამპუნი, ნიღაბი, ზეთი — Dr. C. Tuna Vitalizing-ის სრული კოლექცია მაქსიმალური შედეგისთვის.',
+      bundleImage: 'vitalizing-bundle-products.png',
+      bundlePrice: 71.97,
+      savings: 0,
+      tagline: 'მიეცით თქვენს თმას უფლება, გამოიყურებოდეს ისე, როგორც თქვენ იმსახურებთ.',
+      items: [
+        {
+          step: 1, name: 'აღმდგენი შამპუნი', subtitle: 'ძალის დაბრუნება', price: 19.99,
+          image: 'vitalizing-shampoo.png',
+          quote: 'გახსოვთ ის გრძნობა, როცა თქვენი თმა სიცოცხლით სავსე და მორჩილი იყო?',
+          desc: 'ნივრისა და კაპიქსილის ექსტრაქტით — მეტია ვიდრე უბრალო ჰიგიენა. ეს არის თქვენი თმის ყოველდღიური გამამხნევებელი თერაპია, ნაბიჯი იმ სიმტკიცისკენ, რომელიც დროთა განმავლობაში დაიკარგა. იგრძენით, როგორ ივსება თითოეული ღერი ენერგიით.',
+          benefit: 'ბუნებრივი ბზინვარება, რომელიც თქვენს ღიმილს ასე უხდება',
+          volume: '500 მლ',
+          accent: '#E50571'
+        },
+        {
+          step: 2, name: 'ინტენსიური ნიღაბი', subtitle: 'სინაზე და მზრუნველობა', price: 19.99,
+          image: 'vitalizing-mask.png',
+          quote: 'მიეცით თავს უფლება — რამდენიმე წუთით სრულ სიმშვიდეში ჩაიძიროთ.',
+          desc: 'ვიტამინ B5-ით თქვენს თმას ისეთივე სინაზით ეხვევა, როგორც ყველაზე თბილი ჩახუტება. ღრმად კვებავს და აცოცხლებს დაზიანებულ სტრუქტურას, აქრობს დაღლილობის კვალს, ტოვებს მხოლოდ აბრეშუმისებრ სიმსუბუქეს.',
+          benefit: 'მომენტი, როცა საკუთარ თავზე ზრუნვა ხელშესახები ხდება',
+          volume: '200 მლ',
+          accent: '#A21CAF'
+        },
+        {
+          step: 3, name: 'გამაძლიერებელი ზეთი', subtitle: 'ჯადოსნური ტრანსფორმაცია', price: 31.99,
+          image: 'vitalizing-oil.png',
+          quote: 'თმის ყოველი ღერი თქვენი ისტორიის ნაწილია.',
+          desc: 'როცა ის სუსტდება, თითქოს თქვენი თავდაჯერებულობაც იკლებს. კონცენტრირებული ფორმულა — იმედის წვეთები ფესვებისთვის. სიღრმისეულად მოქმედებს, რათა დააბრუნოს დაკარგული მოცულობა და სიმკვრივე.',
+          benefit: 'ახალი ენერგია, რომლითაც სარკეში თავდაჯერებულად შეხედავთ',
+          volume: '50 მლ',
+          accent: '#BE185D'
+        },
+      ],
+    },
+  },
+  // ⚡ ALTERNATIVE — VITALIZING FORTE Shampoo (პრემიუმ ყოველდღიური, კომპაქტური)
+  {
+    id: 1917,
+    name: 'Vitalizing FORTE შამპუნი',
+    fullName: 'Dr. C. Tuna · Vitalizing FORTE Hair Care',
+    cat: 'თმის მოვლა · 325 მლ',
+    headline: 'გაძლიერებული ფორმულა — ყოველდღე',
+    subheadline: 'პროფესიონალური ხაზის FORTE ფორმულა — UV დაცვა, ანტი-სტატიკური ეფექტი და სკალპის აღდგენა.',
+    price: 12.99, tag: 'FORTE',
+    image: 'vitalizing-shampoo-forte.png',
+    description: 'არ შეიცავს SLS-ს, პარაბენებს, გლუტენს, ფორმალდეჰიდს და ფტალატებს. დერმატოლოგიურად დადასტურებული მგრძნობიარე კანისთვისაც.',
+    bg: ['#FCE7F3', '#F472B6'], accent: '#DB2777',
+    sku: '1002480',
+  },
+
+  // 🧼 ALTERNATIVE — Garlic Soap (კომპაქტური, მრავალფუნქციური)
+  {
+    id: 233,
+    name: 'ნივრის საპონი Vitalizing',
+    fullName: 'Dr. C. Tuna · Garlic & Ginseng Soap',
+    cat: 'თმა + სხეული · 125 გრ',
+    headline: 'სამი დანიშნულება — ერთი საპონი',
+    subheadline: 'ნივრისა და ჟენშენის ექსტრაქტებით — გამოიყენე თმაზე, სახეზე და სხეულზე.',
+    price: 9.99, tag: 'კომპაქტური',
+    image: 'vitalizing-soap.png',
+    description: 'ნაზად აშორებს ჭუჭყს და ცხიმს კანის გამოშრობის გარეშე. იდეალურია სამოგზაუროდ ან მინი ფორმატის მოყვარულთათვის.',
+    bg: ['#FAE8FF', '#A21CAF'], accent: '#9333EA',
+    sku: '1119055',
+  },
+
+  // 🎣 TRIPWIRE — Single-use Tester (შესვლის წერტილი)
+  {
+    id: 1022,
+    name: 'Vitalizing ტესტერი',
+    fullName: 'Dr. C. Tuna · Single-Use Trial · Shampoo + Mask',
+    cat: 'ერთჯერადი · შამპუნი + ნიღაბი',
+    headline: 'სცადე ჯერ — სანამ იყიდი',
+    subheadline: 'ერთჯერადი დოზა შამპუნისა და ნიღბის — შენ თვითონ შეაფასე ეფექტი 2.99 ₾-ად.',
+    price: 2.99, tag: 'სცადე',
+    image: 'vitalizing-tester.png',
+    description: 'სრული Vitalizing რიტუალის გაცნობა მინიმალური რისკით. იდეალური პირველი ნაბიჯი, თუ ჯერ არ გადაგიწყვეტია.',
+    bg: ['#FECACA', '#F87171'], accent: '#DC2626',
+    sku: '1000170',
+  },
+
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// PAIN → SOLUTION — 15 პრობლემის კატეგორია
+// productId !== null = active (აქვს რიტუალი); null = "მალე გამოვა"
+// ════════════════════════════════════════════════════════════════════════════
+const PROBLEMS = [
+  // თმის მოვლა (4)
+  {
+    id: 'hair-loss', label: 'თმის ცვენა', icon: 'wind', productId: 909, accent: '#E50571',
+    bridge: {
+      eyebrow: 'შენ აირჩიე',
+      headline: 'ვიცი ეს ტკივილი.',
+      paragraphs: [
+        'ყოველი ღერი, რომელიც სავარცხელზე რჩება — ცოტა-ცოტა შენი თავდაჯერებულობის ნაჭრებია.',
+        'სარკეში ცქერა, რომელიც ერთ დროს თამაშივით იყო — ახლა ცოტა მძიმე მომენტი გახდა.',
+        'მაგრამ მოისმინე — ეს დაბრუნდება. ნელ-ნელა, რიტუალით, საკუთარი თავის მზრუნველობით.',
+      ],
+      stat: 'ყოველ მე-3 ქალს საქართველოში თმის ცვენის პრობლემა აქვს. შენ მარტო არ ხარ.',
+      repNote: 'ბევრს დავეხმარე ამ გზის გავლაში — შენც გვერდში გაგიდექი.',
+      cta: 'ნახე შენი რიტუალი',
+      science: 'თმა ცოცხალი ორგანოა — სიგნალს გვაძლევს, როცა სხეულში რაღაც არ არის წონასწორობაში. ყოველი ადამიანი ნორმალურად დღეში ~50-100 ღერს კარგავს. პრობლემა მაშინ ხდება, როცა ცვილდება მნიშვნელოვნად მეტი — სავარცხელი დავსებულია, ბალიშზე გროვები რჩება, ცხენი მცირდება.\n\nხშირი მიზეზები: ჰორმონული ცვლილებები (ორსულობის ან მენოპაუზის შემდეგ), რკინის ან D ვიტამინის დეფიციტი, ხანგრძლივი სტრესი, ფარისებრი ჯირკვლის პრობლემა, ან მკაცრი დიეტა. ცვენა — სიმპტომია, არა ცალკე ავადმყოფობა. სანამ კოსმეტიკას ცდი, ჯერ ღირს იცოდე რა იწვევს.',
+      tipsDo: '✦ სკალპის მასაჟი — დღეში 4 წუთი, თითის ბურთულებით, წრიული მოძრაობით. სტიმულირებს სისხლის მიმოქცევას ფოლიკულებში. ✦ ცილოვანი საუზმე — კვერცხი, ხაჭო, ლობიო. თმა 95% კერატინია (ცილა). ✦ წყალი დღეში 1.5 ლიტრი — დეჰიდრატაცია პირდაპირ მოქმედებს ფოლიკულზე. ✦ ძილი 7-8 საათი — ღამით ხდება უჯრედული აღდგენა. ✦ ლაბორატორია — რკინა, ფერიტინი, D ვიტამინი, TSH. ბევრი ქალისთვის ფარული მიზეზი აქ ცხადდება.',
+      tipsAvoid: '✦ სველი თმის ვარცხნა — ყველაზე მტვრევადია. ჯერ პირსახოცით გაიწურე. ✦ ცხელი წყალი თავის დაბანისას — ფოლიკულის ყელი იხსნება. შენელებული წყალი უკეთესია. ✦ ყოველდღიური ფენი/უტიუგი — ცილოვანი სტრუქტურა იშლება. ✦ მჭიდრო ცული, კვანძები — იწვევს traction alopecia-ს. ✦ მკაცრი დიეტა — სწრაფი წონის დაკლება იწვევს ცვენას 2-3 თვეში.',
+      doctor: '✦ ცვენა უცებ დაიწყო, განსაკუთრებით კონკრეტული ადგილები ცარიელდება (alopecia areata). ✦ თავ-კანი ქავა, წითლდება ან აქვს ბუშტუკები. ✦ თან აქვს გვერდითი სიმპტომები: სიცხე, წონის ცვლილება, დაუსრულებელი დაღლილობა (ფარისებრი ჯირკვალი). ✦ ცვენა 6+ თვე გაუთავებელია. ✦ ფეხმძიმობის ან მენოპაუზის ფაზაში ხარ.',
+    }
+  },
+  { id: 'oily-scalp',    label: 'ცხიმიანი სკალპი',    icon: 'droplets',     productId: null, accent: '#BE185D' },
+  { id: 'dull-hair',     label: 'უსიცოცხლო თმა',      icon: 'cloud-off',    productId: null, accent: '#FB7185' },
+  { id: 'graying',       label: 'გათეთრება',           icon: 'snowflake',    productId: null, accent: '#D4A960' },
+  // სახის მოვლა (5)
+  { id: 'acne',          label: 'აკნე',                icon: 'circle-dot',   productId: null, accent: '#EC4899' },
+  { id: 'wrinkles',      label: 'ნაოჭები',            icon: 'clock',        productId: null, accent: '#D4A960' },
+  { id: 'pigmentation',  label: 'პიგმენტი',            icon: 'circle',       productId: null, accent: '#BE185D' },
+  { id: 'dry-skin',      label: 'მშრალი კანი',         icon: 'sun',          productId: null, accent: '#F472B6' },
+  { id: 'oily-skin',     label: 'ცხიმიანი კანი',       icon: 'droplet',      productId: null, accent: '#E50571' },
+  // თვალები (1)
+  { id: 'puffy-eyes',    label: 'თვალის შეშუპება',    icon: 'eye-off',      productId: null, accent: '#BE185D' },
+  // სხეული (2)
+  { id: 'cellulite',     label: 'ცელულიტი',           icon: 'activity',     productId: null, accent: '#EC4899' },
+  { id: 'rough-body',    label: 'გაუხეშებული სხეული', icon: 'feather',      productId: null, accent: '#F472B6' },
+  // ჯანმრთელობა (3)
+  { id: 'fatigue',       label: 'დაღლილობა',           icon: 'battery-low',  productId: null, accent: '#D4A960' },
+  { id: 'sleep',         label: 'ძილის პრობლემა',     icon: 'moon',         productId: null, accent: '#BE185D' },
+  { id: 'nails',         label: 'ფრჩხილების სისუსტე', icon: 'gem',          productId: null, accent: '#FB7185' },
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// BEAUTIFUL SLUG GENERATOR — FARMASI brand-coherent word pool
+// Combines an adjective + noun for unique, anonymous, memorable slugs
+// e.g. "velvet-bloom", "golden-petal", "rose-aurora"
+// ════════════════════════════════════════════════════════════════════════════
+const SLUG_ADJECTIVES = [
+  'velvet', 'silk', 'golden', 'rose', 'pearl', 'crimson', 'royal', 'radiant',
+  'glowing', 'soft', 'pure', 'bright', 'glam', 'chic', 'ruby', 'amber', 'coral',
+  'blush', 'ivory', 'pink', 'lush', 'sweet', 'fresh', 'tender', 'dreamy', 'silky'
+];
+const SLUG_NOUNS = [
+  'bloom', 'petal', 'orchid', 'jasmine', 'lily', 'rose', 'lotus', 'tulip',
+  'aurora', 'flame', 'glow', 'sparkle', 'dawn', 'pearl', 'gem', 'mist', 'dew',
+  'magnolia', 'iris', 'peony', 'velvet', 'star', 'moon', 'satin', 'silk', 'flora'
+];
+
+function generateBeautifulSlug() {
+  const adj = SLUG_ADJECTIVES[Math.floor(Math.random() * SLUG_ADJECTIVES.length)];
+  const noun = SLUG_NOUNS[Math.floor(Math.random() * SLUG_NOUNS.length)];
+  return `${adj}-${noun}`;
+}
+
+// Georgian → Latin transliteration map
+const GEO_TRANSLIT = {
+  'ა':'a','ბ':'b','გ':'g','დ':'d','ე':'e','ვ':'v','ზ':'z','თ':'t',
+  'ი':'i','კ':'k','ლ':'l','მ':'m','ნ':'n','ო':'o','პ':'p','ჟ':'zh',
+  'რ':'r','ს':'s','ტ':'t','უ':'u','ფ':'f','ქ':'q','ღ':'gh','ყ':'q',
+  'შ':'sh','ჩ':'ch','ც':'ts','ძ':'dz','წ':'ts','ჭ':'ch','ხ':'kh',
+  'ჯ':'j','ჰ':'h'
+};
+
+// Generate slug from a name (Georgian or Latin) — first word only by default for privacy
+function slugFromName(name, { includeSurname = true } = {}) {
+  if (!name || typeof name !== 'string') return '';
+  const cleaned = name.trim();
+  if (!cleaned) return '';
+  const parts = cleaned.split(/\s+/);
+  const useParts = includeSurname ? parts : [parts[0]];
+  const slug = useParts
+    .map(part =>
+      part.toLowerCase().split('').map(c => GEO_TRANSLIT[c] || c).join('')
+    )
+    .join('-')
+    .replace(/[^a-z0-9-]/g, '')   // strip anything that's not [a-z0-9-]
+    .replace(/--+/g, '-')          // collapse multiple dashes
+    .replace(/^-+|-+$/g, '');      // trim leading/trailing dashes
+  return slug.length >= 3 ? slug : '';
+}
+
+function isValidSlug(slug) {
+  if (!slug || typeof slug !== 'string') return false;
+  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) && slug.length >= 3 && slug.length <= 30;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// PERSONAL CARD GENERATOR (browser PDF/PNG download)
+// ════════════════════════════════════════════════════════════════════════════
+
+// FARMASI flame icon — embedded as base64 for QR overlay (no extra request needed)
+const FARMASI_ICON_DATA_URL = "data:image/png;base64,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";
+
+// Load external CDN script on demand (caches automatically)
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve();
+    const s = document.createElement('script');
+    s.src = src;
+    s.crossOrigin = 'anonymous';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+// Ensure qrcode + html2canvas libs are loaded (call before card generation)
+let _libsLoadedPromise = null;
+function ensurePersonalCardLibs() {
+  if (!_libsLoadedPromise) {
+    _libsLoadedPromise = Promise.all([
+      // qrcodejs from cdnjs — battle-tested, exposes window.QRCode constructor
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'),
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+    ]);
+  }
+  return _libsLoadedPromise;
+}
+
+// Generate QR code as data URL using qrcodejs library
+// (different API than node-qrcode — creates element then extracts canvas)
+async function generateQrDataUrl(text, size) {
+  const tempDiv = document.createElement('div');
+  tempDiv.style.cssText = 'position:fixed; left:-9999px; top:0;';
+  document.body.appendChild(tempDiv);
+
+  // eslint-disable-next-line no-new
+  new window.QRCode(tempDiv, {
+    text: text,
+    width: size,
+    height: size,
+    colorDark: '#231712',
+    colorLight: '#FFFFFF',
+    correctLevel: window.QRCode.CorrectLevel.H, // High — survives logo overlay
+  });
+
+  // qrcodejs renders synchronously via canvas, but give one tick for safety
+  await new Promise(r => setTimeout(r, 50));
+
+  // Extract canvas → data URL
+  const canvas = tempDiv.querySelector('canvas');
+  if (!canvas) {
+    document.body.removeChild(tempDiv);
+    throw new Error('QR canvas not generated');
+  }
+  const dataUrl = canvas.toDataURL('image/png');
+  document.body.removeChild(tempDiv);
+  return dataUrl;
+}
+
+// Generate Personal Card PNG and trigger download
+async function downloadPersonalCard({ name, city, slug, labels = {} }) {
+  // Helper to get label with fallback (Sheet edits override these defaults)
+  const L = (key, fallback) => labels[key] || fallback;
+
+  // XSS guard — escape HTML special chars before injecting into innerHTML.
+  // Prevents <script>, <img onerror=...>, etc. embedded in rep name/city/labels.
+  const esc = (s) => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  await ensurePersonalCardLibs();
+
+  // Sanity check — libs loaded?
+  if (typeof window.QRCode === 'undefined') {
+    throw new Error('QRCode library failed to load. Check internet connection.');
+  }
+  if (typeof window.html2canvas === 'undefined') {
+    throw new Error('html2canvas library failed to load. Check internet connection.');
+  }
+
+  // 1. Generate QR code as data URL (high error correction so logo overlay still scans)
+  const qrUrl = `https://my.farmasi.ge/${slug}`;
+  const qrDataUrl = await generateQrDataUrl(qrUrl, 600);
+
+  // 2. Build the card HTML in an off-screen div (A5 ratio 800x1131)
+  //    NOTE: no `crossorigin` on same-origin images — that attribute causes
+  //          images to fail loading if the server doesn't return CORS headers.
+  const card = document.createElement('div');
+  card.style.cssText = `
+    position: fixed; left: -9999px; top: 0; width: 800px; height: 1131px;
+    background: #FFFFFF; padding: 60px 50px; box-sizing: border-box;
+    font-family: 'Cormorant Garamond', 'Sylfaen', Georgia, serif;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+  `;
+  card.innerHTML = `
+    <!-- FARMASI logo (same-origin, no crossorigin needed) -->
+    <img id="card-logo" src="/farmasi-logo.png" style="height: 56px; width: auto; margin-bottom: 16px;" />
+    <!-- Wine divider -->
+    <div style="width: 100%; height: 2px; background: #E50571; margin-bottom: 36px;"></div>
+    <!-- Chapter marker -->
+    <p style="font-size: 14px; letter-spacing: 4px; color: #D4A960; margin: 0 0 16px; font-family: 'Sylfaen', serif;">
+      ${esc(L('card_design_chapter', '✦  PERSONAL CARD  ✦'))}
+    </p>
+    <!-- Big name -->
+    <h1 style="font-size: 56px; font-weight: 600; color: #231712; margin: 0 0 12px; line-height: 1.15; font-family: 'Sylfaen', serif;">
+      ${esc(name)}
+    </h1>
+    <!-- Italic subtitle -->
+    <p style="font-size: 20px; font-style: italic; color: #E50571; margin: 0 0 8px; font-family: 'Sylfaen', serif;">
+      ${esc(L('card_design_subtitle', 'FARMASI · ოფიციალური წარმომადგენელი'))}
+    </p>
+    <!-- City -->
+    <p style="font-size: 18px; color: #231712; margin: 0 0 36px; font-family: 'Sylfaen', serif;">
+      📍 ${esc(city || '')}
+    </p>
+    <!-- QR + flame overlay -->
+    <div style="position: relative; width: 340px; height: 340px; margin-bottom: 20px;">
+      <img id="card-qr" src="${esc(qrDataUrl)}" style="width: 100%; height: 100%;" />
+      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                  background: white; padding: 12px 16px; border-radius: 14px;
+                  display: flex; align-items: center; justify-content: center;">
+        <img id="card-icon" src="${esc(FARMASI_ICON_DATA_URL)}" style="width: 50px; height: auto;" />
+      </div>
+    </div>
+    <!-- CTA -->
+    <p style="font-size: 30px; font-weight: 700; color: #E50571; margin: 8px 0 4px; font-family: 'Sylfaen', serif;">
+      ${esc(L('card_design_cta_main', 'დაასკანერე'))}
+    </p>
+    <p style="font-size: 20px; color: #231712; margin: 0 0 18px; font-family: 'Sylfaen', serif;">
+      ${esc(L('card_design_cta_sub', 'და მიიღე უფასო კონსულტაცია'))}
+    </p>
+    <!-- URL pill -->
+    <p style="font-size: 19px; font-family: 'Courier New', monospace; color: #BE185D;
+              background: #FFF4F8; padding: 8px 20px; border-radius: 8px; margin: 0 0 30px;">
+      my.farmasi.ge/${esc(slug)}
+    </p>
+    <!-- Footer -->
+    <p style="font-size: 16px; font-style: italic; color: #D4A960; margin: auto 0 6px; font-family: 'Sylfaen', serif;">
+      ${esc(L('card_design_tagline', 'ნამდვილი პროდუქცია · უფასო კონსულტაცია'))}
+    </p>
+    <div style="width: 100%; height: 2px; background: #E50571; margin-top: 12px;"></div>
+    <p style="font-size: 13px; color: #231712; margin: 8px 0 0; font-family: 'Sylfaen', serif;">
+      ${esc(L('card_design_copyright', '© FARMASI Georgia'))}
+    </p>
+  `;
+  document.body.appendChild(card);
+
+  // 3. WAIT for all images to actually load (not just timeout — proper image.onload)
+  const images = card.querySelectorAll('img');
+  await Promise.all(Array.from(images).map(img => {
+    if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+    return new Promise(resolve => {
+      img.onload = () => resolve();
+      img.onerror = () => resolve(); // continue even if logo fails
+      // Safety timeout — don't hang forever
+      setTimeout(resolve, 3000);
+    });
+  }));
+
+  // 4. Capture as canvas, then export as PNG
+  //    allowTaint: true → continue even if an image is cross-origin
+  //    useCORS: true   → request CORS headers for external images
+  let canvas;
+  try {
+    canvas = await window.html2canvas(card, {
+      scale: 2,           // 2x resolution = ~190 DPI (print-quality)
+      backgroundColor: '#FFFFFF',
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+    });
+  } catch (err) {
+    document.body.removeChild(card);
+    throw new Error('Capture failed: ' + (err.message || err));
+  }
+
+  // 5. Cleanup
+  document.body.removeChild(card);
+
+  // 6. Trigger download
+  let dataUrl;
+  try {
+    dataUrl = canvas.toDataURL('image/png', 1.0);
+  } catch (err) {
+    throw new Error('PNG export failed (canvas tainted): ' + (err.message || err));
+  }
+  const a = document.createElement('a');
+  a.download = `farmasi-${slug}-card.png`;
+  a.href = dataUrl;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// API CONFIG + JSONP UTILITY
+// ════════════════════════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbytRrFPbb1lOQ-_M8o1HmXtpZLUJ_4S6kn7HTOW4lVfRrum8ZQI4xjAO27azelbEpQ6/exec';
+
+function api(params) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[callbackName];
+      script.remove();
+      reject(new Error('Request timed out'));
+    }, 15000);
+    window[callbackName] = (data) => {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      script.remove();
+      resolve(data);
+    };
+    const queryParams = new URLSearchParams({ ...params, callback: callbackName });
+    script.src = API_URL + '?' + queryParams.toString();
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      script.remove();
+      reject(new Error('Network error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+// Compress image: resize and re-encode as JPEG
+async function compressImage(file, maxDimension = 1200, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > height && width > maxDimension) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else if (height > maxDimension) {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// For large payloads (photos/videos): POST to Apps Script via fetch + no-cors.
+// Response is opaque (we can't read it), but the POST reliably reaches the server.
+// Frontend refetches rep data afterward to confirm the upload took effect.
+// (Old iframe approach was blocked by iOS Safari / modern Chrome cross-origin tracking prevention.)
+function apiUpload(params) {
+  return new Promise((resolve, reject) => {
+    const body = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => body.append(k, v));
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s safety net
+
+    fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+      signal: controller.signal,
+    })
+      .then(() => {
+        clearTimeout(timeoutId);
+        // no-cors response is opaque — we trust POST reached server.
+        // _silent flag tells frontend to refetch rep data.
+        resolve({ ok: true, _silent: true });
+      })
+      .catch(err => {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          // Server might still have processed — let frontend refetch and verify.
+          resolve({ ok: true, _silent: true });
+        } else {
+          reject(err);
+        }
+      });
+  });
+}
+
+// Extract URL identifiers:
+//   /?pid=153205         → pid lookup
+//   /?pid=153205&edit=1  → pid + edit mode
+//   /mariami             → slug lookup (resolves to PID server-side)
+//   /mariami/edit        → slug + edit mode (preferred clean path)
+//   /mariami?edit=1      → slug + edit mode (legacy, still supported)
+// Assets (paths with dots like /og-image.png) are NOT treated as slugs.
+function getUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  const isLocalFile = window.location.protocol === 'file:';
+  const pathParts = isLocalFile ? [] : window.location.pathname.split('/').filter(Boolean);
+  const firstPart = pathParts[0] || '';
+  const secondPart = pathParts[1] || '';
+  const slug = (firstPart && !firstPart.includes('.')) ? firstPart : '';
+  // Edit mode triggered by either /slug/edit path OR ?edit=1 query param
+  const editFromPath = !!slug && secondPart === 'edit';
+  return {
+    pid: params.get('pid'),
+    slug: slug,
+    edit: params.get('edit') === '1' || editFromPath,
+    problem: params.get('problem'),
+    token: params.get('token'),
+    logout: params.get('logout') === '1',
+    order: params.get('order'), // Order invoice page: ?order=ORD-XXX
+    local: isLocalFile,
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// EDIT TOKEN — per-rep secret for authenticating profile modifications
+// Token enters via URL param (?token=XYZ), gets saved to localStorage so
+// future visits don't need it in URL. URL is cleaned for security.
+// ════════════════════════════════════════════════════════════════════════════
+const EDIT_TOKEN_KEY = (pid) => `farmasi_edit_token_${pid}`;
+
+function getStoredEditToken(pid) {
+  if (!pid) return null;
+  try { return localStorage.getItem(EDIT_TOKEN_KEY(pid)) || null; } catch { return null; }
+}
+
+function setStoredEditToken(pid, token) {
+  if (!pid || !token) return;
+  try { localStorage.setItem(EDIT_TOKEN_KEY(pid), token); } catch {}
+}
+
+function clearStoredEditToken(pid) {
+  if (!pid) return;
+  try { localStorage.removeItem(EDIT_TOKEN_KEY(pid)); } catch {}
+}
+
+// Runs once at App mount: if URL has ?token=XYZ&pid=ABC, save token to
+// localStorage and strip from URL so it doesn't appear in browser history,
+// screenshots, or shared links.
+function captureUrlEditToken() {
+  if (typeof window === 'undefined') return;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    const urlPid = params.get('pid');
+    if (urlToken && urlPid) {
+      setStoredEditToken(urlPid, urlToken);
+      params.delete('token');
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+      window.history.replaceState({}, '', newUrl);
+    }
+  } catch {}
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SSO LOGIN — Lasha integration with HMAC-signed URLs
+// Flow: rep.php → ?pid=X&ts=Y&sig=HMAC → trySsoLogin() → Apps Script validation → session token
+// ════════════════════════════════════════════════════════════════════════════
+function trySsoLogin() {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('pid');
+    const ts = params.get('ts');
+    const sig = params.get('sig');
+    
+    // No SSO params — continue with normal login flow
+    if (!pid || !ts || !sig) return;
+    
+    console.log('🔐 SSO Login attempt: pid=' + pid);
+    
+    // Call Apps Script to validate HMAC signature and create session
+    fetch(`${API_URL}?action=sso_login&pid=${encodeURIComponent(pid)}&ts=${encodeURIComponent(ts)}&sig=${encodeURIComponent(sig)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          console.log('✓ SSO Login successful for PID ' + pid);
+          
+          // Store session token
+          localStorage.setItem(`farmasi_session_${pid}`, data.token);
+          localStorage.setItem('farmasi_current_pid', pid);
+          
+          // Store rep data if provided
+          if (data.rep) {
+            localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(data.rep));
+          }
+          
+          // Save as "last used" for persistent login
+          try { localStorage.setItem('farmasi_last_pid', pid); } catch {}
+          
+          // Clean URL (remove SSO params before redirect)
+          const cleanParams = new URLSearchParams();
+          cleanParams.set('pid', pid);
+          cleanParams.set('edit', '1');
+          window.history.replaceState({}, document.title, '?' + cleanParams.toString());
+          
+          // Redirect to dashboard edit mode
+          window.location.href = '?' + cleanParams.toString();
+        } else {
+          console.warn('✗ SSO Login failed:', data.error);
+          alert('SSO ავტორიზაცია ვერ მოხერხდა: ' + (data.error || 'უცნობი შეცდომა'));
+        }
+      })
+      .catch(err => {
+        console.error('SSO Login error:', err);
+        alert('SSO შეცდომა: ' + err.message);
+      });
+  } catch (err) {
+    console.error('trySsoLogin exception:', err);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+
+function App() {
+  const urlParams = getUrlParams();
+  const localPreviewRep = {
+    name: 'თენგიზ ბერიძე',
+    bio: 'დაგეხმარები FARMASI-ის პროდუქტების სწორად შერჩევაში, შეკვეთის გაფორმებაში და წარმომადგენლად რეგისტრაციაში.',
+    photo: null,
+    phone: '+995599772266',
+    whatsapp: '+995599772266',
+    instagram: '',
+    facebook: '',
+    tiktok: '',
+    youtube: '',
+    telegram: '',
+    city: 'საქართველო',
+    videoUrl: '',
+    customerVideos: [],
+    referralLink: 'https://www.farmasi.ge/ka/signup',
+  };
+  
+  // Capture and persist any edit token from URL before anything else runs
+  // (saves to localStorage, strips from URL for security)
+  captureUrlEditToken();
+  
+  // SSO Login handler — if URL has ?pid=X&ts=Y&sig=Z, validate and create session
+  trySsoLogin();
+
+  // ─── Persistent login: auto-redirect to last saved PID ───
+  // If user visits root URL with no params, use saved PID from localStorage
+  if (typeof window !== 'undefined' && urlParams.logout) {
+    try {
+      // Clear everything: last PID and all per-PID edit tokens
+      const lastPid = localStorage.getItem('farmasi_last_pid');
+      localStorage.removeItem('farmasi_last_pid');
+      if (lastPid) clearStoredEditToken(lastPid);
+    } catch {}
+    window.location.replace('/');
+    return null;
+  }
+  // ─── Front door is always Login screen ───
+  // Previously this auto-redirected to ?pid=X&edit=1 if farmasi_last_pid was in
+  // localStorage. That made my.farmasi.ge feel like a personalized homepage and
+  // leaked the last user's PID to anyone who opened the link. Now my.farmasi.ge
+  // always shows the Login screen (link paste). Returning users still skip SMS
+  // via the 30-day session token on the ?pid=X&edit=1 redirect that follows.
+
+  const [view, setView] = useState(
+    urlParams.local ? 'public' :
+    urlParams.order ? 'order' :
+    (urlParams.pid || urlParams.slug) ? 'loading' :
+    'login'
+  );
+  const [repCode, setRepCode] = useState(urlParams.pid || (urlParams.local ? 'local-preview' : ''));
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProblem, setSelectedProblem] = useState(null);
+  const [problems, setProblems] = useState(PROBLEMS); // hardcoded fallback, will be replaced from Sheet
+  const [dynamicProducts, setDynamicProducts] = useState([]); // from Products sheet, filtered by problem in PublicPage
+  const [labels, setLabels] = useState({}); // i18n-style label overrides from Labels sheet; empty = use hardcoded defaults
+  const [loadError, setLoadError] = useState('');
+  const [rep, setRep] = useState({
+    ...(urlParams.local ? localPreviewRep : {
+      name: '', bio: '', photo: null, phone: '', whatsapp: '',
+      instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
+    }),
+  });
+
+  // ─── Shopping cart state ───
+  // Cart is scoped per-rep (each rep page has its own cart in localStorage).
+  // Customers can browse multiple rep pages without their cart leaking between them.
+  const cartStorageKey = repCode ? `farmasi_cart_${repCode}` : null;
+  const [cartItems, setCartItems] = useState(() => {
+    if (typeof window === 'undefined' || !cartStorageKey) return [];
+    try {
+      const stored = localStorage.getItem(cartStorageKey);
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
+  const [cartOpen, setCartOpen] = useState(false);
+
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined' || !cartStorageKey) return;
+    try {
+      if (cartItems.length === 0) {
+        localStorage.removeItem(cartStorageKey);
+      } else {
+        localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
+      }
+    } catch {}
+  }, [cartItems, cartStorageKey]);
+
+  // Reload cart when repCode changes (e.g. visiting different rep's page)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !cartStorageKey) {
+      setCartItems([]);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(cartStorageKey);
+      setCartItems(stored ? JSON.parse(stored) : []);
+    } catch { setCartItems([]); }
+  }, [cartStorageKey]);
+
+  const cartAddItem = (product) => {
+    setCartItems(items => {
+      const existing = items.find(it => it.product_id === product.product_id);
+      if (existing) {
+        return items.map(it => it.product_id === product.product_id
+          ? { ...it, quantity: it.quantity + (product.quantity || 1) }
+          : it);
+      }
+      return [...items, { ...product, quantity: product.quantity || 1 }];
+    });
+  };
+  const cartUpdateQty = (productId, qty) => {
+    if (qty <= 0) {
+      setCartItems(items => items.filter(it => it.product_id !== productId));
+    } else {
+      setCartItems(items => items.map(it => it.product_id === productId ? { ...it, quantity: qty } : it));
+    }
+  };
+  const cartRemove = (productId) => setCartItems(items => items.filter(it => it.product_id !== productId));
+  const cartClear = () => setCartItems([]);
+  const cartCount = cartItems.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  const cartTotal = Math.round(cartItems.reduce((sum, it) => sum + ((it.quantity || 0) * (parseFloat(it.price) || 0)), 0) * 100) / 100;
+  const [otpToken, setOtpToken] = useState(null); // OTP session token
+
+  // ✅ Validate session against backend on mount (catches admin reset / Sheet row deletion)
+  // Without this, deleting a user's row from the Sheet doesn't kick them out — the
+  // 30-day session token in PropertiesService and localStorage keeps them "logged in"
+  // with an empty auto-recreated row.
+  const [validatingSession, setValidatingSession] = useState(false);
+  useEffect(() => {
+    if (!urlParams.pid) return;
+    
+    const token = localStorage.getItem(`farmasi_otp_session_${urlParams.pid}`);
+    const expiresAt = parseInt(localStorage.getItem(`farmasi_otp_expires_${urlParams.pid}`) || '0', 10);
+    
+    // No token or expired locally → nothing to validate, fall through to LoginScreen
+    if (!token || expiresAt <= Date.now()) {
+      if (token || expiresAt) {
+        localStorage.removeItem(`farmasi_otp_session_${urlParams.pid}`);
+        localStorage.removeItem(`farmasi_otp_expires_${urlParams.pid}`);
+      }
+      return;
+    }
+    
+    // Local token looks valid — but verify with backend before trusting
+    setValidatingSession(true);
+    api({ action: 'validate_session', pid: urlParams.pid, token: token })
+      .then(response => {
+        if (response.ok && response.valid) {
+          // ✅ Backend confirms session is valid
+          setOtpToken(token);
+          // ✅ Sliding session — backend extended expiry, update localStorage too
+          if (response.expiresAt) {
+            localStorage.setItem(`farmasi_otp_expires_${urlParams.pid}`, String(response.expiresAt));
+          }
+        } else {
+          // ❌ Backend rejected (admin reset, deleted user, token mismatch from new login on another device)
+          localStorage.removeItem(`farmasi_otp_session_${urlParams.pid}`);
+          localStorage.removeItem(`farmasi_otp_expires_${urlParams.pid}`);
+          localStorage.removeItem(`farmasi_rep_${urlParams.pid}`);
+          // Also clear last_pid so my.farmasi.ge front door is clean
+          if (response.userDeleted) {
+            localStorage.removeItem('farmasi_last_pid');
+            localStorage.removeItem('farmasi_current_pid');
+          }
+        }
+      })
+      .catch(() => {
+        // Network error — fall back to trusting localStorage (don't log users out offline)
+        setOtpToken(token);
+      })
+      .finally(() => {
+        setValidatingSession(false);
+      });
+  }, [urlParams.pid]);
+
+  // Handle OTP login success
+  const handleOtpLoginSuccess = (pid, token, rep) => {
+    setRepCode(pid);
+    setOtpToken(token);
+    // Map API response (snake_case) to UI state (camelCase)
+    setRep({
+      name: rep?.name || '',
+      bio: rep?.bio || '',
+      photo: rep?.photo_url || null,
+      phone: rep?.phone || '',
+      whatsapp: rep?.whatsapp || '',
+      instagram: rep?.instagram || '',
+      facebook: rep?.facebook || '',
+      tiktok: rep?.tiktok || '',
+      youtube: rep?.youtube || '',
+      telegram: rep?.telegram || '',
+      city: rep?.city || '',
+      videoUrl: rep?.video_url || '',
+      customerVideos: (() => {
+        try {
+          const raw = rep?.customer_videos;
+          if (!raw) return [];
+          const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+          return Array.isArray(parsed) ? parsed : [];
+        } catch { return []; }
+      })(),
+      referralLink: rep?.referral_link || '',
+    });
+    setView('dashboard');
+    const newUrl = `?pid=${pid}&edit=1`;
+    window.history.replaceState({}, document.title, newUrl);
+  };
+
+  // ─── Logout: clear all session data + redirect to first-time login ───
+  const handleLogout = () => {
+    const pid = repCode || urlParams.pid || localStorage.getItem('farmasi_last_pid');
+    if (pid) {
+      const token = localStorage.getItem(`farmasi_otp_session_${pid}`);
+      // Invalidate session on backend (silent — don't block logout on network errors)
+      if (token) {
+        try { api({ action: 'logout', pid: pid, token: token }).catch(() => {}); } catch {}
+      }
+      // Clear all per-PID localStorage
+      localStorage.removeItem(`farmasi_otp_session_${pid}`);
+      localStorage.removeItem(`farmasi_otp_expires_${pid}`);
+      localStorage.removeItem(`farmasi_rep_${pid}`);
+    }
+    localStorage.removeItem('farmasi_current_pid');
+    localStorage.removeItem('farmasi_last_pid');
+    // Hard redirect to root — triggers Login (link-paste) on next mount
+    window.location.href = '/';
+  };
+
+  // ─── Auto-scroll to top on every navigation ───
+  // Triggers whenever view changes (login → dashboard → public → product)
+  // OR when user clicks a problem/product within a page.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [view, selectedProblem, selectedProduct]);
+
+  // Load problems from Sheet on mount — cached in localStorage for instant render
+  useEffect(() => {
+    // 1. Try cached version first (instant render)
+    try {
+      const cached = localStorage.getItem('farmasi_problems_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProblems(parsed);
+        }
+      }
+    } catch {}
+
+    // 2. Fetch fresh from Sheet (background refresh)
+    api({ action: 'get_problems' })
+      .then(data => {
+        if (data.ok && Array.isArray(data.problems) && data.problems.length > 0) {
+          setProblems(data.problems);
+          try { localStorage.setItem('farmasi_problems_cache', JSON.stringify(data.problems)); } catch {}
+        }
+      })
+      .catch(() => {/* silent fallback to hardcoded PROBLEMS */});
+
+    // Same dual-load for dynamic products
+    try {
+      const cached = localStorage.getItem('farmasi_products_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) setDynamicProducts(parsed);
+      }
+    } catch {}
+
+    api({ action: 'get_products' })
+      .then(data => {
+        if (data.ok && Array.isArray(data.products)) {
+          setDynamicProducts(data.products);
+          try { localStorage.setItem('farmasi_products_cache', JSON.stringify(data.products)); } catch {}
+        }
+      })
+      .catch(() => {/* silent — non-hair-loss problems will just not show product showcase */});
+
+    // Dual-load for UI labels — Sheet-driven text overrides (empty = use hardcoded defaults)
+    try {
+      const cached = localStorage.getItem('farmasi_labels_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') setLabels(parsed);
+      }
+    } catch {}
+
+    api({ action: 'get_labels' })
+      .then(data => {
+        if (data.ok && data.labels && typeof data.labels === 'object') {
+          setLabels(data.labels);
+          try { localStorage.setItem('farmasi_labels_cache', JSON.stringify(data.labels)); } catch {}
+        }
+      })
+      .catch(() => {/* silent — page will use hardcoded defaults */});
+  }, []);
+
+  // Load rep data from API on mount — supports both PID and slug lookups
+  useEffect(() => {
+    if (!urlParams.pid && !urlParams.slug) return;
+
+    // Dispatch: PID → direct lookup, slug → resolve+fetch in one call
+    const action = urlParams.pid ? 'get_rep' : 'get_rep_by_slug';
+    const payload = urlParams.pid ? { pid: urlParams.pid } : { slug: urlParams.slug };
+
+    api({ action, ...payload })
+      .then(data => {
+        if (data.ok && data.rep) {
+          // For slug flow, repCode wasn't in URL — set it from API response
+          const resolvedPid = String(data.rep.pid || '').trim();
+          if (resolvedPid) setRepCode(resolvedPid);
+
+          // Map API response to UI state
+          setRep({
+            name: data.rep.name || '',
+            bio: data.rep.bio || '',
+            photo: data.rep.photo_url || null,
+            phone: data.rep.phone || '',
+            whatsapp: data.rep.whatsapp || '',
+            instagram: data.rep.instagram || '',
+            facebook: data.rep.facebook || '',
+            tiktok: data.rep.tiktok || '',
+            youtube: data.rep.youtube || '',
+            telegram: data.rep.telegram || '',
+            city: data.rep.city || '',
+            videoUrl: data.rep.video_url || '',
+            customerVideos: (() => {
+              try {
+                const raw = data.rep.customer_videos;
+                if (!raw) return [];
+                const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                return Array.isArray(parsed) ? parsed : [];
+              } catch { return []; }
+            })(),
+            referralLink: data.rep.referral_link || '',
+          });
+          // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
+          if (urlParams.edit) {
+            setView('dashboard');
+          } else if (urlParams.problem) {
+            const problem = problems.find(p => p.id === urlParams.problem && p.productId);
+            if (problem) {
+              setSelectedProblem(problem);
+              setView('public');
+            } else {
+              setView('public');
+            }
+          } else {
+            setView('public');
+          }
+          // Log visit if not in edit mode
+          if (!urlParams.edit && resolvedPid) {
+            api({ action: 'log_visit', pid: resolvedPid }).catch(() => {});
+          }
+        } else {
+          // ⚠️ Differentiate: slug not found → show 404 page (public visitor)
+          // PID not found → fall back to login (likely a rep who typed wrong PID)
+          if (urlParams.slug) {
+            setLoadError('');
+            setView('notfound');
+          } else {
+            setLoadError(data.error || 'წარმომადგენელი ვერ მოიძებნა');
+            setView('login');
+          }
+        }
+      })
+      .catch(err => {
+        setLoadError('კავშირის შეცდომა: ' + err.message);
+        setView('login');
+      });
+  }, []);
+
+  const openProduct = (p) => { setSelectedProduct(p); setView('product'); window.scrollTo(0, 0); };
+  const backToPublic = () => { setSelectedProduct(null); setView('public'); window.scrollTo(0, 0); };
+  const openBridge = (problem) => { setSelectedProblem(problem); };
+
+  return (
+    <div style={{ background: theme.cream, minHeight: '100vh' }}>
+      {/* Session validation in progress — prevent flash of LoginScreen */}
+      {urlParams.edit && validatingSession && <LoadingScreen labels={labels} />}
+      
+      {/* OTP Login — shows when edit mode is requested but no OTP session */}
+      {urlParams.edit && !otpToken && !validatingSession && <LoginScreen onLoginSuccess={handleOtpLoginSuccess} labels={labels} />}
+      
+      {/* Normal views — only visible if not in OTP login flow */}
+      {!(urlParams.edit && !otpToken) && !validatingSession && (
+        <>
+          {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
+          {view === 'loading' && <LoadingScreen labels={labels} />}
+          {view === 'notfound' && <NotFoundScreen labels={labels} />}
+          {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
+          {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
+          {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+          {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+          {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+function LoadingScreen({ labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `linear-gradient(135deg, ${theme.cream} 0%, ${theme.ivory} 100%)`,
+      padding: '20px'
+    }}>
+      {/* Animated FARMASI logo */}
+      <div style={{ position: 'relative', width: 80, height: 80, marginBottom: 28 }}>
+        {/* Outer ring */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          border: `2px solid ${theme.gold}33`,
+          borderRadius: '50%'
+        }} />
+        {/* Spinning ring */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          border: '2px solid transparent',
+          borderTopColor: theme.wine,
+          borderRightColor: theme.wine + '88',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+        {/* FARMASI flame icon in center */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 18
+        }}>
+          <img src="data:image/png;base64,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" alt="FARMASI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+        </div>
+      </div>
+
+      {/* Brand mark */}
+      <p style={{
+        fontFamily: 'Noto Serif Georgian, serif',
+        fontSize: 18,
+        color: theme.ink,
+        marginBottom: 6,
+        letterSpacing: '-0.01em'
+      }}>FARMASI</p>
+
+      {/* Loading text */}
+      <p style={{
+        color: theme.ink + '88',
+        fontSize: 11,
+        letterSpacing: '0.3em',
+        textTransform: 'uppercase',
+        fontWeight: 500
+      }}>{L('loading_text', 'ვტვირთავ...')}</p>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ✅ NEW: Shown when a slug URL doesn't resolve to a rep (public visitor)
+// Friendly 404 instead of bouncing them to the rep login screen.
+function NotFoundScreen({ labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const requestedSlug = (() => {
+    try {
+      const parts = window.location.pathname.split('/').filter(Boolean);
+      return parts[0] || '';
+    } catch { return ''; }
+  })();
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `linear-gradient(135deg, ${theme.cream} 0%, ${theme.ivory} 100%)`,
+      padding: '20px',
+      textAlign: 'center'
+    }}>
+      <div style={{
+        fontSize: 72,
+        fontWeight: 700,
+        color: theme.wine,
+        letterSpacing: '-0.02em',
+        marginBottom: 8,
+        fontFamily: 'Georgia, serif'
+      }}>404</div>
+      <h1 style={{
+        fontSize: 24,
+        fontWeight: 600,
+        color: theme.ink,
+        marginBottom: 12
+      }}>
+        {L('notfound_title', 'გვერდი ვერ მოიძებნა')}
+      </h1>
+      {requestedSlug && (
+        <p style={{
+          fontSize: 14,
+          color: theme.ink + '99',
+          marginBottom: 8,
+          fontFamily: 'monospace'
+        }}>
+          /{requestedSlug}
+        </p>
+      )}
+      <p style={{
+        fontSize: 15,
+        color: theme.ink + 'cc',
+        marginBottom: 28,
+        maxWidth: 400,
+        lineHeight: 1.5
+      }}>
+        {L('notfound_message', 'ეს URL არ ეკუთვნის არცერთ წარმომადგენელს. შესაძლოა ლინკი არასწორად დაიწერა ან წარმომადგენელმა შეცვალა.')}
+      </p>
+      <a href="/"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '12px 24px',
+          background: theme.ink,
+          color: theme.cream,
+          borderRadius: 999,
+          textDecoration: 'none',
+          fontSize: 14,
+          fontWeight: 500,
+          transition: 'transform 0.2s'
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
+        ← {L('notfound_back', 'მთავარზე დაბრუნება')}
+      </a>
+    </div>
+  );
+}
+
+function ViewSwitcher({ view, setView, hasRep }) {
+  const items = [
+    { k: 'login', l: 'შესვლა' },
+    { k: 'dashboard', l: 'პანელი', disabled: !hasRep },
+    { k: 'public', l: 'საჯარო ფეიჯი', disabled: !hasRep },
+  ];
+  return (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 rounded-full backdrop-blur-md text-xs"
+      style={{ background: 'rgba(35,23,18,0.85)', border: `1px solid ${theme.gold}33` }}>
+      {items.map(it => (
+        <button key={it.k} disabled={it.disabled} onClick={() => !it.disabled && setView(it.k)}
+          className="px-3 py-1.5 rounded-full transition-all disabled:opacity-30"
+          style={{ background: view === it.k ? theme.cream : 'transparent', color: view === it.k ? theme.ink : theme.cream }}>
+          {it.l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Login({ onAuthSuccess, initialError, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('phone'); // 'phone' | 'otp'
+  const [phoneMask, setPhoneMask] = useState('');
+  const [err, setErr] = useState(initialError || '');
+  const [loading, setLoading] = useState(false);
+
+  // Send SMS code to phone
+  const handleRequestOtp = async () => {
+    // Normalize: strip non-digits, remove 995 prefix if present
+    let normalized = phone.replace(/[^\d]/g, '');
+    if (normalized.startsWith('995') && normalized.length > 9) normalized = normalized.substring(3);
+    if (!/^5\d{8}$/.test(normalized)) {
+      setErr(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)'));
+      return;
+    }
+    setLoading(true);
+    setErr('');
+    try {
+      const res = await api({ action: 'request_otp', phone: normalized });
+      if (res.ok) {
+        setPhone(normalized);
+        setPhoneMask(res.phoneMask || '****' + normalized.slice(-4));
+        setStep('otp');
+      } else {
+        setErr(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+      }
+    } catch (e) {
+      setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
+    }
+    setLoading(false);
+  };
+
+  // Verify OTP and complete login
+  const handleVerifyOtp = async (codeOverride) => {
+    const otpCode = codeOverride || otp;
+    if (!otpCode || otpCode.length !== 6) {
+      setErr(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
+      return;
+    }
+    setLoading(true);
+    setErr('');
+    try {
+      const res = await api({ action: 'verify_otp', phone: phone, otp: otpCode });
+      if (res.ok && res.token) {
+        const pid = res.pid;
+        localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
+        localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+        localStorage.setItem('farmasi_current_pid', pid);
+        localStorage.setItem('farmasi_last_pid', pid);
+        if (res.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(res.rep));
+        onAuthSuccess(pid, res.token, res.rep);
+      } else {
+        setErr(res.error || L('welcome_otp_invalid', 'არასწორი კოდი'));
+      }
+    } catch (e) {
+      setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
+    }
+    setLoading(false);
+  };
+
+  // Android Chrome Web OTP API — auto-read SMS code when received
+  // (iOS Safari handles this natively via autocomplete="one-time-code" on input)
+  useEffect(() => {
+    if (step !== 'otp') return;
+    if (!('OTPCredential' in window)) return;
+    const ac = new AbortController();
+    navigator.credentials.get({
+      otp: { transport: ['sms'] },
+      signal: ac.signal
+    }).then(cred => {
+      if (cred && cred.code) {
+        setOtp(cred.code);
+        // Auto-submit when code is received
+        setTimeout(() => handleVerifyOtp(cred.code), 300);
+      }
+    }).catch(() => { /* user cancelled or no SMS received */ });
+    return () => ac.abort();
+  }, [step]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-5 py-20 grain relative" style={{ background: theme.cream }}>
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-25 blur-3xl"
+        style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
+      <div className="relative w-full max-w-md anim-fadeup">
+        <div className="text-center mb-10">
+          <img src="/farmasi-logo.png" alt="FARMASI"
+            className="mx-auto mb-6"
+            style={{ height: 56, width: 'auto', objectFit: 'contain' }} />
+          <h1 className="font-display text-3xl sm:text-4xl mb-2 leading-tight" style={{ color: theme.ink }}>{L('welcome_hero_title', 'წარმომადგენლის შესვლა')}</h1>
+          <p className="font-display-lat text-2xl sm:text-3xl italic" style={{ color: theme.wine }}>{L('welcome_hero_subtitle', 'FARMASI Georgia')}</p>
+        </div>
+        <div className="rounded-2xl p-8 backdrop-blur-sm shadow-2xl"
+          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+
+          {/* STEP 1: phone */}
+          {step === 'phone' && (
+            <>
+              <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                <span>{L('welcome_step_1_label', 'ნაბიჯი 01')}</span>
+                <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+              </div>
+              <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_phone_title', 'შესვლა ტელეფონის ნომრით')}</h2>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_phone_label', 'ტელეფონის ნომერი')}</label>
+              <div className="relative">
+                <input type="tel" inputMode="numeric" value={phone}
+                  onChange={(e) => { setPhone(e.target.value); setErr(''); }}
+                  placeholder={L('welcome_phone_placeholder', '599 12 34 56')}
+                  className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
+                  style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleRequestOtp()} />
+                <Ic name="lock" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2" style={{ color: theme.gold }} />
+              </div>
+              {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
+              <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
+                {L('welcome_phone_hint', '💡 ნომერზე გამოგეგზავნება SMS კოდი')}
+              </p>
+              <button onClick={handleRequestOtp} disabled={loading || !phone.trim()}
+                className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50"
+                style={{ background: theme.ink, color: theme.cream }}>
+                {loading ? L('welcome_button_loading', 'იგზავნება...') : <>{L('welcome_button_continue', 'გაგრძელება')} <Ic name="arrow-right" className="w-4 h-4" /></>}
+              </button>
+            </>
+          )}
+
+          {/* STEP 2: OTP */}
+          {step === 'otp' && (
+            <>
+              <div className="flex items-center gap-2 mb-1 text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                <span>{L('welcome_step_otp_label', 'ნაბიჯი 02')}</span>
+                <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+              </div>
+              <h2 className="font-display text-2xl mb-2 mt-3" style={{ color: theme.ink }}>{L('welcome_otp_title', 'SMS კოდი')}</h2>
+              {phoneMask && (
+                <p className="text-sm mb-6" style={{ color: theme.ink + '99' }}>
+                  {L('welcome_otp_sent_to', '📱 კოდი გავიდა ')} <span className="font-mono" style={{ color: theme.wine }}>{phoneMask}</span> {L('welcome_otp_sent_suffix', '-ზე')}
+                </p>
+              )}
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_otp_label', 'შეიყვანე 6-ციფრიანი კოდი')}</label>
+              <input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength="6"
+                value={otp}
+                onChange={(e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); setErr(''); }}
+                placeholder="000000"
+                className="w-full px-4 py-3.5 rounded-xl outline-none text-center text-2xl tracking-widest font-mono"
+                style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
+                onKeyDown={(e) => e.key === 'Enter' && otp.length === 6 && handleVerifyOtp()} />
+              {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
+              <button onClick={() => handleVerifyOtp()} disabled={loading || otp.length !== 6}
+                className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 disabled:opacity-40 hover:scale-[1.01]"
+                style={{ background: theme.wine, color: theme.cream }}>
+                {loading ? L('welcome_button_verifying', 'შემოწმება...') : <>{L('welcome_button_login', 'შესვლა')} <Ic name="arrow-right" className="w-4 h-4" /></>}
+              </button>
+              <button onClick={() => { setStep('phone'); setOtp(''); setErr(''); }}
+                className="w-full mt-3 text-xs tracking-widest uppercase py-2"
+                style={{ color: theme.ink + '88' }}>{L('welcome_button_back', '← სხვა ნომერი')}</button>
+            </>
+          )}
+
+        </div>
+        <p className="text-center text-xs mt-6" style={{ color: theme.ink + '77' }}>
+          {L('welcome_footer', '© FARMASI Georgia ოფიციალური წარმომადგენელი საქართველოში')}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOGIN SCREEN — OTP Authentication
+// ════════════════════════════════════════════════════════════════════════════
+
+function LoginScreen({ onLoginSuccess, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState('phone'); // 'phone' | 'otp'
+  const [phoneMask, setPhoneMask] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleRequestOtp = async () => {
+    let normalized = phone.replace(/[^\d]/g, '');
+    if (normalized.startsWith('995') && normalized.length > 9) normalized = normalized.substring(3);
+    if (!/^5\d{8}$/.test(normalized)) {
+      setError(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია (599XXXXXX)'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api({ action: 'request_otp', phone: normalized });
+      if (response.ok) {
+        setPhone(normalized);
+        setPhoneMask(response.phoneMask || '****' + normalized.slice(-4));
+        setStep('otp');
+      } else {
+        setError(response.error || L('login_pid_send_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+      }
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  // ✅ WebOTP API — auto-fill OTP from SMS on Android Chrome 84+
+  useEffect(() => {
+    if (step !== 'otp') return;
+    if (!('OTPCredential' in window)) return;
+    const ac = new AbortController();
+    navigator.credentials.get({ otp: { transport: ['sms'] }, signal: ac.signal })
+      .then((otpCred) => {
+        if (otpCred && otpCred.code) {
+          setOtp(otpCred.code);
+          setTimeout(() => handleVerifyOtp(otpCred.code), 300);
+        }
+      })
+      .catch((err) => { console.log('WebOTP: ', err.message); });
+    return () => ac.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  const handleVerifyOtp = async (codeOverride) => {
+    const codeToVerify = codeOverride || otp;
+    if (!codeToVerify || codeToVerify.length !== 6) {
+      setError(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api({ action: 'verify_otp', phone: phone, otp: codeToVerify });
+      if (response.ok && response.token) {
+        const pid = response.pid;
+        localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
+        localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+        localStorage.setItem('farmasi_current_pid', pid);
+        localStorage.setItem('farmasi_last_pid', pid);
+        if (response.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(response.rep));
+        onLoginSuccess(pid, response.token, response.rep);
+      } else {
+        setError(response.error || L('login_otp_invalid', 'არასწორი კოდი'));
+      }
+    } catch (err) {
+      setError('Error: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  return React.createElement('div', { className: 'min-h-screen flex items-center justify-center bg-slate-50 p-4' },
+    React.createElement('div', { className: 'w-full max-w-md bg-white rounded-2xl shadow-xl p-8' },
+      React.createElement('div', { className: 'text-center mb-6' },
+        React.createElement('img', { src: '/farmasi-logo.png', alt: 'FARMASI',
+          className: 'mx-auto mb-4', style: { height: 48, width: 'auto', objectFit: 'contain' } }),
+        React.createElement('h1', { className: 'text-2xl font-bold text-slate-800' },
+          L('login_hero_title', 'წარმომადგენლის შესვლა')
+        ),
+        React.createElement('p', { className: 'text-pink-600 italic mt-1' }, L('login_hero_subtitle', 'FARMASI Georgia'))
+      ),
+
+      step === 'phone' ? (
+        // PHONE Input
+        React.createElement('div', {},
+          React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
+            L('login_phone_label', 'ტელეფონის ნომერი')
+          ),
+          React.createElement('input', {
+            type: 'tel',
+            inputMode: 'numeric',
+            value: phone,
+            onChange: (e) => { setPhone(e.target.value); if (error) setError(''); },
+            onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
+            placeholder: L('login_phone_placeholder', '599 12 34 56'),
+            disabled: loading,
+            maxLength: '15',
+            className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
+          }),
+          error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
+          React.createElement('button', {
+            onClick: () => handleRequestOtp(),
+            disabled: loading || !phone.trim(),
+            className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
+          },
+            loading ? L('login_loading_send', 'იგზავნება...') : L('login_phone_button', 'გაგრძელება')
+          )
+        )
+      ) : (
+        // OTP Input
+        React.createElement('div', {},
+          phoneMask && React.createElement('p', { className: 'text-pink-600 text-xs mb-4 font-medium text-center' },
+            L('login_otp_phone_mask', '📱 კოდი გავიდა ') + phoneMask + L('login_otp_phone_mask_suffix', '-ზე')
+          ),
+          React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
+            L('login_otp_label', 'დამადასტურებელი კოდი (SMS)')
+          ),
+          React.createElement('input', {
+            type: 'text',
+            value: otp,
+            onChange: (e) => { setOtp(e.target.value.replace(/\D/g, '').slice(0, 6)); if (error) setError(''); },
+            onKeyPress: (e) => e.key === 'Enter' && handleVerifyOtp(),
+            placeholder: L('login_otp_placeholder', '000000'),
+            disabled: loading,
+            maxLength: '6',
+            inputMode: 'numeric',
+            autoComplete: 'one-time-code',
+            pattern: '[0-9]*',
+            className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none text-center text-2xl tracking-widest disabled:bg-slate-100'
+          }),
+          error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
+          React.createElement('button', {
+            onClick: () => handleVerifyOtp(),
+            disabled: loading || otp.length !== 6,
+            className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
+          },
+            loading ? L('login_loading_verify', 'დამდასტურდება...') : L('login_otp_button', 'შესვლა')
+          ),
+          React.createElement('button', {
+            onClick: () => { setStep('phone'); setOtp(''); setError(''); },
+            disabled: loading,
+            className: 'w-full mt-2 text-slate-600 py-2 rounded-lg hover:bg-slate-100 transition'
+          },
+            L('login_back', '← სხვა ნომერი')
+          )
+        )
+      ),
+      React.createElement('p', { className: 'text-xs text-slate-400 text-center mt-4' },
+        L('login_security_note', 'ეს გვერდი დაცულია. მხოლოდ SMS კოდით შეიძლება შესვლა.')
+      )
+    )
+  );
+}
+// ════════════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════════════
+// MY ORDERS SECTION — Dashboard card listing rep's orders with invoice links
+// Fetches orders from backend (get_rep_orders) and displays as scrollable list.
+// ════════════════════════════════════════════════════════════════════════════
+
+function MyOrdersSection({ repCode, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadOrders = () => {
+    if (!repCode) return;
+    setLoading(true);
+    setError('');
+    api({ action: 'get_rep_orders', pid: repCode })
+      .then(res => {
+        if (res.ok && Array.isArray(res.orders)) {
+          setOrders(res.orders);
+        } else {
+          setError(res.error || L('orders_load_failed', 'შეცდომა შეკვეთების ჩატვირთვისას'));
+        }
+      })
+      .catch(e => setError(L('orders_load_error', 'ქსელის შეცდომა: ') + e.message))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadOrders(); }, [repCode]);
+
+  const statusBadges = {
+    'new': { label: '🆕 ახალი', color: theme.wine },
+    'processing': { label: '⏳ მუშავდება', color: theme.gold },
+    'completed': { label: '✅ დასრულდა', color: '#22c55e' },
+    'cancelled': { label: '❌ გაუქმდა', color: theme.rose }
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between mb-4">
+        <SectionLabel n="🛒" t={L('orders_section_title', 'ჩემი შეკვეთები')} />
+        <button onClick={loadOrders} disabled={loading}
+          className="text-xs px-3 py-1.5 rounded-full hover:scale-105 transition-transform disabled:opacity-50"
+          style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>
+          {loading ? '⏳' : '🔄 განახლება'}
+        </button>
+      </div>
+
+      {loading && orders.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="w-10 h-10 mx-auto mb-3 rounded-full border-4 animate-spin" style={{ borderColor: theme.gold + '33', borderTopColor: theme.wine }} />
+          <p className="text-xs" style={{ color: theme.ink + '99' }}>{L('orders_loading', 'შეკვეთები იტვირთება...')}</p>
+        </div>
+      ) : error ? (
+        <p className="text-sm py-4" style={{ color: theme.rose }}>{error}</p>
+      ) : orders.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-5xl mb-3 opacity-30">📦</div>
+          <p className="text-sm mb-1" style={{ color: theme.ink }}>{L('orders_empty_title', 'ჯერ არ გაქვს შეკვეთები')}</p>
+          <p className="text-xs" style={{ color: theme.ink + '88' }}>{L('orders_empty_hint', 'როცა კლიენტი შენი გვერდიდან გააფორმებს შეკვეთას, აქ ნახავ')}</p>
+        </div>
+      ) : (
+        <>
+          <p className="text-xs mb-4" style={{ color: theme.ink + '88' }}>
+            {L('orders_count_label', 'სულ:')} <span className="font-bold" style={{ color: theme.wine }}>{orders.length}</span> {L('orders_count_word', 'შეკვეთა')}
+          </p>
+          <div className="space-y-2.5" style={{ maxHeight: 480, overflowY: 'auto' }}>
+            {orders.map((o, idx) => {
+              const status = statusBadges[o.status] || { label: o.status, color: theme.ink };
+              const date = o.timestamp ? new Date(o.timestamp) : null;
+              const formattedDate = date ? date.toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+              const invoiceUrl = `${window.location.origin}/?order=${o.order_id}`;
+              return (
+                <a key={o.order_id || idx} href={invoiceUrl} target="_blank" rel="noopener"
+                  className="block rounded-xl p-3.5 hover:scale-[1.01] transition-transform"
+                  style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                  <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
+                    <span className="text-[10px] tracking-widest uppercase font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: status.color + '22', color: status.color }}>
+                      {status.label}
+                    </span>
+                    <span className="text-[10px] opacity-60" style={{ color: theme.ink }}>{formattedDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm leading-tight truncate" style={{ color: theme.ink }}>
+                        {o.customer_name || '(ანონიმური)'}
+                      </p>
+                      <p className="text-xs mt-0.5 opacity-70" style={{ color: theme.ink }}>
+                        📱 {o.customer_phone} · {(Array.isArray(o.items) ? o.items.length : 0)} ც.
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-display text-lg" style={{ color: theme.wine }}>
+                        {Number(o.total).toFixed(2)} ₾
+                      </p>
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {} }) {
+  // Helper to get label with fallback — edit Sheet "Labels" tab to override
+  const L = (key, fallback) => labels[key] || fallback;
+  const [copied, setCopied] = useState(false);
+  const [guideCopied, setGuideCopied] = useState(false);
+  const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
+  const copyGuideUrl = () => {
+    try {
+      navigator.clipboard?.writeText(GUIDE_URL);
+      setGuideCopied(true);
+      setTimeout(() => setGuideCopied(false), 2000);
+    } catch {}
+  };
+  const [saving, setSaving] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [missingFieldsModal, setMissingFieldsModal] = useState(null);
+  const [validationAttempted, setValidationAttempted] = useState(false);
+  const [tokenError, setTokenError] = useState(false);
+  const [visits, setVisits] = useState(null);
+
+  // ─── Authenticated API wrappers ───
+  // editApi / editApiUpload automatically include the rep's edit_token from
+  // localStorage and detect invalid_token errors. Use these for ANY mutation
+  // (save, upload, delete, update). Read-only calls can still use plain api().
+  const editApi = async (payload) => {
+    const token = getStoredEditToken(repCode);
+    const response = await api({ ...payload, pid: payload.pid || repCode, token });
+    if (response && response.error === 'invalid_token') {
+      setTokenError(true);
+    }
+    if (response && response.new_token && repCode) {
+      setStoredEditToken(repCode, response.new_token);
+    }
+    return response;
+  };
+  const editApiUpload = async (payload) => {
+    const token = getStoredEditToken(repCode);
+    const response = await apiUpload({ ...payload, pid: payload.pid || repCode, token });
+    if (response && response.error === 'invalid_token') {
+      setTokenError(true);
+    }
+    if (response && response.new_token && repCode) {
+      setStoredEditToken(repCode, response.new_token);
+    }
+    return response;
+  };
+  const [leads, setLeads] = useState(null); // null = not loaded yet, array = loaded
+  const [myProducts, setMyProducts] = useState(null); // rep's curated products
+  const [allProducts, setAllProducts] = useState([]); // full catalog for picker
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerCategoryFilter, setPickerCategoryFilter] = useState('all'); // 'all' or category name
+  const [pickerSearchQuery, setPickerSearchQuery] = useState(''); // text search in picker
+  const [pickerSortBy, setPickerSortBy] = useState('name'); // 'name' | 'code'
+  const [editingNote, setEditingNote] = useState(null); // {row, currentNote}
+  const [cardGenerating, setCardGenerating] = useState(false);
+  const [cardError, setCardError] = useState('');
+  const fileRef = useRef(null);
+  const videoFileRef = useRef(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
+  // Prefer slug-based URL when present (rep opened /<slug>/edit) — cleaner for sharing
+  const { slug: dashboardSlug } = getUrlParams();
+  // Slug state — priority: backend slug → URL slug → transliterated name → FARMASI-themed fallback
+  const [slug, setSlug] = useState(() =>
+    rep.slug || dashboardSlug || slugFromName(rep.name) || generateBeautifulSlug()
+  );
+  const [editingSlug, setEditingSlug] = useState(false);
+  const [slugDraft, setSlugDraft] = useState(slug);
+  const [slugError, setSlugError] = useState('');
+
+  // If rep.name changes later (e.g., backend data arrives after mount) and current slug is empty/fallback,
+  // update from name. Don't override if user has manually edited the slug.
+  const [slugWasGenerated, setSlugWasGenerated] = useState(true); // becomes false once user manually edits
+  useEffect(() => {
+    if (slugWasGenerated && rep.name) {
+      const fromName = slugFromName(rep.name);
+      if (fromName && fromName !== slug) {
+        setSlug(fromName);
+        setSlugDraft(fromName);
+      }
+    }
+  }, [rep.name]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const shareUrl = `${window.location.host}/${slug}`;
+  const upd = (k) => (e) => setRep(r => ({ ...r, [k]: e.target.value }));
+
+  // Split rep.name into firstName / lastName for separate inputs.
+  // Source of truth is rep.name (single Sheet column); we just slice on whitespace.
+  const _nameParts = (rep.name || '').trim().split(/\s+/);
+  const firstName = _nameParts[0] || '';
+  const lastName = _nameParts.slice(1).join(' ') || '';
+  const updFirstName = (e) => {
+    const v = e.target.value;
+    setRep(r => ({ ...r, name: (v + (lastName ? ' ' + lastName : '')).trimStart() }));
+  };
+  const updLastName = (e) => {
+    const v = e.target.value;
+    setRep(r => ({ ...r, name: (firstName + (v ? ' ' + v : '')).trimEnd() }));
+  };
+
+  const regenerateSlug = () => {
+    const newSlug = generateBeautifulSlug();
+    setSlug(newSlug);
+    setSlugDraft(newSlug);
+    setSlugError('');
+    setSlugWasGenerated(true);
+  };
+
+  const useNameAsSlug = () => {
+    const fromName = slugFromName(rep.name);
+    if (fromName) {
+      setSlug(fromName);
+      setSlugDraft(fromName);
+      setSlugError('');
+      setSlugWasGenerated(true);
+    } else {
+      setSlugError('სახელი ვერ ვიპოვე — ჯერ შეიყვანე სახელი');
+    }
+  };
+
+  const applySlugEdit = async () => {
+    const cleaned = slugDraft.trim().toLowerCase();
+    if (!isValidSlug(cleaned)) {
+      setSlugError('მცირე ასოები, ციფრები ან დეფისი (3-30 ანბანი). მაგ: rose-bloom, beautymood, ana-23');
+      return;
+    }
+    // ✅ Persist directly to Sheet — no need for separate "Save" click
+    setSlugError('');
+    try {
+      const result = await editApi({
+        action: 'save_rep',
+        pid: repCode,
+        slug: cleaned,
+      });
+      if (result.ok) {
+        setSlug(cleaned);
+        setSlugDraft(cleaned);
+        setEditingSlug(false);
+        setSlugWasGenerated(false); // user manually customized
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 2000);
+      } else {
+        setSlugError(result.error || 'შენახვა ვერ მოხერხდა');
+      }
+    } catch (err) {
+      setSlugError('კავშირის შეცდომა: ' + (err.message || err));
+    }
+  };
+
+  // Load visit stats
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_visits', pid: repCode })
+      .then(data => { if (data.ok) setVisits(data); })
+      .catch(() => {});
+  }, [repCode]);
+
+  // Load leads (contact form submissions)
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_leads', pid: repCode })
+      .then(data => { if (data.ok && Array.isArray(data.leads)) setLeads(data.leads); })
+      .catch(() => {});
+  }, [repCode]);
+
+  // Update a lead's status (new → contacted → closed)
+  const updateLeadStatus = async (leadRow, newStatus) => {
+    try {
+      const res = await editApi({ action: 'update_lead_status', row: leadRow, status: newStatus });
+      if (res.ok && leads) {
+        setLeads(leads.map(l => l.row === leadRow ? { ...l, status: newStatus } : l));
+      }
+    } catch (err) {
+      console.error('Failed to update lead status', err);
+    }
+  };
+
+  // Load rep's curated products
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_rep_products', pid: repCode })
+      .then(data => { if (data.ok && Array.isArray(data.products)) setMyProducts(data.products); })
+      .catch(() => {});
+  }, [repCode]);
+
+  // Load full product catalog (lazy — only when picker opens)
+  const openProductPicker = async () => {
+    if (allProducts.length === 0) {
+      try {
+        const data = await api({ action: 'get_products' });
+        if (data.ok && Array.isArray(data.products)) setAllProducts(data.products);
+      } catch (err) {
+        console.error('Failed to load products', err);
+      }
+    }
+    setPickerCategoryFilter('all');
+    setPickerSearchQuery('');
+    setPickerSortBy('name');
+    setPickerOpen(true);
+  };
+
+  // Add product to rep's selection
+  const addProductToSelection = async (productId, note = '') => {
+    try {
+      const res = await editApi({ action: 'add_rep_product', pid: repCode, product_id: productId, note: note });
+      if (res.ok) {
+        // Reload list
+        const data = await api({ action: 'get_rep_products', pid: repCode });
+        if (data.ok && Array.isArray(data.products)) setMyProducts(data.products);
+      }
+    } catch (err) {
+      console.error('Failed to add product', err);
+    }
+  };
+
+  // Remove from selection
+  const removeProductFromSelection = async (row) => {
+    try {
+      const res = await editApi({ action: 'remove_rep_product', row: row });
+      if (res.ok && myProducts) {
+        setMyProducts(myProducts.filter(p => p.row !== row));
+      }
+    } catch (err) {
+      console.error('Failed to remove product', err);
+    }
+  };
+
+  // Save product note
+  const saveProductNote = async (row, note) => {
+    try {
+      const res = await editApi({ action: 'update_rep_product', row: row, note: note });
+      if (res.ok && myProducts) {
+        setMyProducts(myProducts.map(p => p.row === row ? { ...p, note: note } : p));
+      }
+      setEditingNote(null);
+    } catch (err) {
+      console.error('Failed to update note', err);
+    }
+  };
+
+  const onPhoto = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    // Size limit: 3MB
+    if (f.size > 3 * 1024 * 1024) {
+      setSaveError('ფოტო ძალიან დიდია — მაქსიმუმ 3 MB');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+
+    setUploadingPhoto(true);
+    setSaveError('');
+
+    try {
+      // Compress photo before upload
+      const base64Data = await compressImage(f, 1200, 0.85);
+
+      // Show preview immediately (optimistic UI)
+      setRep(r => ({ ...r, photo: base64Data }));
+
+      // Upload to Apps Script
+      const result = await editApiUpload({
+        action: 'upload_photo',
+        pid: repCode,
+        photo_data: base64Data,
+      });
+
+      if (result.ok && result.photo_url) {
+        // Replace base64 with permanent Drive URL
+        setRep(r => ({ ...r, photo: result.photo_url }));
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 3000);
+      } else if (result._silent) {
+        // Cross-origin couldn't read response — re-fetch rep data
+        const refresh = await api({ action: 'get_rep', pid: repCode });
+        if (refresh.ok && refresh.rep.photo_url) {
+          setRep(r => ({ ...r, photo: refresh.rep.photo_url }));
+          setSavedToast(true);
+          setTimeout(() => setSavedToast(false), 3000);
+        }
+      } else {
+        setSaveError(result.error || 'ფოტოს ატვირთვა ვერ მოხერხდა');
+      }
+    } catch (e) {
+      setSaveError('ფოტოს ატვირთვის შეცდომა: ' + e.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const onVideoFile = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    // Type check
+    if (!f.type.startsWith('video/')) {
+      setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+
+    // Size limit: 5MB (Apps Script payload limit)
+    if (f.size > 5 * 1024 * 1024) {
+      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB. მოკლედ ჩაჭერი ან ხარისხი დააწიე.`);
+      setTimeout(() => setSaveError(''), 6000);
+      return;
+    }
+
+    setUploadingVideo(true);
+    setVideoUploadProgress(0);
+    setSaveError('');
+
+    try {
+      // Read as base64 (with progress simulation since FileReader is sync-ish)
+      const reader = new FileReader();
+      reader.onprogress = (ev) => {
+        if (ev.lengthComputable) {
+          setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 50)); // 0-50% for read
+        }
+      };
+      const base64Data = await new Promise((resolve, reject) => {
+        reader.onload = () => { setVideoUploadProgress(50); resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(f);
+      });
+
+      setVideoUploadProgress(60); // 60% — uploading to Drive
+
+      const result = await editApiUpload({
+        action: 'upload_video',
+        pid: repCode,
+        video_data: base64Data,
+        video_filename: f.name,
+      });
+
+      setVideoUploadProgress(95);
+
+      if (result.ok && result.video_url) {
+        setRep(r => ({ ...r, videoUrl: result.video_url }));
+        setVideoUploadProgress(100);
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 3000);
+      } else if (result._silent) {
+        // Cross-origin couldn't read response — re-fetch rep data
+        const refresh = await api({ action: 'get_rep', pid: repCode });
+        if (refresh.ok && refresh.rep.video_url) {
+          setRep(r => ({ ...r, videoUrl: refresh.rep.video_url }));
+          setVideoUploadProgress(100);
+          setSavedToast(true);
+          setTimeout(() => setSavedToast(false), 3000);
+        }
+      } else {
+        setSaveError(result.error || 'ვიდეოს ატვირთვა ვერ მოხერხდა');
+      }
+    } catch (err) {
+      setSaveError('ვიდეოს ატვირთვის შეცდომა: ' + err.message);
+    } finally {
+      setUploadingVideo(false);
+      setTimeout(() => setVideoUploadProgress(0), 1500);
+      // Reset file input so same file can be selected again
+      if (videoFileRef.current) videoFileRef.current.value = '';
+    }
+  };
+
+  // ─── Customer Videos (testimonial gallery at bottom of public page) ───
+  const customerVideoFileRef = useRef(null);
+  const [uploadingCustomerVideo, setUploadingCustomerVideo] = useState(false);
+  const [customerUploadProgress, setCustomerUploadProgress] = useState(0);
+  const [newCustomerUrl, setNewCustomerUrl] = useState('');
+  const [newCustomerCaption, setNewCustomerCaption] = useState('');
+  const [newCustomerProblem, setNewCustomerProblem] = useState(''); // empty = "all problems"
+
+  const persistCustomerVideos = async (updatedList) => {
+    setRep(r => ({ ...r, customerVideos: updatedList }));
+    // Auto-save the updated list to Sheet
+    try {
+      await editApi({
+        action: 'save_rep',
+        pid: repCode,
+        customer_videos: JSON.stringify(updatedList),
+      });
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 2000);
+    } catch (err) {
+      setSaveError('ვერ შეინახა: ' + err.message);
+    }
+  };
+
+  const addCustomerVideoFromUrl = async () => {
+    const url = newCustomerUrl.trim();
+    if (!url) return;
+    if (!parseVideoUrl(url)) {
+      setSaveError('ლინკი არ მესმის — სცადე YouTube/Instagram/TikTok/Facebook');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    if ((rep.customerVideos || []).length >= 6) {
+      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    const newItem = { url, caption: newCustomerCaption.trim(), problem: newCustomerProblem || '' };
+    const updated = [...(rep.customerVideos || []), newItem];
+    setNewCustomerUrl('');
+    setNewCustomerCaption('');
+    setNewCustomerProblem('');
+    await persistCustomerVideos(updated);
+  };
+
+  const onCustomerVideoFile = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!f.type.startsWith('video/')) {
+      setSaveError('ფაილი უნდა იყოს ვიდეო');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+    if (f.size > 5 * 1024 * 1024) {
+      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB.`);
+      setTimeout(() => setSaveError(''), 5000);
+      return;
+    }
+    if ((rep.customerVideos || []).length >= 6) {
+      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+      setTimeout(() => setSaveError(''), 4000);
+      return;
+    }
+
+    setUploadingCustomerVideo(true);
+    setCustomerUploadProgress(0);
+    setSaveError('');
+
+    try {
+      const reader = new FileReader();
+      reader.onprogress = (ev) => {
+        if (ev.lengthComputable) setCustomerUploadProgress(Math.round((ev.loaded / ev.total) * 50));
+      };
+      const base64Data = await new Promise((resolve, reject) => {
+        reader.onload = () => { setCustomerUploadProgress(50); resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(f);
+      });
+
+      setCustomerUploadProgress(70);
+
+      const result = await editApiUpload({
+        action: 'upload_video',
+        pid: repCode,
+        slot: 'customer',  // tells Apps Script to NOT update video_url field
+        video_data: base64Data,
+        video_filename: f.name,
+      });
+
+      setCustomerUploadProgress(90);
+
+      let returnedUrl = '';
+      if (result.ok && result.video_url) {
+        returnedUrl = result.video_url;
+      } else if (result._silent) {
+        // Fallback: re-fetch isn't useful here since slot='customer' doesn't update Sheet
+        // The URL is in result, but if we can't read it, ask user to retry
+        setSaveError('ვიდეო ატვირთულია, მაგრამ პასუხი ვერ წავიკითხე. გადატვირთე გვერდი და ცადე ხელახლა.');
+        setTimeout(() => setSaveError(''), 6000);
+        return;
+      } else {
+        setSaveError(result.error || 'ატვირთვა ვერ მოხერხდა');
+        return;
+      }
+
+      const newItem = { url: returnedUrl, caption: newCustomerCaption.trim(), problem: newCustomerProblem || '' };
+      const updated = [...(rep.customerVideos || []), newItem];
+      setNewCustomerCaption('');
+      setNewCustomerProblem('');
+      setCustomerUploadProgress(100);
+      await persistCustomerVideos(updated);
+    } catch (err) {
+      setSaveError('ატვირთვის შეცდომა: ' + err.message);
+    } finally {
+      setUploadingCustomerVideo(false);
+      setTimeout(() => setCustomerUploadProgress(0), 1500);
+      if (customerVideoFileRef.current) customerVideoFileRef.current.value = '';
+    }
+  };
+
+  const removeCustomerVideo = async (index) => {
+    const updated = (rep.customerVideos || []).filter((_, i) => i !== index);
+    await persistCustomerVideos(updated);
+  };
+
+  const updateCustomerCaption = async (index, caption) => {
+    const updated = (rep.customerVideos || []).map((v, i) => i === index ? { ...v, caption } : v);
+    setRep(r => ({ ...r, customerVideos: updated }));
+    // Don't auto-save on every keystroke — user will click save or trigger via blur
+  };
+
+  const copyUrl = () => {
+    navigator.clipboard?.writeText('https://' + shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const saveProfile = async () => {
+    // VALIDATION — required fields before allowing save
+    setValidationAttempted(true);
+    const missing = [];
+    const _parts = (rep.name || '').trim().split(/\s+/).filter(Boolean);
+    if (!_parts[0]) missing.push(L('validation_firstname', 'სახელი'));
+    if (_parts.length < 2) missing.push(L('validation_lastname', 'გვარი'));
+    if (!rep.city || !rep.city.trim()) missing.push(L('validation_city', 'ქალაქი'));
+    if (!rep.phone || !rep.phone.trim()) missing.push(L('validation_phone', 'ტელეფონის ნომერი'));
+    if (!rep.facebook || !rep.facebook.trim()) missing.push(L('validation_facebook', 'Facebook ლინკი'));
+    if (!rep.referralLink || !rep.referralLink.trim()) missing.push(L('validation_referral_link', 'რეფერალური ლინკი'));
+    if (missing.length > 0) {
+      setMissingFieldsModal(missing);
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
+    try {
+      const result = await editApi({
+        action: 'save_rep',
+        pid: repCode,
+        name: rep.name,
+        slug: slug,
+        bio: rep.bio,
+        city: rep.city,
+        phone: rep.phone,
+        whatsapp: rep.whatsapp,
+        instagram: rep.instagram,
+        facebook: rep.facebook,
+        tiktok: rep.tiktok,
+        youtube: rep.youtube,
+        telegram: rep.telegram,
+        video_url: rep.videoUrl || '',
+        customer_videos: JSON.stringify(rep.customerVideos || []),
+        referral_link: rep.referralLink || '',
+        // photo_url left out for now — base64 too large for JSONP, will handle separately
+      });
+      if (result.ok) {
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 3000);
+      } else {
+        setSaveError(result.error || 'შენახვის შეცდომა');
+      }
+    } catch (e) {
+      setSaveError('კავშირის შეცდომა: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    await saveProfile();
+    onPreview();
+  };
+  return (
+    <div className="min-h-screen pb-20" style={{ background: theme.cream }}>
+      {/* Token Error Modal — invalid/missing edit_token */}
+      {tokenError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(15,15,15,0.75)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-2xl p-6 max-w-md w-full shadow-2xl" style={{ background: theme.cream, border: `2px solid #DC2626` }}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FEE2E2' }}>
+                <span style={{ color: '#DC2626', fontSize: '26px', fontWeight: 'bold', lineHeight: 1 }}>🔒</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-xl mb-1" style={{ color: theme.ink }}>
+                  {L('token_error_title', 'ლინკი არ მუშაობს')}
+                </h3>
+                <p className="text-sm" style={{ color: theme.ink + '99' }}>
+                  {L('token_error_subtitle', 'ეს ლინკი ან არ არის ვალიდური, ან მისი მოქმედების ვადა ამოიწურა')}
+                </p>
+              </div>
+            </div>
+            <p className="text-sm mb-5" style={{ color: theme.ink + 'BB', lineHeight: 1.6 }}>
+              {L('token_error_message', 'შენი პერსონალური წვდომის ლინკის მისაღებად დაუკავშირდი FARMASI Georgia-ს:')}
+            </p>
+            <a href="https://wa.me/995322560760" target="_blank" rel="noopener" className="block w-full py-3 rounded-xl text-center text-sm font-medium mb-3" style={{ background: '#25D366', color: 'white', textDecoration: 'none' }}>
+              💬 WhatsApp: (032) 2 560 760
+            </a>
+            <button onClick={() => { clearStoredEditToken(repCode); window.location.replace('/'); }} className="w-full py-3 rounded-xl text-sm font-medium" style={{ background: theme.ink, color: theme.cream }}>
+              {L('token_error_relogin', 'სხვა PID-ით შესვლა')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {missingFieldsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(15,15,15,0.7)', backdropFilter: 'blur(4px)' }}>
+          <div className="rounded-2xl p-6 max-w-md w-full shadow-2xl" style={{ background: theme.cream, border: `1.5px solid ${theme.gold}44` }}>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FEE2E2' }}>
+                <span style={{ color: '#DC2626', fontSize: '22px', fontWeight: 'bold', lineHeight: 1 }}>!</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display text-xl mb-1" style={{ color: theme.ink }}>
+                  {L('validation_modal_title', 'შეავსე სავალდებულო ველები')}
+                </h3>
+                <p className="text-xs" style={{ color: theme.ink + '99' }}>
+                  {L('validation_modal_subtitle', 'პროფილის შესანახად აუცილებელია:')}
+                </p>
+              </div>
+            </div>
+            <ul className="space-y-2 mb-5 pl-1">
+              {missingFieldsModal.map((field, i) => (
+                <li key={i} className="text-sm flex items-start gap-2" style={{ color: theme.ink }}>
+                  <span style={{ color: '#DC2626', fontWeight: 'bold' }}>•</span>
+                  <span>{field}</span>
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setMissingFieldsModal(null)} className="w-full py-3 rounded-xl text-sm font-medium" style={{ background: theme.ink, color: theme.cream }}>
+              {L('validation_modal_ok', 'გავიგე, შევავსებ')}
+            </button>
+          </div>
+        </div>
+      )}
+      <header className="px-5 pt-20 pb-6" style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}22` }}>
+        <div className="max-w-3xl mx-auto">
+          <div className="flex justify-between items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <span className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                <span className="font-mono" style={{ color: theme.wine }}>#{repCode}</span> · {L('dash_header_subtitle', 'წარმომადგენლის პანელი')} · <a href="?logout=1" style={{ color: theme.ink + '66', textDecoration: 'underline', textTransform: 'none', letterSpacing: 'normal' }}>{L('switch_pid_link', 'სხვა PID')}</a>
+              </span>
+              <h1 className="font-display text-3xl mb-1 mt-2" style={{ color: theme.ink }}>
+                {L('dash_header_greeting', 'გამარჯობა,')} {rep.name.split(' ')[0]}
+              </h1>
+              <p className="text-sm" style={{ color: theme.ink + '99' }}>
+                {L('dash_header_description', 'შეავსე პროფილი — ეს გვერდი ნახავს ყველა, ვინც შენ ლინკზე გადავა')}
+              </p>
+            </div>
+            <button onClick={() => {
+              if (typeof onLogout === 'function' && window.confirm(L('logout_confirm', 'ნამდვილად გსურს გასვლა? შემდეგ შესვლისას SMS კოდი მოგთხოვება.'))) {
+                onLogout();
+              }
+            }}
+              className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition self-end flex-shrink-0"
+              style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.ink}33` }}
+              title={L('logout_title', 'გასვლა')}>
+              <Ic name="log-out" className="w-3 h-3" /> {L('logout_button', 'გასვლა')}
+            </button>
+          </div>
+        </div>
+      </header>
+      <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
+        <Card>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{L('dash_share_eyebrow', 'შენი ლენდინგ ფეიჯი')}</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>{L('dash_share_title', 'გააზიარე და მიიღე გაყიდვა')}</p>
+            </div>
+            <button onClick={onPreview} className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
+              style={{ background: theme.ink, color: theme.cream }}>
+              <Ic name="eye" className="w-3 h-3" /> ნახე
+            </button>
+          </div>
+
+          {!editingSlug ? (
+            // ─── VIEW mode: show URL + copy + edit buttons ───
+            <>
+              <div className="flex items-center gap-2 p-3 rounded-xl"
+                style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
+                <a href={'https://' + shareUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-sm flex-1 truncate font-mono hover:underline transition cursor-pointer"
+                  style={{ color: theme.wine, textDecoration: 'none' }}
+                  title={L('dash_share_open_tooltip', 'გახსენი ახალ ფანჯარაში')}>{shareUrl}</a>
+                <button onClick={() => { setSlugDraft(slug); setEditingSlug(true); setSlugError(''); }}
+                  className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition hover:scale-105"
+                  style={{ background: theme.ink + '22', color: theme.ink }}
+                  title="slug-ის შეცვლა">
+                  <Ic name="edit-3" className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={copyUrl}
+                  className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
+                  style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
+                  {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დააკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+                </button>
+              </div>
+              <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
+                💡 slug ავტომატურად მოგენიჭა — შეგიძლია შეცვალო ან ახალი დაგენერირო
+              </p>
+            </>
+          ) : (
+            // ─── EDIT mode: input + regenerate + save/cancel ───
+            <div className="p-3 rounded-xl" style={{ background: theme.cream, border: `1.5px solid ${theme.wine}55` }}>
+              <p className="text-[10px] tracking-widest uppercase mb-2" style={{ color: theme.gold }}>slug-ის შეცვლა</p>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-mono" style={{ color: theme.ink + '99' }}>{window.location.host}/</span>
+                <input type="text" value={slugDraft}
+                  onChange={(e) => { setSlugDraft(e.target.value.toLowerCase()); setSlugError(''); }}
+                  placeholder="rose-bloom"
+                  className="flex-1 px-3 py-2 rounded-lg outline-none text-sm font-mono"
+                  style={{ background: theme.ivory, border: `1px solid ${slugError ? theme.rose : theme.gold + '55'}`, color: theme.ink }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') applySlugEdit(); if (e.key === 'Escape') setEditingSlug(false); }}
+                  autoFocus />
+              </div>
+              {slugError && <p className="text-[10px] mb-2" style={{ color: theme.rose }}>{slugError}</p>}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={useNameAsSlug}
+                  className="flex-1 min-w-[120px] px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-[11px] tracking-wide transition hover:scale-[1.02]"
+                  style={{ background: theme.wine + '15', color: theme.wine, border: `1px solid ${theme.wine}55` }}
+                  title={L('slug_tooltip_from_name', 'სახელიდან')}>
+                  <Ic name="user" className="w-3 h-3" /> სახელით
+                </button>
+                <button onClick={regenerateSlug}
+                  className="flex-1 min-w-[120px] px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 text-[11px] tracking-wide transition hover:scale-[1.02]"
+                  style={{ background: theme.ink + '11', color: theme.ink, border: `1px solid ${theme.gold}44` }}
+                  title={L('slug_tooltip_anon', 'ანონიმური FARMASI-themed')}>
+                  <Ic name="refresh-cw" className="w-3 h-3" /> ანონიმური
+                </button>
+                <button onClick={() => { setEditingSlug(false); setSlugDraft(slug); setSlugError(''); }}
+                  className="px-3 py-2 rounded-lg text-[11px] tracking-wide"
+                  style={{ background: theme.ink + '11', color: theme.ink + 'AA' }}>
+                  გაუქმება
+                </button>
+                <button onClick={applySlugEdit}
+                  className="px-4 py-2 rounded-lg flex items-center gap-1.5 text-[11px] tracking-wide transition hover:scale-105"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  <Ic name="check" className="w-3 h-3" /> შენახვა
+                </button>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* Guide Link Card — shareable resource for new reps / customers */}
+        <Card>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>📖 {L('dash_guide_eyebrow', 'გზამკვლევი')}</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>{L('dash_guide_title', 'გადაუგზავნე ახალ წარმომადგენელს')}</p>
+            </div>
+            <a href={GUIDE_URL} target="_blank" rel="noopener noreferrer"
+              className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
+              style={{ background: theme.ink, color: theme.cream, textDecoration: 'none' }}>
+              <Ic name="eye" className="w-3 h-3" /> {L('dash_guide_view', 'ნახე')}
+            </a>
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-xl"
+            style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
+            <a href={GUIDE_URL} target="_blank" rel="noopener noreferrer"
+              className="text-sm flex-1 truncate font-mono hover:underline transition cursor-pointer"
+              style={{ color: theme.wine, textDecoration: 'none' }}
+              title={L('dash_guide_open_tooltip', 'გახსენი ახალ ფანჯარაში')}>
+              {GUIDE_URL.replace('https://', '')}
+            </a>
+            <button onClick={copyGuideUrl}
+              className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
+              style={{ background: guideCopied ? theme.gold : theme.wine, color: theme.cream }}>
+              {guideCopied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_guide_copied', 'დააკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> {L('dash_guide_copy', 'კოპი')}</>}
+            </button>
+          </div>
+          <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
+            💡 {L('dash_guide_hint', 'გადაუგზავნე ლინკი WhatsApp/Facebook/SMS-ით — დაინტერესებული პირი წაიკითხავს FARMASI-ში როგორ უნდა გახდეს წარმომადგენელი')}
+          </p>
+        </Card>
+
+        {/* Visits Analytics Card */}
+        {visits && (
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>📊 ანალიტიკა</p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>{L('visits_title', 'შენი გვერდის ვიზიტები')}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="text-center p-4 rounded-2xl"
+                style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
+                <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.today}</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>{L('visits_today', 'დღეს')}</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl"
+                style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
+                <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.week}</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>{L('visits_7days', '7 დღე')}</p>
+              </div>
+              <div className="text-center p-4 rounded-2xl"
+                style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`, border: `1px solid ${theme.gold}22` }}>
+                <p className="font-display text-3xl mb-1" style={{ color: theme.wine }}>{visits.total}</p>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.ink + '99' }}>{L('visits_total', 'სულ')}</p>
+              </div>
+            </div>
+
+            {visits.days && visits.days.length > 0 && (
+              <div>
+                <p className="text-[10px] tracking-widest uppercase mb-3" style={{ color: theme.ink + '77' }}>{L('visits_period_label', 'ბოლო 7 დღე')}</p>
+                <div className="flex items-end gap-1.5 h-24">
+                  {visits.days.map((d, i) => {
+                    const maxCount = Math.max(...visits.days.map(x => x.count), 1);
+                    const heightPct = (d.count / maxCount) * 100;
+                    const dayName = ['კვ','ორ','სა','ოთ','ხუ','პა','შა'][new Date(d.date).getDay()];
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                        <div className="w-full flex-1 flex items-end">
+                          <div className="w-full rounded-t-md transition-all relative"
+                            style={{
+                              height: `${Math.max(heightPct, d.count > 0 ? 8 : 2)}%`,
+                              background: d.count > 0
+                                ? `linear-gradient(180deg, ${theme.wine}, ${theme.rose})`
+                                : theme.gold + '22',
+                              minHeight: '4px'
+                            }}>
+                            {d.count > 0 && (
+                              <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-mono" style={{ color: theme.wine }}>
+                                {d.count}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-[9px] tracking-wider uppercase" style={{ color: theme.ink + '77' }}>{dayName}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {visits.total === 0 && (
+              <p className="text-xs text-center mt-4 italic" style={{ color: theme.ink + '77' }}>
+                {L('visits_empty', 'ჯერ ვიზიტები არ არის — გააზიარე შენი ლინკი! 🚀')}
+              </p>
+            )}
+          </Card>
+        )}
+
+        {/* ─── Leads — Contact form submissions ─── */}
+        {leads && (
+          <Card>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
+                  {L('leads_eyebrow', '📬 კონტაქტები')}
+                </p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>
+                  {L('leads_title', 'შემოსული შეტყობინებები')}
+                </p>
+              </div>
+              {leads.length > 0 && (
+                <span className="text-xs px-3 py-1 rounded-full"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  {leads.filter(l => l.status === 'new').length} {L('leads_new_badge', 'ახალი')}
+                </span>
+              )}
+            </div>
+
+            {leads.length === 0 ? (
+              <p className="text-xs text-center py-6 italic" style={{ color: theme.ink + '77' }}>
+                {L('leads_empty', 'ჯერ კონტაქტი არ მიგიღია — გააზიარე შენი ლინკი და დაელოდე 🌹')}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {leads.map(lead => {
+                  const statusColors = {
+                    new:       { bg: theme.wine + '15', border: theme.wine + '55', dot: theme.wine },
+                    contacted: { bg: theme.gold + '15', border: theme.gold + '55', dot: theme.gold },
+                    closed:    { bg: theme.ink + '11',  border: theme.ink + '33',  dot: theme.ink + '88' },
+                  };
+                  const c = statusColors[lead.status] || statusColors.new;
+                  const date = lead.timestamp ? new Date(lead.timestamp).toLocaleString('ka-GE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  }) : '';
+                  return (
+                    <div key={lead.row} className="rounded-xl p-4"
+                      style={{ background: c.bg, border: `1px solid ${c.border}` }}>
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="w-2 h-2 rounded-full" style={{ background: c.dot }} />
+                            <p className="font-display text-base truncate" style={{ color: theme.ink }}>
+                              {lead.name}
+                            </p>
+                          </div>
+                          <a href={`tel:${lead.phone}`} className="text-xs font-mono hover:underline"
+                            style={{ color: theme.wine }}>
+                            📞 {lead.phone}
+                          </a>
+                          {lead.message && (
+                            <p className="text-xs mt-2 leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+                              💬 {lead.message}
+                            </p>
+                          )}
+                          <p className="text-[10px] mt-2" style={{ color: theme.ink + '77' }}>
+                            🕐 {date}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status update buttons */}
+                      <div className="flex gap-2 mt-3 flex-wrap">
+                        {lead.status !== 'contacted' && lead.status !== 'closed' && (
+                          <button onClick={() => updateLeadStatus(lead.row, 'contacted')}
+                            className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105"
+                            style={{ background: theme.gold + '33', color: theme.gold, border: `1px solid ${theme.gold}66` }}>
+                            ✓ {L('leads_button_contacted', 'დაკავშირებული')}
+                          </button>
+                        )}
+                        {lead.status !== 'closed' && (
+                          <button onClick={() => updateLeadStatus(lead.row, 'closed')}
+                            className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105"
+                            style={{ background: theme.ink + '11', color: theme.ink + '99', border: `1px solid ${theme.ink}33` }}>
+                            🔒 {L('leads_button_closed', 'დახურული')}
+                          </button>
+                        )}
+                        {lead.status === 'closed' && (
+                          <button onClick={() => updateLeadStatus(lead.row, 'new')}
+                            className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105"
+                            style={{ background: theme.wine + '11', color: theme.wine, border: `1px solid ${theme.wine}33` }}>
+                            ↻ {L('leads_button_reopen', 'ხელახლა გახსნა')}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* ─── My Curated Products — Rep's favorite picks ─── */}
+        {myProducts !== null && (
+          <Card>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex-1">
+                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
+                  {L('myprods_eyebrow', '✦ ჩემი არჩევანი')}
+                </p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>
+                  {L('myprods_title', 'რჩეული პროდუქტები')}
+                </p>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.ink + '99' }}>
+                  {L('myprods_subtitle', 'მონიშნე შენი ფავორიტი 5-6 პროდუქტი — ვიზიტორებს გამოეჩვენებათ შენი არჩევანი მთავარი კატალოგის ნაცვლად')}
+                </p>
+              </div>
+            </div>
+
+            {myProducts.length === 0 ? (
+              <div className="text-center py-8 px-4">
+                <p className="text-sm mb-4" style={{ color: theme.ink + '99' }}>
+                  {L('myprods_empty', 'ჯერ არჩეული პროდუქტი არ გაქვს')}
+                </p>
+                <button onClick={openProductPicker}
+                  className="px-6 py-3 rounded-xl text-sm tracking-wider uppercase font-medium hover:scale-[1.02] transition"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  + {L('myprods_button_add', 'პროდუქტის დამატება')}
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {myProducts.map(p => (
+                    <div key={p.row} className="rounded-xl p-3 sm:p-4 flex gap-3"
+                      style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+                      {p.image && (
+                        <img src={p.image} alt={p.name}
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover flex-shrink-0"
+                          style={{ background: theme.cream }} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-display text-sm sm:text-base truncate" style={{ color: theme.ink }}>
+                          {p.name}
+                        </p>
+                        <p className="text-xs mb-2" style={{ color: theme.wine }}>
+                          {p.price} ₾
+                        </p>
+                        {editingNote && editingNote.row === p.row ? (
+                          <div>
+                            <textarea
+                              value={editingNote.currentNote}
+                              onChange={(e) => setEditingNote({ ...editingNote, currentNote: e.target.value })}
+                              placeholder={L('myprods_note_placeholder', 'მაგ: ეს სერუმი ნამდვილად მუშაობს...')}
+                              rows={2}
+                              className="w-full text-xs px-2 py-1.5 rounded outline-none resize-none"
+                              style={{ background: theme.cream, border: `1px solid ${theme.gold}44`, color: theme.ink }} />
+                            <div className="flex gap-2 mt-2">
+                              <button onClick={() => saveProductNote(p.row, editingNote.currentNote)}
+                                className="text-[10px] px-3 py-1 rounded"
+                                style={{ background: theme.wine, color: theme.cream }}>
+                                {L('myprods_note_save', 'შენახვა')}
+                              </button>
+                              <button onClick={() => setEditingNote(null)}
+                                className="text-[10px] px-3 py-1 rounded"
+                                style={{ background: theme.ink + '11', color: theme.ink }}>
+                                {L('myprods_note_cancel', 'უარყოფა')}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {p.note ? (
+                              <p className="text-xs italic leading-relaxed mb-2" style={{ color: theme.ink + 'AA' }}>
+                                "{p.note}"
+                              </p>
+                            ) : (
+                              <p className="text-xs italic mb-2" style={{ color: theme.ink + '66' }}>
+                                {L('myprods_no_note', 'ჯერ კომენტარი არ დაგიწერია')}
+                              </p>
+                            )}
+                            <div className="flex gap-2">
+                              <button onClick={() => setEditingNote({ row: p.row, currentNote: p.note || '' })}
+                                className="text-[10px] px-3 py-1 rounded transition hover:scale-105"
+                                style={{ background: theme.gold + '22', color: theme.gold }}>
+                                ✎ {L('myprods_button_edit', 'კომენტარი')}
+                              </button>
+                              <button onClick={() => removeProductFromSelection(p.row)}
+                                className="text-[10px] px-3 py-1 rounded transition hover:scale-105"
+                                style={{ background: theme.rose + '22', color: theme.rose }}>
+                                × {L('myprods_button_remove', 'წაშლა')}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {myProducts.length < 10 ? (
+                  <button onClick={openProductPicker}
+                    className="w-full mt-4 py-3 rounded-xl text-sm tracking-wider uppercase font-medium hover:scale-[1.01] transition"
+                    style={{ background: theme.wine + '11', color: theme.wine, border: `1.5px dashed ${theme.wine}55` }}>
+                    + {L('myprods_button_add_more', 'მეტი პროდუქტი')} ({myProducts.length}/10)
+                  </button>
+                ) : (
+                  <div className="w-full mt-4 py-3 px-4 rounded-xl text-center text-xs leading-relaxed"
+                    style={{ background: theme.gold + '15', color: theme.gold, border: `1px dashed ${theme.gold}66` }}>
+                    {L('myprods_limit_reached', '✦ მიაღწიე მაქსიმუმ 10 პროდუქტს — წაშალე ერთი ახლის დასამატებლად')}
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+        )}
+
+        {/* ─── Product Picker Modal ─── */}
+        {pickerOpen && (
+          <div onClick={() => setPickerOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(35,23,18,0.85)', backdropFilter: 'blur(8px)' }}>
+            <div onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl max-h-[85vh] rounded-2xl flex flex-col"
+              style={{ background: theme.cream }}>
+              <div className="px-6 py-4 flex items-center justify-between border-b"
+                style={{ borderColor: theme.gold + '33' }}>
+                <div>
+                  <p className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>
+                    {L('myprods_picker_eyebrow', 'კატალოგი')}
+                  </p>
+                  <p className="font-display text-lg" style={{ color: theme.ink }}>
+                    {L('myprods_picker_title', 'აარჩიე პროდუქტი')}
+                  </p>
+                </div>
+                <button onClick={() => setPickerOpen(false)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110"
+                  style={{ background: theme.ink + '11', color: theme.ink }}>
+                  <Ic name="x" className="w-4 h-4" />
+                </button>
+              </div>
+              {/* Filter bar + product list — single IIFE so computation happens once per render */}
+              {(() => {
+                if (allProducts.length === 0) {
+                  return (
+                    <div className="overflow-y-auto p-4 space-y-2">
+                      <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
+                        {L('myprods_picker_loading', 'იტვირთება...')}
+                      </p>
+                    </div>
+                  );
+                }
+                // ─── Compute filter values ONCE per render ───
+                const myIds = new Set((myProducts || []).map(mp => String(mp.id)));
+                const availableProducts = allProducts.filter(p => !myIds.has(String(p.id)));
+                const catCounts = new Map();
+                availableProducts.forEach(p => {
+                  const c = String(p.cat || '').trim();
+                  if (!c) return;
+                  catCounts.set(c, (catCounts.get(c) || 0) + 1);
+                });
+                const categories = Array.from(catCounts.keys()).sort();
+                const q = (pickerSearchQuery || '').trim().toLowerCase();
+                const filtered = availableProducts.filter(p => {
+                  if (pickerCategoryFilter !== 'all' && String(p.cat || '').trim() !== pickerCategoryFilter) return false;
+                  if (q) {
+                    const matches = String(p.name || '').toLowerCase().includes(q)
+                                 || String(p.cat || '').toLowerCase().includes(q)
+                                 || String(p.id || '').toLowerCase().includes(q)
+                                 || String(p.tag || '').toLowerCase().includes(q);
+                    if (!matches) return false;
+                  }
+                  return true;
+                });
+                // Apply sort
+                if (pickerSortBy === 'name') {
+                  filtered.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ka'));
+                } else if (pickerSortBy === 'code') {
+                  filtered.sort((a, b) => String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true }));
+                }
+                const isFiltering = !!q || pickerCategoryFilter !== 'all';
+                return (
+                  <>
+                    {/* Filter bar */}
+                    <div className="px-4 sm:px-6 py-3 border-b space-y-3" style={{ borderColor: theme.gold + '22', background: theme.cream }}>
+                      <div className="relative">
+                        <Ic name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: theme.ink + '66' }} />
+                        <input
+                          type="text"
+                          value={pickerSearchQuery}
+                          onChange={(e) => setPickerSearchQuery(e.target.value)}
+                          placeholder={L('myprods_picker_search', 'მოძებნე სახელით ან კოდით...')}
+                          className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none"
+                          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, color: theme.ink }}
+                        />
+                      </div>
+                      {/* Sort toggle */}
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: theme.ink + '88' }}>
+                          {L('myprods_picker_sort_label', 'დახარისხება:')}
+                        </span>
+                        <button
+                          onClick={() => setPickerSortBy('name')}
+                          className="px-2.5 py-1 rounded-full transition hover:scale-[1.03]"
+                          style={pickerSortBy === 'name'
+                            ? { background: theme.wine, color: theme.cream }
+                            : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                          {L('myprods_picker_sort_name', 'სახელით')}
+                        </button>
+                        <button
+                          onClick={() => setPickerSortBy('code')}
+                          className="px-2.5 py-1 rounded-full transition hover:scale-[1.03]"
+                          style={pickerSortBy === 'code'
+                            ? { background: theme.wine, color: theme.cream }
+                            : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                          {L('myprods_picker_sort_code', 'კოდით')}
+                        </button>
+                      </div>
+                      {categories.length > 0 && (
+                        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
+                          <button
+                            onClick={() => setPickerCategoryFilter('all')}
+                            className="px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 transition hover:scale-[1.03]"
+                            style={pickerCategoryFilter === 'all'
+                              ? { background: theme.wine, color: theme.cream }
+                              : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                            {L('myprods_picker_cat_all', 'ყველა')} ({availableProducts.length})
+                          </button>
+                          {categories.map(cat => (
+                            <button
+                              key={cat}
+                              onClick={() => setPickerCategoryFilter(cat)}
+                              className="px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 transition hover:scale-[1.03]"
+                              style={pickerCategoryFilter === cat
+                                ? { background: theme.wine, color: theme.cream }
+                                : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                              {cat} ({catCounts.get(cat)})
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Product list — key forces remount when filter changes */}
+                    <div className="overflow-y-auto p-4 space-y-2" key={`picker-body-${pickerCategoryFilter}|${q}|${pickerSortBy}`}>
+                      {filtered.length === 0 ? (() => {
+                        // Smart empty state: check if search matches already-selected product
+                        let alreadySelectedMatch = null;
+                        if (q && Array.isArray(myProducts)) {
+                          alreadySelectedMatch = myProducts.find(mp =>
+                            String(mp.id || '').toLowerCase().includes(q) ||
+                            String(mp.name || '').toLowerCase().includes(q)
+                          );
+                        }
+                        let message;
+                        if (alreadySelectedMatch) {
+                          message = `✓ "${alreadySelectedMatch.name}" უკვე გყავს რჩეულებში`;
+                        } else if (isFiltering) {
+                          message = L('myprods_picker_no_results', 'შედეგი ვერ მოიძებნა — სცადე სხვა საძიებო');
+                        } else {
+                          message = L('myprods_picker_all_added', 'ყველა პროდუქტი უკვე დამატებულია');
+                        }
+                        return (
+                          <p className="text-center py-12 text-sm italic" style={{ color: alreadySelectedMatch ? theme.gold : theme.ink + '77' }}>
+                            {message}
+                          </p>
+                        );
+                      })() : (
+                        filtered.map(p => (
+                          <button key={p.id}
+                            onClick={() => { addProductToSelection(p.id); setPickerOpen(false); }}
+                            className="w-full rounded-xl p-3 flex gap-3 items-center transition hover:scale-[1.01] text-left"
+                            style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                            {p.image && (
+                              <img src={p.image} alt={p.name}
+                                className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                                style={{ background: theme.cream }} />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                {p.cat && (
+                                  <span className="text-[9px] tracking-widest uppercase" style={{ color: theme.gold }}>
+                                    {String(p.cat).trim()}
+                                  </span>
+                                )}
+                                {p.id && (
+                                  <span className="text-[9px] font-mono" style={{ color: theme.ink + '66' }}>
+                                    #{p.id}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="font-display text-sm truncate" style={{ color: theme.ink }}>
+                                {p.name}
+                              </p>
+                              <p className="text-xs" style={{ color: theme.wine }}>
+                                {p.price} ₾
+                              </p>
+                            </div>
+                            <Ic name="plus" className="w-4 h-4" style={{ color: theme.wine }} />
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* ─── Personal Card Download ─── */}
+        <Card>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{L('card_eyebrow', '🎴 PERSONAL CARD')}</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>{L('card_title', 'შენი ციფრული ვიზიტური')}</p>
+            </div>
+          </div>
+          <p className="text-sm mb-4" style={{ color: theme.ink + 'AA' }}>
+            {L('card_description', 'ერთი ღილაკით ჩამოტვირთე შენი პერსონალური ფლაერი — QR კოდით, სახელით და ბრენდინგით. დაბეჭდე, გადააგზავნე WhatsApp-ით, ან გამოიყენე Instagram Story-ში.')}
+          </p>
+
+          {/* Mini preview */}
+          <div className="flex items-center gap-4 p-4 rounded-xl mb-4"
+               style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
+            <div className="flex-shrink-0 w-16 h-16 rounded-lg flex items-center justify-center text-3xl"
+                 style={{ background: 'white', border: `1px solid ${theme.gold}33` }}>
+              🎴
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-base truncate" style={{ color: theme.ink }}>
+                {rep.name || L('card_placeholder_name', 'შენი სახელი')}
+              </p>
+              <p className="text-xs italic" style={{ color: theme.wine }}>
+                FARMASI · {rep.city || L('card_placeholder_city', 'შენი ქალაქი')}
+              </p>
+              <p className="text-[10px] font-mono mt-1" style={{ color: theme.ink + '77' }}>
+                my.farmasi.ge/{slug}
+              </p>
+            </div>
+          </div>
+
+          {cardError && (
+            <p className="text-xs mb-3" style={{ color: theme.rose }}>{cardError}</p>
+          )}
+
+          <button
+            onClick={async () => {
+              setCardError('');
+              if (!rep.name) { setCardError(L('card_error_no_name', 'ჯერ შეავსე სახელი')); return; }
+              if (!isValidSlug(slug)) { setCardError(L('card_error_bad_slug', 'არასწორი slug')); return; }
+              setCardGenerating(true);
+              try {
+                await downloadPersonalCard({
+                  name: rep.name,
+                  city: rep.city || '',
+                  slug: slug,
+                  labels: labels,
+                });
+              } catch (err) {
+                console.error('Card generation failed', err);
+                setCardError((err && err.message) ? err.message : L('card_error_generic', 'ვერ შეიქმნა — სცადე ხელახლა'));
+              } finally {
+                setCardGenerating(false);
+              }
+            }}
+            disabled={cardGenerating}
+            className="w-full px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-sm tracking-wide transition hover:scale-[1.02] disabled:opacity-60"
+            style={{ background: theme.wine, color: theme.cream }}>
+            {cardGenerating
+              ? <><Ic name="loader" className="w-4 h-4 animate-spin" /> {L('card_button_loading', 'მზადდება...')}</>
+              : <><Ic name="download" className="w-4 h-4" /> {L('card_button_download', 'ჩამოტვირთვა (PNG)')}</>}
+          </button>
+
+          <p className="text-[10px] mt-3 text-center" style={{ color: theme.ink + '77' }}>
+            {L('card_hint', '💡 პირველ ჯერზე ცოტა ხანი დასჭირდება — გადმოიწერება საჭირო ფაილები (~150KB)')}
+          </p>
+        </Card>
+
+        <MyOrdersSection repCode={repCode} labels={labels} />
+
+        <Card>
+          <SectionLabel n="01" t={L('profile_section_1', 'ფოტო და სახელი')} />
+          <div className="flex items-center gap-4">
+            <button onClick={() => fileRef.current?.click()} disabled={uploadingPhoto}
+              className="relative w-24 h-24 rounded-full overflow-hidden flex-shrink-0 transition hover:scale-105 disabled:opacity-70"
+              style={{ background: theme.mist, border: `2px solid ${theme.gold}66` }}>
+              {rep.photo
+                ? <img src={rep.photo} alt="" className="w-full h-full object-cover" />
+                : <Ic name="camera" className="w-7 h-7 absolute inset-0 m-auto" style={{ color: theme.gold }} />}
+              {uploadingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+                  <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent" style={{ animation: 'spin 0.8s linear infinite' }} />
+                </div>
+              )}
+              <div className="absolute bottom-0 left-0 right-0 py-1 text-[10px] tracking-widest uppercase"
+                style={{ background: theme.ink + 'CC', color: theme.cream }}>
+                {uploadingPhoto ? 'ვტვირთავ' : (rep.photo ? 'შეცვლა' : 'ატვირთე')}
+              </div>
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" onChange={onPhoto} hidden />
+            <div className="flex-1 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <Input label={L('profile_firstname_label', 'სახელი')} value={firstName} onChange={updFirstName} placeholder={L('profile_firstname_placeholder', 'ნინო')} required hasError={validationAttempted && !firstName.trim()} />
+                <Input label={L('profile_lastname_label', 'გვარი')} value={lastName} onChange={updLastName} placeholder={L('profile_lastname_placeholder', 'ცინცაძე')} required hasError={validationAttempted && !lastName.trim()} />
+              </div>
+              <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} small required hasError={validationAttempted && !(rep.city || '').trim()} />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{L('profile_bio_label', 'მოკლე ბიო')}</label>
+            <textarea value={rep.bio} onChange={upd('bio')} rows={3} maxLength={200}
+              placeholder={L('profile_bio_placeholder', 'რას გთავაზობ? რატომ შენ?')}
+              className="w-full px-3 py-2.5 rounded-xl outline-none text-sm resize-none"
+              style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+            <p className="text-[10px] mt-1 text-right" style={{ color: theme.ink + '66' }}>{rep.bio.length}/200</p>
+          </div>
+        </Card>
+
+        <Card>
+          <SectionLabel n="02" t={L('profile_section_2', 'ვიდეო მიმართვა')} />
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            {L('profile_video_hint_pre', 'მოკლე ვიდეო (15–30 წამი) ფოტოს გვერდით გამოჩნდება.')} <strong>{L('profile_video_hint_bold', 'ფაილის ატვირთვა ყველაზე სუფთად ჩანს')}</strong> {L('profile_video_hint_post', '— TikTok/Instagram-ის ლინკზე მათი caption და music ჩანს.')}
+          </p>
+
+          {/* PRIMARY: Direct file upload */}
+          <div className="mb-4">
+            <button onClick={() => videoFileRef.current?.click()}
+              disabled={uploadingVideo}
+              className="w-full py-4 rounded-2xl flex items-center justify-center gap-2.5 text-sm font-medium transition hover:scale-[1.01]"
+              style={{ background: theme.ink, color: theme.cream, opacity: uploadingVideo ? 0.7 : 1 }}>
+              {uploadingVideo ? (
+                <>
+                  <Ic name="loader" className="w-4 h-4 animate-spin" />
+                  ვტვირთავ... {videoUploadProgress > 0 && `${videoUploadProgress}%`}
+                </>
+              ) : (
+                <>
+                  <Ic name="upload" className="w-4 h-4" />
+                  ატვირთე ვიდეო ფაილი (MP4, max 5 MB)
+                </>
+              )}
+            </button>
+            {uploadingVideo && videoUploadProgress > 0 && (
+              <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                <div className="h-full transition-all duration-300"
+                  style={{ width: `${videoUploadProgress}%`, background: theme.wine }} />
+              </div>
+            )}
+            <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*"
+              onChange={onVideoFile} className="hidden" />
+            <p className="text-[10px] mt-2 leading-relaxed text-center" style={{ color: theme.ink + '77' }}>
+              💡 TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე
+            </p>
+          </div>
+
+          {/* OR divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+            <span className="text-[10px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>{L('profile_or', 'ან')}</span>
+            <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+          </div>
+
+          {/* SECONDARY: URL paste */}
+          <Input icon="link" label={L('profile_paste_link', 'ჩასვი ლინკი (გამოჩნდება მეტადატით)')} value={rep.videoUrl}
+            onChange={upd('videoUrl')}
+            placeholder="https://instagram.com/reel/... ან https://youtu.be/..." />
+          {rep.videoUrl && (
+            <div className="mt-3">
+              {parseVideoUrl(rep.videoUrl) ? (
+                <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg"
+                  style={{ background: '#10B98111', color: '#059669', border: '1px solid #10B98133' }}>
+                  <span className="flex items-center gap-2">
+                    <Ic name="check-circle" className="w-3.5 h-3.5" />
+                    {L('profile_link_recognized', 'ლინკი ცნობილია')} — ({parseVideoUrl(rep.videoUrl).type})
+                  </span>
+                  <button onClick={() => setRep(r => ({ ...r, videoUrl: '' }))}
+                    className="text-[10px] underline opacity-70 hover:opacity-100">{L('profile_delete', 'წაშლა')}</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg"
+                  style={{ background: theme.rose + '22', color: theme.wine, border: `1px solid ${theme.rose}55` }}>
+                  <Ic name="alert-circle" className="w-3.5 h-3.5" />
+                  <span>{L('profile_link_error', 'ლინკი არ მესმის — სცადე YouTube, Instagram, TikTok, Facebook ან Vimeo')}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <p className="text-[10px] mt-3 leading-relaxed" style={{ color: theme.ink + '77' }}>
+            {L('profile_supported_platforms', 'მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Facebook (Watch/Reels) · Vimeo · MP4 პირდაპირი ლინკი')}
+          </p>
+        </Card>
+
+        <Card>
+          <SectionLabel n="03" t={L('profile_section_3', 'პირდაპირი კონტაქტი')} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input icon="phone" label={L('profile_phone_label', 'ტელეფონი')} value={rep.phone} onChange={upd('phone')} placeholder="+995 555 123456" required hasError={validationAttempted && !(rep.phone || '').trim()} />
+            <Input icon="message-circle" label="WhatsApp" value={rep.whatsapp} onChange={upd('whatsapp')} placeholder="+995 555 123456" green />
+          </div>
+        </Card>
+
+        {/* ✅ NEW: Referral link section — required for "Buy" button */}
+        <Card>
+          <SectionLabel n="03b" t={L('profile_section_referral', 'რეფერალური ლინკი')} />
+          <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            {L('profile_referral_hint', 'ლინკი farmasi.ge-დან — "შეიძინე" ღილაკი მომხმარებლებს გადაამისამართებს ამ ლინკზე. მაგ: https://farmasi.ge/ka/signup/549244')}
+          </p>
+          <Input icon="link" label={L('profile_referral_link_label', 'რეფერალური ლინკი')}
+            value={rep.referralLink || ''} onChange={upd('referralLink')}
+            placeholder="https://farmasi.ge/ka/signup/549244"
+            required hasError={validationAttempted && !(rep.referralLink || '').trim()} />
+        </Card>
+
+        <Card>
+          <SectionLabel n="04" t={L('profile_section_4', 'სოციალური ქსელები')} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input icon="instagram" iconType="social" label="Instagram" value={rep.instagram} onChange={upd('instagram')} placeholder="@yourhandle" />
+            <Input icon="facebook"  iconType="social" label="Facebook"  value={rep.facebook}  onChange={upd('facebook')}  placeholder="facebook.com/..." required hasError={validationAttempted && !(rep.facebook || '').trim()} />
+            <Input icon="tiktok"    iconType="social" label="TikTok"    value={rep.tiktok}    onChange={upd('tiktok')}    placeholder="@yourhandle" />
+            <Input icon="youtube"   iconType="social" label="YouTube"   value={rep.youtube}   onChange={upd('youtube')}   placeholder="youtube.com/..." />
+            <Input icon="telegram"  iconType="social" label="Telegram"  value={rep.telegram}  onChange={upd('telegram')}  placeholder="@yourhandle" />
+          </div>
+        </Card>
+
+        <Card>
+          <SectionLabel n="05" t={L('profile_section_5', 'კმაყოფილი მომხმარებლები')} />
+          <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            დაამატე მომხმარებლების ვიდეო-რეცენზიები (მაქს. 6) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. იგივე წესები: ფაილი 5 MB-მდე, ან ნებისმიერი ვიდეო-პლატფორმის ლინკი.
+          </p>
+
+          {/* Existing customer videos list */}
+          {(rep.customerVideos || []).length > 0 && (
+            <div className="space-y-2 mb-4">
+              {rep.customerVideos.map((v, idx) => {
+                const parsed = parseVideoUrl(v.url);
+                return (
+                  <div key={idx} className="flex items-center gap-3 p-2.5 rounded-xl"
+                    style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ background: parsed ? theme.wine + '15' : theme.rose + '22', color: theme.wine }}>
+                      <Ic name="play" className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <input type="text" value={v.caption || ''}
+                        onChange={(e) => updateCustomerCaption(idx, e.target.value)}
+                        onBlur={() => persistCustomerVideos(rep.customerVideos)}
+                        placeholder={L('profile_customer_caption', 'წარწერა (მაგ. ანი, 8 კვირა)')}
+                        className="w-full text-sm bg-transparent outline-none truncate"
+                        style={{ color: theme.ink }} />
+                      <p className="text-[10px] truncate flex items-center gap-1.5" style={{ color: theme.ink + '66' }}>
+                        {v.problem ? (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-medium"
+                            style={{ background: theme.wine + '22', color: theme.wine }}>
+                            {((problems || PROBLEMS).find(p => p.id === v.problem) || {}).label || v.problem}
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-medium"
+                            style={{ background: theme.gold + '22', color: theme.gold }}>
+                            {L('filter_all', 'ყველა')}
+                          </span>
+                        )}
+                        <span>· {parsed ? parsed.type : '⚠'} · {v.url.slice(0, 30)}…</span>
+                      </p>
+                    </div>
+                    <button onClick={() => removeCustomerVideo(idx)}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition hover:scale-110"
+                      style={{ background: theme.rose + '22', color: theme.wine }}>
+                      <Ic name="trash" className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Add new — only show if under limit */}
+          {(rep.customerVideos || []).length < 6 ? (
+            <div className="rounded-2xl p-3" style={{ background: theme.cream + '88', border: `1px dashed ${theme.gold}44` }}>
+              <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.ink + '99' }}>
+                {L('profile_add_new', 'დაამატე ახალი')} ({(rep.customerVideos || []).length}/6)
+              </p>
+
+              <input type="text" value={newCustomerCaption}
+                onChange={(e) => setNewCustomerCaption(e.target.value)}
+                placeholder={L('profile_customer_caption_optional', "წარწერა (არასავალდებულო) — მაგ. 'ანი, 8 კვირა'")}
+                className="w-full px-3 py-2 mb-2 rounded-xl outline-none text-sm"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+
+              <select value={newCustomerProblem}
+                onChange={(e) => setNewCustomerProblem(e.target.value)}
+                className="w-full px-3 py-2 mb-3 rounded-xl outline-none text-sm cursor-pointer"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }}>
+                <option value="">🌐 ყველა პრობლემაზე (ზოგადი)</option>
+                {(problems || PROBLEMS).filter(p => p.productId).map(p => (
+                  <option key={p.id} value={p.id}>{p.icon === 'droplet' ? '💧' : '🎯'} {p.label}</option>
+                ))}
+              </select>
+
+              <button onClick={() => customerVideoFileRef.current?.click()}
+                disabled={uploadingCustomerVideo}
+                className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium mb-2"
+                style={{ background: theme.ink, color: theme.cream, opacity: uploadingCustomerVideo ? 0.7 : 1 }}>
+                {uploadingCustomerVideo ? (
+                  <><Ic name="loader" className="w-4 h-4 animate-spin" /> ვტვირთავ... {customerUploadProgress}%</>
+                ) : (
+                  <><Ic name="upload" className="w-4 h-4" /> ფაილის ატვირთვა</>
+                )}
+              </button>
+              {uploadingCustomerVideo && customerUploadProgress > 0 && (
+                <div className="mb-2 h-1 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                  <div className="h-full transition-all duration-300"
+                    style={{ width: `${customerUploadProgress}%`, background: theme.wine }} />
+                </div>
+              )}
+              <input ref={customerVideoFileRef} type="file" accept="video/*"
+                onChange={onCustomerVideoFile} className="hidden" />
+
+              <div className="flex items-center gap-2 my-2">
+                <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+                <span className="text-[9px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>{L('profile_or_link', 'ან ლინკი')}</span>
+                <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
+              </div>
+
+              <div className="flex gap-2">
+                <input type="url" value={newCustomerUrl}
+                  onChange={(e) => setNewCustomerUrl(e.target.value)}
+                  placeholder={L('profile_link_placeholder', 'ლინკი ნებისმიერი პლატფორმიდან...')}
+                  className="flex-1 px-3 py-2 rounded-xl outline-none text-sm"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+                <button onClick={addCustomerVideoFromUrl} disabled={!newCustomerUrl.trim()}
+                  className="px-4 rounded-xl text-sm font-medium disabled:opacity-40"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  დამატება
+                </button>
+              </div>
+              <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '77' }}>
+                ✓ YouTube · Instagram (Reels/Posts) · TikTok · Facebook · Vimeo · MP4
+              </p>
+            </div>
+          ) : (
+            <div className="text-xs text-center py-3 rounded-xl" style={{ background: theme.cream, color: theme.ink + '88' }}>
+              მაქსიმუმ მიღწეულია (6 ვიდეო) — წაშალე ერთი დასამატებლად
+            </div>
+          )}
+        </Card>
+
+        {/* Save error message */}
+        {saveError && (
+          <div className="px-4 py-3 rounded-xl text-sm" style={{ background: theme.rose + '22', color: theme.wine, border: `1px solid ${theme.rose}55` }}>
+            ⚠️ {saveError}
+          </div>
+        )}
+
+        {/* Save + Preview action row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onClick={saveProfile} disabled={saving}
+            className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
+            style={{ background: theme.wine, color: theme.cream }}>
+            {saving ? 'ვინახავ...' : <><Ic name="save" className="w-4 h-4" /> შენახვა</>}
+          </button>
+          <button onClick={handlePreview} disabled={saving}
+            className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
+            style={{ background: theme.ink, color: theme.cream }}>
+            <Ic name="eye" className="w-4 h-4" /> ნახე ლენდინგი
+          </button>
+        </div>
+
+        {/* Saved toast */}
+        {savedToast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-3 rounded-full flex items-center gap-2 z-50 anim-fadeup"
+            style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.5)' }}>
+            <Ic name="check-circle" className="w-4 h-4" />
+            <span className="text-sm font-medium">{L('profile_saved', 'შენახულია')}</span>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function Card({ children }) {
+  return <section className="rounded-2xl p-5 sm:p-6 anim-fadeup"
+    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>{children}</section>;
+}
+
+function SectionLabel({ n, t }) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <span className="font-mono text-xs" style={{ color: theme.gold }}>{n}</span>
+      <span className="font-display text-base" style={{ color: theme.ink }}>{t}</span>
+      <div className="flex-1 h-px" style={{ background: `${theme.gold}22` }} />
+    </div>
+  );
+}
+
+function Input({ label, value, onChange, placeholder, icon, iconType, small, green, required, hasError }) {
+  const IconComp = iconType === 'social' ? SocialIcon : Ic;
+  // Brand colors for social media icons — applied when iconType === 'social'
+  const SOCIAL_BRAND_COLORS = {
+    instagram: '#E4405F',  // Instagram pink/magenta
+    facebook:  '#1877F2',  // Facebook blue
+    tiktok:    '#000000',  // TikTok black
+    youtube:   '#FF0000',  // YouTube red
+    telegram:  '#229ED9',  // Telegram sky blue
+    whatsapp:  '#25D366',  // WhatsApp green
+  };
+  const iconColor = green
+    ? '#25D366'
+    : (iconType === 'social' && SOCIAL_BRAND_COLORS[icon])
+      ? SOCIAL_BRAND_COLORS[icon]
+      : theme.gold;
+  return (
+    <div>
+      <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{label}{required && <span style={{ color: '#DC2626', marginLeft: '4px', fontWeight: 700 }}>*</span>}</label>
+      <div className="relative">
+        {icon && <IconComp name={icon} className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+          style={{ color: iconColor }} />}
+        <input type="text" value={value} onChange={onChange} placeholder={placeholder}
+          className={`w-full ${icon ? 'pl-9' : 'pl-3'} pr-3 ${small ? 'py-2' : 'py-2.5'} rounded-xl outline-none text-sm transition-colors`}
+          style={{ background: theme.cream, border: `1.5px solid ${hasError ? '#DC2626' : theme.gold + '33'}`, color: theme.ink }} />
+      </div>
+      {hasError && (
+        <p className="text-[10px] mt-1" style={{ color: '#DC2626' }}>
+          ⚠ შეავსე ეს ველი
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// VIDEO INTRO — embeds rep's video greeting from YouTube/Vimeo/Instagram/TikTok/Facebook
+// or direct video URL (mp4/webm/mov)
+// ════════════════════════════════════════════════════════════════════════════
+function parseVideoUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  const u = url.trim();
+
+  // YouTube: youtube.com/watch?v=, youtu.be/, youtube.com/shorts/, /embed/, /live/
+  const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) {
+    const isShort = /youtube\.com\/shorts\//.test(u);
+    // Preserve timestamp (?t=158s or ?t=158 → embed ?start=158)
+    const tMatch = u.match(/[?&]t=(\d+)/);
+    const startParam = tMatch ? `&start=${tMatch[1]}` : '';
+    return { type: 'youtube', orientation: isShort ? 'vertical' : 'horizontal',
+      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1${startParam}` };
+  }
+
+  // Vimeo: vimeo.com/{id}
+  const vm = u.match(/vimeo\.com\/(\d+)/);
+  if (vm) return { type: 'vimeo', orientation: 'horizontal',
+    embedUrl: `https://player.vimeo.com/video/${vm[1]}` };
+
+  // Instagram: /p/, /reel/, /reels/, /tv/
+  const ig = u.match(/instagram\.com\/(?:p|reel|reels|tv)\/([a-zA-Z0-9_-]+)/);
+  if (ig) return { type: 'instagram', orientation: 'vertical',
+    embedUrl: `https://www.instagram.com/p/${ig[1]}/embed` };
+
+  // TikTok: tiktok.com/@user/video/{id}
+  const tt = u.match(/tiktok\.com\/@[^/]+\/video\/(\d+)/);
+  if (tt) return { type: 'tiktok', orientation: 'vertical',
+    embedUrl: `https://www.tiktok.com/embed/v2/${tt[1]}` };
+
+  // Facebook: facebook.com/watch?v=..., facebook.com/{user}/videos/..., fb.watch/...
+  if (/(?:facebook\.com\/(?:watch|[^/]+\/videos|video\.php|reel)|fb\.watch)/.test(u)) {
+    // Detect if it's a Reel (vertical) vs regular video (horizontal)
+    const isFbReel = /facebook\.com\/reel\//.test(u);
+    return { type: 'facebook', orientation: isFbReel ? 'vertical' : 'horizontal',
+      embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(u)}&show_text=false&width=560` };
+  }
+
+  // Direct video file (mp4, webm, mov, m4v)
+  if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(u)) return { type: 'direct', orientation: 'vertical', url: u };
+
+  // Google Drive video (from uploaded files via upload_video action)
+  if (/drive\.google\.com|googleusercontent\.com/.test(u)) {
+    const idMatch = u.match(/\/d\/([a-zA-Z0-9_-]+)|[?&]id=([a-zA-Z0-9_-]+)/);
+    const driveId = idMatch ? (idMatch[1] || idMatch[2]) : null;
+    if (driveId) return { type: 'drive', orientation: 'vertical',
+      embedUrl: `https://drive.google.com/file/d/${driveId}/preview` };
+  }
+
+  return null;
+}
+
+function VideoIntro({ url }) {
+  const parsed = parseVideoUrl(url);
+  if (!parsed) return null;
+
+  if (parsed.type === 'direct') {
+    return (
+      <video src={parsed.url} controls playsInline
+        className="w-full h-full object-cover"
+        style={{ background: theme.ink }} />
+    );
+  }
+
+  // Hide platform chrome (username, caption, controls bar) by oversizing iframe
+  // and shifting it so only the video portion is visible within the clipped container.
+  // The parent modal already has overflow-hidden, so the cropped parts are invisible.
+  // Tune percentages per platform — measured empirically for typical embed layouts.
+  const cropStyles = {
+    instagram: { top: '-12%', height: '155%' },  // hide top username bar + bottom caption/likes
+    tiktok:    { top: '-6%',  height: '125%' },  // hide bottom info strip + watermark
+    facebook:  { top: '-4%',  height: '115%' },  // minor trim
+    drive:     { top: '-7%',  height: '116%' },  // hide Drive file title bar
+    youtube:   { top: '0',    height: '100%' },  // already minimal with rel=0
+    vimeo:     { top: '0',    height: '100%' },
+  };
+  const crop = cropStyles[parsed.type] || { top: '0', height: '100%' };
+
+  return (
+    <iframe
+      src={parsed.embedUrl}
+      title="წარმომადგენლის ვიდეო მიმართვა"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      style={{
+        position: 'absolute',
+        top: crop.top,
+        left: 0,
+        width: '100%',
+        height: crop.height,
+        border: 0,
+        background: theme.ink,
+      }} />
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ORDER INVOICE PAGE — Beautiful order summary opened via SMS link
+// Accessed via my.farmasi.ge/?order=ORD-XXX-XXX
+// Fetches order from backend by order_id and displays in elegant format.
+// ════════════════════════════════════════════════════════════════════════════
+
+function OrderInvoicePage({ orderId, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!orderId) {
+      setError(L('order_no_id', 'შეკვეთის ID არ მითითებულია'));
+      setLoading(false);
+      return;
+    }
+    api({ action: 'get_order', order_id: orderId })
+      .then(res => {
+        if (res.ok && res.order) {
+          setOrder(res.order);
+        } else {
+          setError(res.error || L('order_not_found', 'შეკვეთა ვერ მოიძებნა'));
+        }
+      })
+      .catch(e => setError(L('order_load_error', 'შეცდომა: ') + e.message))
+      .finally(() => setLoading(false));
+  }, [orderId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full border-4 animate-spin" style={{ borderColor: theme.gold + '33', borderTopColor: theme.wine }} />
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('order_loading', 'შეკვეთა იტვირთება...')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="font-display text-2xl mb-3" style={{ color: theme.ink }}>{L('order_not_found_title', 'შეკვეთა ვერ მოიძებნა')}</h2>
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{error || L('order_not_found_msg', 'შესაძლოა ID არასწორად დაიწერა ან შეკვეთა წაშლილია.')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Parse items if string
+  let items = order.items;
+  if (typeof items === 'string') {
+    try { items = JSON.parse(items); } catch { items = []; }
+  }
+  if (!Array.isArray(items)) items = [];
+
+  const orderDate = order.timestamp ? new Date(order.timestamp) : null;
+  const formattedDate = orderDate
+    ? orderDate.toLocaleString('ka-GE', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '';
+  const statusLabels = {
+    'new': '🆕 ახალი',
+    'processing': '⏳ მუშავდება',
+    'completed': '✅ დასრულდა',
+    'cancelled': '❌ გაუქმდა'
+  };
+  const statusLabel = statusLabels[order.status] || order.status;
+
+  return (
+    <div className="min-h-screen px-5 py-10 sm:py-16 grain" style={{ background: theme.cream }}>
+      {/* Subtle background glow */}
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
+
+      <div className="relative max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <img src="/farmasi-logo.png" alt="FARMASI"
+            className="mx-auto mb-5"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-2" style={{ color: theme.gold }}>
+            🛒 {L('order_eyebrow', 'შეკვეთა')}
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl mb-2" style={{ color: theme.ink }}>
+            {L('order_invoice_title', 'ინვოისი')}
+          </h1>
+          <p className="text-xs font-mono opacity-60" style={{ color: theme.ink }}>{order.order_id}</p>
+        </div>
+
+        {/* Invoice card */}
+        <div className="rounded-3xl overflow-hidden shadow-2xl"
+          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+          
+          {/* Status bar */}
+          <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-2"
+            style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`, color: theme.cream }}>
+            <span className="text-xs tracking-widest uppercase">{statusLabel}</span>
+            {formattedDate && (
+              <span className="text-xs opacity-80">{formattedDate}</span>
+            )}
+          </div>
+
+          {/* Customer info */}
+          <div className="px-6 py-6 sm:px-8 sm:py-8" style={{ borderBottom: `1px solid ${theme.gold}22` }}>
+            <p className="text-[10px] tracking-[0.3em] uppercase mb-4" style={{ color: theme.gold }}>
+              👤 {L('order_customer', 'კლიენტი')}
+            </p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs opacity-60 mb-1" style={{ color: theme.ink }}>{L('order_field_name', 'სახელი გვარი')}</p>
+                <p className="font-display text-lg" style={{ color: theme.ink }}>{order.customer_name}</p>
+              </div>
+              <div>
+                <p className="text-xs opacity-60 mb-1" style={{ color: theme.ink }}>{L('order_field_phone', 'ტელეფონი')}</p>
+                <a href={`tel:+995${order.customer_phone}`}
+                  className="font-display text-lg hover:underline inline-flex items-center gap-2"
+                  style={{ color: theme.wine }}>
+                  📱 {order.customer_phone}
+                </a>
+              </div>
+              <div>
+                <p className="text-xs opacity-60 mb-1" style={{ color: theme.ink }}>{L('order_field_address', 'მისამართი')}</p>
+                <p className="text-sm leading-relaxed" style={{ color: theme.ink }}>{order.customer_address}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Items */}
+          <div className="px-6 py-6 sm:px-8 sm:py-8" style={{ borderBottom: `1px solid ${theme.gold}22` }}>
+            <p className="text-[10px] tracking-[0.3em] uppercase mb-4" style={{ color: theme.gold }}>
+              🛍️ {L('order_items', 'შეძენილი პროდუქტები')}
+            </p>
+            <div className="space-y-3">
+              {items.map((it, idx) => (
+                <div key={idx} className="flex items-center gap-3 py-3"
+                  style={{ borderBottom: idx < items.length - 1 ? `1px dashed ${theme.gold}22` : 'none' }}>
+                  {it.image && (
+                    <div className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ background: theme.cream }}>
+                      <img src={it.image && it.image.startsWith('http') ? it.image : (it.image ? `/${it.image}` : '')} alt={it.name}
+                        className="max-w-full max-h-full object-contain" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm leading-tight mb-1" style={{ color: theme.ink }}>{it.name}</p>
+                    <p className="text-xs opacity-60" style={{ color: theme.ink }}>
+                      {it.quantity} × {it.price} ₾
+                    </p>
+                  </div>
+                  <p className="font-display text-base whitespace-nowrap" style={{ color: theme.wine }}>
+                    {(it.quantity * it.price).toFixed(2)} ₾
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Total */}
+          <div className="px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between"
+            style={{ background: theme.cream }}>
+            <span className="text-sm tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>
+              {L('order_total', 'ჯამი:')}
+            </span>
+            <span className="font-display text-3xl font-bold" style={{ color: theme.wine }}>
+              {Number(order.total).toFixed(2)} ₾
+            </span>
+          </div>
+
+          {/* Rep info footer */}
+          {order.rep_name && (
+            <div className="px-6 py-4 sm:px-8 text-center" style={{ background: theme.ivory, borderTop: `1px solid ${theme.gold}22` }}>
+              <p className="text-xs opacity-70" style={{ color: theme.ink }}>
+                {L('order_rep_label', 'წარმომადგენელი:')} <span className="font-medium">{order.rep_name}</span>
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer note */}
+        <p className="text-center text-xs mt-6 opacity-60" style={{ color: theme.ink }}>
+          {L('order_footer', '© FARMASI Georgia · ეს ლინკი დროებითია, არ გაუზიარო სხვებს')}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CART — Floating cart button + drawer + checkout form + success screen
+// 
+// Renders inline (button is fixed bottom-right, drawer slides from right).
+// All cart state lives in the App component and is passed as props.
+// ════════════════════════════════════════════════════════════════════════════
+
+function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, remove, clear, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const freeShippingLeft = Math.max(0, FREE_SHIPPING_THRESHOLD - total);
+  const freeShippingProgress = items.length > 0 ? Math.min(100, Math.round((total / FREE_SHIPPING_THRESHOLD) * 100)) : 0;
+  const shippingFee = items.length > 0 && freeShippingLeft > 0 ? SHIPPING_FEE : 0;
+  const grandTotal = Math.round((total + shippingFee) * 100) / 100;
+  const [step, setStep] = useState('cart'); // 'cart' | 'checkout' | 'success'
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [customerComment, setCustomerComment] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('bank');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [orderId, setOrderId] = useState('');
+
+  // Reset state when drawer is closed and re-opens fresh from success
+  const close = () => {
+    setOpen(false);
+    setTimeout(() => {
+      if (step === 'success') {
+        setStep('cart');
+        setCustomerName('');
+        setCustomerPhone('');
+        setCustomerAddress('');
+        setOrderId('');
+        setError('');
+      }
+    }, 300);
+  };
+
+  const handleSubmit = async () => {
+    setError('');
+    if (!customerName.trim()) return setError(L('cart_err_name', 'სახელი გვარი სავალდებულოა'));
+    let normalizedPhone = customerPhone.replace(/[^\d]/g, '');
+    if (normalizedPhone.startsWith('995') && normalizedPhone.length > 9) normalizedPhone = normalizedPhone.substring(3);
+    if (!/^5\d{8}$/.test(normalizedPhone)) return setError(L('cart_err_phone', 'ნომერი არასწორი ფორმატია (599XXXXXX)'));
+    if (!customerAddress.trim()) return setError(L('cart_err_addr', 'მისამართი სავალდებულოა'));
+    const paymentLabel = paymentMethod === 'bank'
+      ? L('payment_bank_label', 'საბანკო გადარიცხვა')
+      : L('payment_courier_label', 'კურიერთან გადახდა');
+    
+    setSubmitting(true);
+    try {
+      const res = await api({
+        action: 'submit_order',
+        rep_pid: repPid,
+        customer_name: customerName.trim(),
+        customer_phone: normalizedPhone,
+        customer_address: [
+          customerAddress.trim(),
+          customerComment.trim() ? `${L('cart_comment_order_prefix', 'კომენტარი:')} ${customerComment.trim()}` : '',
+          `${L('payment_order_prefix', 'გადახდის მეთოდი:')} ${paymentLabel}`
+        ].filter(Boolean).join('\n'),
+        customer_comment: customerComment.trim(),
+        payment_method: paymentMethod,
+        items: JSON.stringify([
+          ...items.map(it => ({
+            product_id: it.product_id,
+            name: it.name,
+            quantity: it.quantity,
+            price: it.price
+          })),
+          ...(shippingFee > 0 ? [{
+            product_id: 'shipping_georgia',
+            name: L('shipping_item_name', 'საკურიერო მომსახურება მთელი საქართველოს მასშტაბით'),
+            quantity: 1,
+            price: SHIPPING_FEE
+          }] : [])
+        ])
+      });
+      if (res.ok) {
+        setOrderId(res.order_id || '');
+        setStep('success');
+        clear();
+      } else {
+        setError(res.error || L('cart_err_submit', 'შეცდომა შეკვეთის გაგზავნისას'));
+      }
+    } catch (e) {
+      setError(L('cart_err_network', 'ქსელის შეცდომა: ') + e.message);
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <>
+      {/* Floating cart button — fixed bottom-right, visible always */}
+      <button onClick={() => setOpen(true)} aria-label={L('cart_button_aria', 'კალათა')}
+        className="fixed bottom-6 right-6 z-40 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+        style={{ background: theme.ink, color: theme.cream, width: 60, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Ic name="shopping-bag" className="w-6 h-6" />
+        {count > 0 && (
+          <span className="absolute -top-1 -right-1 rounded-full font-bold flex items-center justify-center"
+            style={{ background: theme.wine, color: theme.cream, minWidth: 24, height: 24, fontSize: 12, padding: '0 6px', border: `2px solid ${theme.cream}` }}>
+            {count}
+          </span>
+        )}
+      </button>
+
+      {/* Drawer backdrop */}
+      {open && (
+        <div onClick={close}
+          className="fixed inset-0 z-50 anim-fadeup"
+          style={{ background: 'rgba(35,23,18,0.55)', backdropFilter: 'blur(4px)' }} />
+      )}
+
+      {/* Drawer panel */}
+      {open && (
+        <div className="fixed top-0 right-0 bottom-0 z-50 overflow-y-auto"
+          style={{ background: theme.cream, width: '100%', maxWidth: 480, boxShadow: '-20px 0 60px -20px rgba(35,23,18,0.4)' }}>
+          
+          {/* Header */}
+          <div className="sticky top-0 z-10 px-5 py-4 flex items-center justify-between"
+            style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}33` }}>
+            <h2 className="font-display text-xl" style={{ color: theme.ink }}>
+              {step === 'cart' && L('cart_title', '🛒 შენი კალათა')}
+              {step === 'checkout' && L('cart_checkout_title', '📝 შეკვეთის გაფორმება')}
+              {step === 'success' && L('cart_success_title', '✅ შეკვეთა მიღებულია!')}
+            </h2>
+            <button onClick={close} className="rounded-full p-2 hover:bg-black/5" aria-label="დახურვა">
+              <Ic name="x" className="w-5 h-5" style={{ color: theme.ink }} />
+            </button>
+          </div>
+
+          <div className="px-5 py-5">
+            {/* STEP: CART — items list */}
+            {step === 'cart' && (
+              <>
+                {items.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Ic name="shopping-bag" className="w-16 h-16 mx-auto mb-4 opacity-30" style={{ color: theme.ink }} />
+                    <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_empty', 'კალათა ცარიელია')}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      {items.map(it => (
+                        <div key={it.product_id}
+                          className="rounded-xl p-3 flex items-center gap-3"
+                          style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                          {it.image && (
+                            <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+                              style={{ background: theme.cream }}>
+                              <img src={it.image} alt={it.name} className="max-w-full max-h-full object-contain" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium leading-tight mb-1" style={{ color: theme.ink }}>{it.name}</div>
+                            <div className="text-xs" style={{ color: theme.wine }}>{it.price} GEL</div>
+                            <div className="flex items-center gap-2 mt-2">
+                              <button onClick={() => updateQty(it.product_id, it.quantity - 1)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-sm hover:scale-110 transition-transform"
+                                style={{ background: theme.cream, border: `1px solid ${theme.gold}44`, color: theme.ink }}>−</button>
+                              <span className="text-sm font-semibold tabular-nums w-6 text-center" style={{ color: theme.ink }}>{it.quantity}</span>
+                              <button onClick={() => updateQty(it.product_id, it.quantity + 1)}
+                                className="w-7 h-7 rounded-full flex items-center justify-center text-sm hover:scale-110 transition-transform"
+                                style={{ background: theme.cream, border: `1px solid ${theme.gold}44`, color: theme.ink }}>+</button>
+                              <button onClick={() => remove(it.product_id)}
+                                className="ml-auto text-xs hover:underline" style={{ color: theme.rose }}>
+                                {L('cart_remove', 'წაშლა')}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-5 pt-4 space-y-2"
+                      style={{ borderTop: `1px solid ${theme.gold}33` }}>
+                      <div className="rounded-xl p-3 mb-3" style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <span className="text-xs font-semibold" style={{ color: theme.ink }}>
+                            {shippingFee === 0
+                              ? L('free_shipping_unlocked', 'უფასო მიწოდება გააქტიურდა')
+                              : `${L('free_shipping_left', 'უფასო მიწოდებამდე დაგრჩა')} ${freeShippingLeft.toFixed(2)} GEL`}
+                          </span>
+                          <span className="text-[10px] font-mono" style={{ color: theme.gold }}>{freeShippingProgress}%</span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                          <div className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${freeShippingProgress}%`, background: shippingFee === 0 ? '#1FAF5B' : theme.wine }} />
+                        </div>
+                        <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '70' }}>
+                          {L('free_shipping_rule', '150 GEL-ზე ზემოთ მიწოდება უფასოა მთელი საქართველოს მასშტაბით')}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'პროდუქტები:')}</span>
+                        <span className="text-sm font-semibold" style={{ color: theme.ink }}>{total.toFixed(2)} GEL</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_shipping_label', 'საკურიერო მომსახურება:')}</span>
+                        <span className="text-sm font-semibold" style={{ color: shippingFee === 0 ? '#1FAF5B' : theme.ink }}>
+                          {shippingFee === 0 ? L('free_shipping_price', 'უფასო') : `${shippingFee.toFixed(2)} GEL`}
+                        </span>
+                      </div>
+                      <p className="text-[11px] leading-relaxed" style={{ color: theme.ink + '70' }}>
+                        {L('cart_shipping_note', 'მიწოდება მთელი საქართველოს მასშტაბით')}
+                      </p>
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                        <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{grandTotal.toFixed(2)} GEL</span>
+                      </div>
+                    </div>
+                    
+                    <button onClick={() => setStep('checkout')}
+                      className="w-full mt-5 py-4 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.01]"
+                      style={{ background: theme.wine, color: theme.cream }}>
+                      {L('cart_checkout_button', 'შეკვეთის გაფორმება')} <Ic name="arrow-right" className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* STEP: CHECKOUT — customer info form */}
+            {step === 'checkout' && (
+              <>
+                <p className="text-xs mb-5" style={{ color: theme.ink + '99' }}>
+                  {L('cart_checkout_hint', '💡 შენი ინფორმაცია წარმომადგენელთან გავა SMS-ით — დაგიკავშირდება შეკვეთის დასადასტურებლად')}
+                </p>
+                
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_name', 'სახელი გვარი')} <span style={{ color: theme.rose }}>*</span>
+                </label>
+                <input type="text" value={customerName} onChange={(e) => { setCustomerName(e.target.value); setError(''); }}
+                  placeholder={L('cart_field_name_placeholder', 'ნინო ცინცაძე')}
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_phone', 'ტელეფონის ნომერი')} <span style={{ color: theme.rose }}>*</span>
+                </label>
+                <input type="tel" inputMode="numeric" value={customerPhone} onChange={(e) => { setCustomerPhone(e.target.value); setError(''); }}
+                  placeholder="599 12 34 56"
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_address', 'მისამართი')} <span style={{ color: theme.rose }}>*</span>
+                </label>
+                <textarea value={customerAddress} onChange={(e) => { setCustomerAddress(e.target.value); setError(''); }}
+                  placeholder={L('cart_field_address_placeholder', 'ქალაქი, უბანი, ქუჩა, კორპუსი, ბინა')}
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_comment', 'კომენტარი შეკვეთაზე')}
+                </label>
+                <textarea value={customerComment} onChange={(e) => { setCustomerComment(e.target.value); setError(''); }}
+                  placeholder={L('cart_field_comment_placeholder', 'მაგ: დამირეკეთ მიწოდებამდე, სადარბაზო 2, ან სასურველი დრო')}
+                  rows={2}
+                  maxLength={300}
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                  {L('payment_method_title', 'გადახდის მეთოდი')}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                  <button type="button" onClick={() => setPaymentMethod('bank')}
+                    className="px-4 py-3 rounded-xl text-left transition hover:scale-[1.01]"
+                    style={{
+                      background: paymentMethod === 'bank' ? theme.ink : theme.ivory,
+                      color: paymentMethod === 'bank' ? theme.cream : theme.ink,
+                      border: `1.5px solid ${paymentMethod === 'bank' ? theme.ink : theme.gold + '44'}`
+                    }}>
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <Ic name="landmark" className="w-4 h-4" />
+                      {L('payment_bank_label', 'საბანკო გადარიცხვა')}
+                    </span>
+                    <span className="block text-[11px] mt-1 opacity-75 leading-relaxed">
+                      {L('payment_bank_note', 'რეკვიზიტებს წარმომადგენელი გამოგიგზავნის შეკვეთის დადასტურებისას')}
+                    </span>
+                  </button>
+                  <button type="button" onClick={() => setPaymentMethod('courier')}
+                    className="px-4 py-3 rounded-xl text-left transition hover:scale-[1.01]"
+                    style={{
+                      background: paymentMethod === 'courier' ? theme.ink : theme.ivory,
+                      color: paymentMethod === 'courier' ? theme.cream : theme.ink,
+                      border: `1.5px solid ${paymentMethod === 'courier' ? theme.ink : theme.gold + '44'}`
+                    }}>
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <Ic name="truck" className="w-4 h-4" />
+                      {L('payment_courier_label', 'კურიერთან გადახდა')}
+                    </span>
+                    <span className="block text-[11px] mt-1 opacity-75 leading-relaxed">
+                      {L('payment_courier_note', 'თანხას გადაიხდი შეკვეთის მიღებისას')}
+                    </span>
+                  </button>
+                </div>
+
+                <div className="mt-4 pt-4 space-y-2"
+                  style={{ borderTop: `1px solid ${theme.gold}33` }}>
+                  <div className="rounded-xl p-3 mb-3" style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-xs font-semibold" style={{ color: theme.ink }}>
+                        {shippingFee === 0
+                          ? L('free_shipping_unlocked', 'უფასო მიწოდება გააქტიურდა')
+                          : `${L('free_shipping_left', 'უფასო მიწოდებამდე დაგრჩა')} ${freeShippingLeft.toFixed(2)} GEL`}
+                      </span>
+                      <span className="text-[10px] font-mono" style={{ color: theme.gold }}>{freeShippingProgress}%</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${freeShippingProgress}%`, background: shippingFee === 0 ? '#1FAF5B' : theme.wine }} />
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '70' }}>
+                      {L('free_shipping_rule', '150 GEL-ზე ზემოთ მიწოდება უფასოა მთელი საქართველოს მასშტაბით')}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'პროდუქტები:')}</span>
+                    <span className="text-sm font-semibold" style={{ color: theme.ink }}>{total.toFixed(2)} GEL</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_shipping_label', 'საკურიერო მომსახურება:')}</span>
+                    <span className="text-sm font-semibold" style={{ color: shippingFee === 0 ? '#1FAF5B' : theme.ink }}>
+                      {shippingFee === 0 ? L('free_shipping_price', 'უფასო') : `${shippingFee.toFixed(2)} GEL`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed" style={{ color: theme.ink + '70' }}>
+                    {L('cart_shipping_note', 'მიწოდება მთელი საქართველოს მასშტაბით')}
+                  </p>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                    <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{grandTotal.toFixed(2)} GEL</span>
+                  </div>
+                </div>
+
+                {error && <p className="text-xs mt-3" style={{ color: theme.rose }}>{error}</p>}
+
+                <button onClick={handleSubmit} disabled={submitting}
+                  className="w-full mt-5 py-4 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.01] disabled:opacity-50"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  {submitting ? L('cart_submitting', 'იგზავნება...') : <>{L('cart_submit_button', 'შეკვეთის გაგზავნა')} <Ic name="send" className="w-4 h-4" /></>}
+                </button>
+                
+                <button onClick={() => setStep('cart')} disabled={submitting}
+                  className="w-full mt-2 text-xs tracking-widest uppercase py-2"
+                  style={{ color: theme.ink + '88' }}>
+                  {L('cart_back_button', '← უკან კალათაში')}
+                </button>
+              </>
+            )}
+
+            {/* STEP: SUCCESS */}
+            {step === 'success' && (
+              <div className="text-center py-8">
+                <div className="w-20 h-20 rounded-full mx-auto mb-5 flex items-center justify-center"
+                  style={{ background: theme.gold + '33' }}>
+                  <Ic name="check" className="w-10 h-10" style={{ color: theme.wine }} />
+                </div>
+                <h3 className="font-display text-2xl mb-3" style={{ color: theme.ink }}>
+                  {L('cart_success_msg_1', 'მადლობა შენი შეკვეთისთვის!')}
+                </h3>
+                <p className="text-sm mb-2" style={{ color: theme.ink + '99' }}>
+                  {repName ? `${repName} ` : ''}{L('cart_success_msg_2', 'მალე დაგიკავშირდება შეკვეთის დასადასტურებლად')}
+                </p>
+                {orderId && (
+                  <p className="text-xs mt-4 font-mono" style={{ color: theme.ink + '77' }}>
+                    {L('cart_success_order_id', 'შეკვეთის ID:')} {orderId}
+                  </p>
+                )}
+                <button onClick={close}
+                  className="w-full mt-8 py-3 rounded-xl font-medium text-sm tracking-wider uppercase"
+                  style={{ background: theme.ink, color: theme.cream }}>
+                  {L('cart_success_close', 'დახურვა')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], labels = {}, cart }) {
+  // i18n-style label helper — Sheet override wins, hardcoded fallback otherwise
+  const t = (key, fallback = '') => (labels && labels[key]) || fallback;
+  const [chatOpen, setChatOpen] = useState(false);
+  const [photoZoom, setPhotoZoom] = useState(false);
+  const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
+  const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  // Lead capture form state
+  const [leadName, setLeadName] = useState('');
+  const [leadPhone, setLeadPhone] = useState('');
+  const [leadMessage, setLeadMessage] = useState('');
+  const [leadSending, setLeadSending] = useState(false);
+  const [leadSent, setLeadSent] = useState(false);
+  const [leadError, setLeadError] = useState('');
+  const [catalogQuery, setCatalogQuery] = useState('');
+  const [catalogCategory, setCatalogCategory] = useState('all');
+  const [catalogLimit, setCatalogLimit] = useState(12);
+  // Rep's curated products (Sheet: RepProducts) — shown as "rep's pick" section
+  const [repPicks, setRepPicks] = useState([]);
+  // Selected pick product → opens elegant ProductDetailModal (same as problem flow)
+  const [pickModalProduct, setPickModalProduct] = useState(null);
+
+  // Fetch rep's curated products on mount
+  useEffect(() => {
+    if (!repCode) return;
+    api({ action: 'get_rep_products', pid: repCode })
+      .then(data => { if (data.ok && Array.isArray(data.products)) setRepPicks(data.products); })
+      .catch(() => {});
+  }, [repCode]);
+  const expandedRef = useRef(null);
+  const heroPhotoTiltRef = useRef(null);
+  const heroPhotoContainerRef = useRef(null);
+  // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
+  const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
+  const goShop = () => window.open(referralUrl, '_blank');
+  const goCatalog = () => window.open(CATALOG_URL, '_blank');
+
+  // Sync with initialProblem changes (e.g. URL deep-link)
+  useEffect(() => {
+    if (initialProblem) {
+      setSelectedProblem(initialProblem);
+      setTimeout(() => expandedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+    }
+  }, [initialProblem]);
+
+  // Scroll-triggered reveal — adds 'is-visible' class when element enters viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target); // animate once
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+    const elements = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right, .reveal-scale');
+    elements.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [selectedProblem]); // re-run when expanded content mounts
+
+  // Reading progress — fills a thin bar at top as user scrolls
+  useEffect(() => {
+    const handleScroll = () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = total > 0 ? (window.scrollY / total) * 100 : 0;
+      setScrollProgress(Math.min(100, Math.max(0, progress)));
+      // Show floating scroll-to-top button after scrolling 600px
+      setShowScrollTop(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Hero photo 3D tilt — interactive mouse-tracking
+  const handleHeroPhotoMove = (e) => {
+    if (!heroPhotoContainerRef.current || !heroPhotoTiltRef.current) return;
+    const rect = heroPhotoContainerRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    heroPhotoTiltRef.current.style.transform =
+      `perspective(1400px) rotateY(${px * 12}deg) rotateX(${-py * 8}deg) scale(1.02)`;
+  };
+
+  const handleHeroPhotoLeave = () => {
+    if (heroPhotoTiltRef.current) heroPhotoTiltRef.current.style.transform = '';
+  };
+
+
+  // Quiz click → expand content inline + smooth scroll to it
+  const handleProblemSelect = (problem) => {
+    setSelectedProblem(problem);
+    if (onClearProblem) onClearProblem(); // Clear App-level state if it was set from URL
+    // Smooth scroll to expanded content
+    setTimeout(() => expandedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  };
+
+  const clearSelection = () => {
+    setSelectedProblem(null);
+    if (onClearProblem) onClearProblem();
+    // Scroll back to quiz
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const socials = [
+    rep.instagram && { icon: 'instagram', label: 'Instagram', href: rep.instagram.startsWith('http') ? rep.instagram : `https://instagram.com/${rep.instagram.replace('@','')}` },
+    rep.facebook  && { icon: 'facebook',  label: 'Facebook',  href: rep.facebook.startsWith('http') ? rep.facebook : `https://facebook.com/${rep.facebook}` },
+    rep.tiktok    && { icon: 'tiktok',    label: 'TikTok',    href: rep.tiktok.startsWith('http') ? rep.tiktok : `https://tiktok.com/${rep.tiktok.startsWith('@') ? rep.tiktok : '@'+rep.tiktok}` },
+    rep.youtube   && { icon: 'youtube',   label: 'YouTube',   href: rep.youtube.startsWith('http') ? rep.youtube : `https://youtube.com/${rep.youtube}` },
+    rep.telegram  && { icon: 'telegram',  label: 'Telegram',  href: rep.telegram.startsWith('http') ? rep.telegram : `https://t.me/${rep.telegram.replace('@','')}` },
+  ].filter(Boolean);
+  const activeProblems = problems.filter(p => p.productId);
+  const quickTestProblems = activeProblems.slice(0, 3);
+  const featuredProduct =
+    dynamicProducts.find(p => p && (p.featured === true || String(p.featured || '').toLowerCase() === 'true' || String(p.featured || '') === '1')) ||
+    repPicks[0] ||
+    dynamicProducts.find(p => p && p.active) ||
+    dynamicProducts[0] ||
+    null;
+  const catalogProducts = dynamicProducts.filter(p => p && p.active !== false && p.price);
+  const catalogCategories = ['all', ...Array.from(new Set(catalogProducts.map(p => p.cat || p.category || '').filter(Boolean)))];
+  const filteredCatalogProducts = catalogProducts.filter(p => {
+    const query = catalogQuery.trim().toLowerCase();
+    const category = p.cat || p.category || '';
+    const matchesCategory = catalogCategory === 'all' || category === catalogCategory;
+    const matchesQuery = !query || [p.name, p.desc, p.cat, p.category, p.id, p.sku].filter(Boolean).join(' ').toLowerCase().includes(query);
+    return matchesCategory && matchesQuery;
+  });
+  const visibleCatalogProducts = filteredCatalogProducts.slice(0, catalogLimit);
+  const hasMoreCatalogProducts = visibleCatalogProducts.length < filteredCatalogProducts.length;
+
+  return (
+    <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+      {/* Sticky back-to-quiz button — visible only when problem is selected */}
+      {selectedProblem && (
+        <button onClick={clearSelection}
+          className="fixed top-4 left-4 z-[55] flex items-center gap-2 px-4 py-2.5 rounded-full text-xs tracking-[0.15em] uppercase font-medium transition hover:scale-105 hover:gap-3 backdrop-blur-md"
+          style={{
+            background: theme.ink + 'EE',
+            color: theme.cream,
+            boxShadow: `0 10px 30px -10px ${theme.ink}99`,
+            border: `1px solid ${theme.gold}55`
+          }}>
+          <Ic name="arrow-left" className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">{t('other_problem', 'სხვა პრობლემა')}</span>
+          <span className="sm:hidden">{t('back_button_mobile', 'უკან')}</span>
+        </button>
+      )}
+
+      {/* Reading progress bar — fills as user scrolls */}
+      <div className="fixed top-0 left-0 right-0 h-[2px] z-[60] pointer-events-none"
+        style={{ background: theme.ink + '08' }}>
+        <div className="h-full transition-[width] duration-150 ease-out"
+          style={{
+            width: `${scrollProgress}%`,
+            background: `linear-gradient(90deg, ${theme.wine}, ${theme.gold})`,
+            boxShadow: `0 0 8px ${theme.wine}66`
+          }} />
+      </div>
+
+      {/* ═══ HERO — Premium representative landing ═══ */}
+      <section className="premium-hero premium-shell relative overflow-hidden">
+        <div className="relative w-full max-w-7xl mx-auto px-5 sm:px-10 lg:px-12 py-8 sm:py-12 lg:py-14">
+          <header className="flex items-center justify-between gap-5 pb-7 mb-10" style={{ borderBottom: `1px solid ${theme.ink}12` }}>
+            <div className="flex items-center gap-3 min-w-0">
+              <img src="/farmasi-logo.png" alt="FARMASI" className="h-8 sm:h-9 w-auto object-contain" />
+              <span className="hidden sm:block h-5 w-px" style={{ background: theme.ink + '18' }} />
+              <span className="premium-kicker hidden sm:inline" style={{ color: theme.sage }}>
+                {t('hero_topbar_full', 'პერსონალური კონსულტანტი')}
+              </span>
+            </div>
+            <div className="premium-kicker text-right" style={{ color: theme.ink + '78' }}>
+              {rep.city || t('hero_country', 'საქართველო')}
+            </div>
+          </header>
+
+          <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+            <div className="lg:col-span-7 order-2 lg:order-1 anim-fadeup">
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                <p className="premium-kicker font-semibold" style={{ color: theme.gold }}>
+                  {t('hero_rep_role', 'FARMASI წარმომადგენელი')}
+                </p>
+                <span className="px-3 py-1 rounded-full text-[10px] tracking-[0.18em] uppercase font-semibold"
+                  style={{ background: theme.ink, color: theme.cream }}>
+                  PREMIUM v2
+                </span>
+              </div>
+
+              <h1 className="premium-title font-display mb-6"
+                style={{
+                  color: theme.ink,
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  hyphens: 'auto'
+                }}>
+                {rep.name || t('hero_name_placeholder', 'შენი სახელი')}
+              </h1>
+
+              <p className="premium-copy max-w-2xl mb-6" style={{ color: theme.ink + 'CC' }}>
+                {rep.bio || t('hero_default_intro', 'დაგეხმარები FARMASI-ის პროდუქტების სწორად შერჩევაში, შეკვეთის გაფორმებაში და თუ გსურს, წარმომადგენლად რეგისტრაციაშიც.')}
+              </p>
+
+              <div className="grid sm:grid-cols-3 gap-4 max-w-2xl mb-8">
+                <div className="premium-stat pt-4">
+                  <p className="text-2xl font-display" style={{ color: theme.ink }}>1:1</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: theme.ink + '88' }}>
+                    {t('hero_stat_consulting', 'პერსონალური შერჩევა')}
+                  </p>
+                </div>
+                <div className="premium-stat pt-4">
+                  <p className="text-2xl font-display" style={{ color: theme.ink }}>24h</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: theme.ink + '88' }}>
+                    {t('hero_stat_reply', 'სწრაფი პასუხი')}
+                  </p>
+                </div>
+                <div className="premium-stat pt-4">
+                  <p className="text-2xl font-display" style={{ color: theme.ink }}>FARMASI</p>
+                  <p className="text-xs leading-relaxed mt-1" style={{ color: theme.ink + '88' }}>
+                    {t('hero_stat_brand', 'ოფიციალური კატალოგი')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 max-w-xl">
+                <button onClick={() => document.getElementById('pain-quiz-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="premium-btn group flex-1 px-6 flex items-center justify-center gap-3 font-semibold text-xs tracking-[0.16em] uppercase transition hover:translate-y-[-1px]"
+                  style={{ background: theme.ink, color: theme.cream, boxShadow: `0 20px 48px -22px ${theme.ink}` }}>
+                  <Ic name="sparkles" className="w-4 h-4" />
+                  {t('hero_cta_primary', 'შემირჩიე პროდუქტი')}
+                  <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+                </button>
+                {rep.whatsapp && (
+                  <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა${rep.name ? ', ' + rep.name : ''}! მინდა FARMASI-ის კონსულტაცია.`)}`} target="_blank" rel="noreferrer"
+                    className="premium-btn group flex-1 px-6 flex items-center justify-center gap-3 font-semibold text-xs tracking-[0.16em] uppercase transition hover:translate-y-[-1px]"
+                    style={{ background: '#1FAF5B', color: '#fff', boxShadow: '0 20px 48px -22px rgba(31,175,91,.95)' }}>
+                    <SocialIcon name="whatsapp" className="w-4 h-4" />
+                    {t('hero_cta_consultation', 'WhatsApp კონსულტაცია')}
+                  </a>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-x-5 gap-y-3 mt-7 text-[11px] tracking-[0.16em] uppercase">
+                <button onClick={goCatalog} className="flex items-center gap-2 transition hover:opacity-70" style={{ color: theme.cocoa }}>
+                  <Ic name="book-open" className="w-3.5 h-3.5" /> {t('hero_catalog_link', 'PDF კატალოგი')}
+                </button>
+                <button onClick={() => document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex items-center gap-2 transition hover:opacity-70" style={{ color: theme.cocoa }}>
+                  <Ic name="shopping-bag" className="w-3.5 h-3.5" /> {t('hero_shop_catalog_link', 'პროდუქტები')}
+                </button>
+                <button onClick={goShop} className="flex items-center gap-2 transition hover:opacity-70" style={{ color: theme.cocoa }}>
+                  <Ic name="user-plus" className="w-3.5 h-3.5" /> {t('hero_join_link', 'რეგისტრაცია')}
+                </button>
+                {rep.phone && (
+                  <a href={`tel:${rep.phone}`} className="flex items-center gap-2 transition hover:opacity-70" style={{ color: theme.cocoa }}>
+                    <Ic name="phone" className="w-3.5 h-3.5" /> {t('hero_social_phone', 'დარეკე')}
+                  </a>
+                )}
+              </div>
+
+              {socials.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-6">
+                  {socials.map((s, i) => (
+                    <a key={i} href={s.href} target="_blank" rel="noreferrer"
+                      className="w-10 h-10 rounded-full flex items-center justify-center transition hover:translate-y-[-1px]"
+                      style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.ink}12` }} title={s.label}>
+                      <SocialIcon name={s.icon} className="w-4 h-4" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-5 order-1 lg:order-2 anim-fadeup" style={{ animationDelay: '120ms' }}>
+              <div ref={heroPhotoContainerRef} onMouseMove={handleHeroPhotoMove} onMouseLeave={handleHeroPhotoLeave}
+                className="relative max-w-[22rem] sm:max-w-md mx-auto lg:max-w-none" style={{ perspective: '1400px' }}>
+                <div ref={heroPhotoTiltRef} className="product-tilt-3d">
+                  <div onClick={() => rep.photo && setPhotoZoom(true)}
+                    className="premium-photo relative aspect-[4/5] overflow-hidden cursor-zoom-in">
+                    {rep.photo
+                      ? <img src={rep.photo} alt={rep.name || 'FARMASI representative'} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center text-8xl font-display"
+                           style={{ background: theme.mist, color: theme.wine }}>
+                          {rep.name.charAt(0) || '?'}
+                        </div>}
+
+                    <div className="absolute left-4 right-4 bottom-4 p-4 rounded-md backdrop-blur-md"
+                      style={{ background: 'rgba(255,252,248,.86)', color: theme.ink }}>
+                      <p className="premium-kicker mb-1" style={{ color: theme.gold }}>
+                        {t('hero_photo_badge', 'კონსულტაცია და შეკვეთა')}
+                      </p>
+                      <p className="font-display text-xl leading-tight">{rep.name || t('hero_name_placeholder', 'FARMASI')}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {rep.videoUrl && parseVideoUrl(rep.videoUrl) && (
+                  <button onClick={() => setVideoToPlay(rep.videoUrl)}
+                    className="absolute -bottom-5 -right-2 sm:-right-5 w-20 h-20 rounded-full flex items-center justify-center transition hover:scale-105"
+                    style={{
+                      background: theme.ink,
+                      color: theme.cream,
+                      boxShadow: `0 22px 48px -18px ${theme.ink}AA`,
+                      border: `1px solid ${theme.gold}55`
+                    }}>
+                    <Ic name="play" className="w-6 h-6" style={{ marginLeft: '3px' }} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 lg:mt-16 flex items-center gap-4" style={{ color: theme.ink + '55' }}>
+            <div className="h-px flex-1" style={{ background: theme.ink + '14' }} />
+            <span className="premium-kicker">{t('hero_scroll_hint', 'აირჩიე შენი საჭიროება')}</span>
+            <div className="h-px flex-1" style={{ background: theme.ink + '14' }} />
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ WOW STRIP — Daily offer + fast test ═══ */}
+      <section className="px-5 sm:px-12 py-12" style={{ background: theme.cream }}>
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-5">
+          <div className="rounded-2xl p-5 sm:p-7" style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: theme.wine + '12', color: theme.wine }}>
+                <Ic name="sparkles" className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="premium-kicker mb-2" style={{ color: theme.gold }}>
+                  {t('daily_offer_eyebrow', 'დღის რჩეული შეთავაზება')}
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl leading-tight mb-2" style={{ color: theme.ink }}>
+                  {featuredProduct?.name || t('daily_offer_title', 'შეარჩიე ნაკრები კონსულტანტთან ერთად')}
+                </h2>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: theme.ink + 'AA' }}>
+                  {featuredProduct
+                    ? t('daily_offer_subtitle_product', 'დღეს ეს პროდუქტი გამოვყავით სწრაფი რეკომენდაციისთვის. შეგიძლია დაამატო კალათაში ან ჯერ კონსულტაცია მიიღო.')
+                    : t('daily_offer_subtitle_empty', 'მითხარი რა გჭირდება და დღესვე შეგირჩევ ყველაზე სწორ პროდუქტს ან ნაკრებს.')}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {featuredProduct && cart && (
+                    <button onClick={() => { cart.addItem({ product_id: featuredProduct.id, name: featuredProduct.name, price: featuredProduct.price, image: featuredProduct.image, quantity: 1 }); cart.setOpen(true); }}
+                      className="px-5 py-3 rounded-full text-xs tracking-[0.16em] uppercase font-semibold flex items-center justify-center gap-2 transition hover:scale-[1.01]"
+                      style={{ background: theme.ink, color: theme.cream }}>
+                      <Ic name="shopping-bag" className="w-4 h-4" />
+                      {t('daily_offer_add', 'კალათაში დამატება')}
+                    </button>
+                  )}
+                  <button onClick={() => document.getElementById('pain-quiz-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="px-5 py-3 rounded-full text-xs tracking-[0.16em] uppercase font-semibold flex items-center justify-center gap-2 transition hover:scale-[1.01]"
+                    style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}44` }}>
+                    <Ic name="wand-sparkles" className="w-4 h-4" />
+                    {t('daily_offer_test', 'სწრაფი ტესტი')}
+                  </button>
+                </div>
+              </div>
+              {featuredProduct?.image && (
+                <div className="hidden sm:flex w-24 h-24 rounded-xl items-center justify-center p-3 flex-shrink-0"
+                  style={{ background: theme.cream }}>
+                  <img src={featuredProduct.image} alt={featuredProduct.name} className="max-w-full max-h-full object-contain" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-5 sm:p-7" style={{ background: theme.ink, color: theme.cream }}>
+            <p className="premium-kicker mb-3" style={{ color: theme.gold }}>
+              {t('quick_test_eyebrow', '30 წამიანი სწრაფი ტესტი')}
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl leading-tight mb-4">
+              {t('quick_test_title', 'რა გინდა დღეს ყველაზე მეტად გააუმჯობესო?')}
+            </h2>
+            <div className="grid gap-2">
+              {quickTestProblems.map(p => (
+                <button key={p.id} onClick={() => handleProblemSelect(p)}
+                  className="w-full px-4 py-3 rounded-xl text-left flex items-center justify-between gap-3 transition hover:translate-x-1"
+                  style={{ background: theme.cream + '10', border: `1px solid ${theme.cream}18` }}>
+                  <span className="flex items-center gap-3 text-sm">
+                    <Ic name={p.icon} className="w-4 h-4" style={{ color: p.accent }} />
+                    {p.label}
+                  </span>
+                  <Ic name="arrow-right" className="w-4 h-4" style={{ color: theme.gold }} />
+                </button>
+              ))}
+              <button onClick={() => setChatOpen(true)}
+                className="w-full px-4 py-3 rounded-xl text-left flex items-center justify-between gap-3 transition hover:translate-x-1"
+                style={{ background: theme.gold + '20', border: `1px solid ${theme.gold}33` }}>
+                <span className="flex items-center gap-3 text-sm">
+                  <Ic name="message-circle" className="w-4 h-4" style={{ color: theme.gold }} />
+                  {t('quick_test_other', 'სხვა კითხვა მაქვს')}
+                </span>
+                <Ic name="arrow-right" className="w-4 h-4" style={{ color: theme.gold }} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ MANIFESTO — Editorial statement moment ═══ */}
+      <section className="relative overflow-hidden py-20 sm:py-32 px-5 sm:px-12"
+        style={{ background: theme.ink, color: theme.cream }}>
+        {/* Atmospheric gradient */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full opacity-[0.12] blur-3xl"
+          style={{ background: theme.wine }} />
+        <div className="absolute -bottom-40 right-1/4 w-[500px] h-[400px] rounded-full opacity-[0.08] blur-3xl"
+          style={{ background: theme.gold }} />
+
+        <div className="relative max-w-4xl mx-auto">
+          {/* Chapter marker */}
+          <div className="flex items-center gap-4 mb-12 anim-fadeup">
+            <span className="font-display-lat italic text-2xl" style={{ color: theme.gold }}>I.</span>
+            <div className="h-px flex-1" style={{ background: theme.cream + '22' }} />
+            <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.cream + '77' }}>
+              {t('manifesto_chapter', 'ფილოსოფია')}
+            </span>
+          </div>
+
+          {/* Main statement — massive editorial typography */}
+          <div className="anim-fadeup" style={{ animationDelay: '120ms' }}>
+            <p className="font-display leading-[1.05] mb-12"
+              style={{
+                fontSize: 'clamp(2.25rem, 6vw, 4.5rem)',
+                color: theme.cream,
+                letterSpacing: '-0.01em'
+              }}>
+              {t('manifesto_headline_1', 'სწორი არჩევანი')}<br />
+              <span className="font-display-lat italic" style={{ color: theme.gold }}>
+                {t('manifesto_headline_2', 'იწყება ყურადღებით.')}
+              </span>
+            </p>
+
+            <p className="font-display-lat italic leading-[1.4] max-w-2xl"
+              style={{
+                fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)',
+                color: theme.cream + 'CC'
+              }}>
+                {t('manifesto_sub_1', 'მომწერე, მითხარი რა გჭირდება')}<br />
+                {t('manifesto_sub_2', 'და ერთად შევარჩევთ სწორ გზას.')}
+            </p>
+          </div>
+
+          {/* Signature — first name of the rep */}
+          {rep.name && (
+            <div className="mt-16 flex items-center gap-4 anim-fadeup" style={{ animationDelay: '240ms' }}>
+              <div className="h-px w-12" style={{ background: theme.gold }} />
+              <p className="font-display-lat italic text-sm" style={{ color: theme.gold }}>
+                {rep.name.split(' ')[0]}
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══ PAIN QUIZ — Pain → Solution Engine entry point (Sprint 6) ═══ */}
+      <div id="pain-quiz-section">
+        <PainQuiz onSelect={handleProblemSelect} selectedId={selectedProblem?.id} problems={problems} rep={rep} t={t} />
+      </div>
+
+      {/* ═══ EXPANDED CONTENT — only shown when user clicks a problem ═══ */}
+      {/* New flow: full empathy bridge → stories → products (in that order) */}
+      {selectedProblem ? (
+        <div ref={expandedRef} className="anim-fadeup">
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT III — EMPATHY BRIDGE                                       ║ */}
+          {/* ║ Full editorial empathy moment. No CTAs, no products yet.      ║ */}
+          {/* ║ Just: I see you. You're not alone. Here's my story too.       ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          <section className="relative overflow-hidden py-20 sm:py-28 px-5 sm:px-12"
+            style={{ background: `linear-gradient(180deg, ${theme.cream} 0%, ${theme.ivory} 50%, ${theme.cream} 100%)` }}>
+
+            {/* Atmospheric problem-accent gradients — soft cinematic glow */}
+            <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full opacity-[0.18] blur-3xl pointer-events-none"
+              style={{ background: selectedProblem.accent }} />
+            <div className="absolute top-1/2 -left-40 w-[500px] h-[500px] rounded-full opacity-[0.12] blur-3xl pointer-events-none"
+              style={{ background: theme.gold }} />
+            <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+              style={{ background: theme.blush }} />
+
+            <div className="relative max-w-3xl mx-auto">
+
+              {/* Editorial chapter marker — III. თანაგრძნობა */}
+              <div className="flex items-center gap-4 mb-14 reveal-up max-w-2xl mx-auto">
+                <span className="font-display-lat italic text-2xl" style={{ color: selectedProblem.accent }}>III.</span>
+                <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                  {t('act3_chapter', 'თანაგრძნობა')}
+                </span>
+              </div>
+
+              {/* Eyebrow pill — problem icon + label */}
+              <div className="text-center mb-8 reveal-up">
+                <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full backdrop-blur-sm"
+                  style={{
+                    background: selectedProblem.accent + '11',
+                    border: `1px solid ${selectedProblem.accent}44`
+                  }}>
+                  <Ic name={selectedProblem.icon} className="w-3.5 h-3.5" style={{ color: selectedProblem.accent }} />
+                  <span className="text-[10px] tracking-[0.3em] uppercase font-medium" style={{ color: selectedProblem.accent }}>
+                    {selectedProblem.bridge?.eyebrow || t('act3_eyebrow_default', 'შენ აირჩიე')} · {selectedProblem.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Massive editorial headline */}
+              <h2 className="font-display text-center mb-14 reveal-up"
+                style={{
+                  fontSize: 'clamp(2.5rem, 7.5vw, 5.5rem)',
+                  color: theme.ink,
+                  lineHeight: 1.02,
+                  letterSpacing: '-0.025em'
+                }}>
+                {selectedProblem.bridge?.headline || t('act3_headline_default', 'ვიცი ეს ტკივილი.')}
+              </h2>
+
+              {/* Empathy paragraphs — staggered reveal as user scrolls */}
+              {selectedProblem.bridge?.paragraphs && selectedProblem.bridge.paragraphs.length > 0 && (
+                <div className="max-w-xl mx-auto space-y-7 mb-16">
+                  {selectedProblem.bridge.paragraphs.map((p, i) => (
+                    <p key={i} className="font-display-lat italic text-center leading-[1.65] reveal-up"
+                      style={{
+                        color: theme.ink + 'CC',
+                        fontSize: 'clamp(1.1rem, 1.9vw, 1.4rem)',
+                        animationDelay: `${i * 120}ms`
+                      }}>
+                      {p}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              {/* "You're not alone" — stat card with soft glow */}
+              {selectedProblem.bridge?.stat && (
+                <div className="max-w-xl mx-auto rounded-3xl p-7 sm:p-10 mb-12 text-center reveal-up"
+                  style={{
+                    background: `linear-gradient(135deg, ${selectedProblem.accent}11, ${theme.cream} 70%)`,
+                    border: `1px solid ${selectedProblem.accent}33`,
+                    boxShadow: `0 20px 60px -20px ${selectedProblem.accent}33, 0 4px 20px -8px ${selectedProblem.accent}22`
+                  }}>
+                  <div className="flex justify-center mb-4">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                      style={{
+                        background: selectedProblem.accent + '22',
+                        boxShadow: `0 4px 16px ${selectedProblem.accent}33`
+                      }}>
+                      <Ic name="users" className="w-5 h-5" style={{ color: selectedProblem.accent }} />
+                    </div>
+                  </div>
+                  <p className="text-base sm:text-lg leading-relaxed font-display" style={{ color: theme.ink }}>
+                    {selectedProblem.bridge.stat}
+                  </p>
+                </div>
+              )}
+
+              {/* Rep personal note — humanizing touch (advisory, not personal-claim) */}
+              {rep.name && selectedProblem.bridge && (
+                <div className="max-w-md mx-auto flex items-center gap-4 p-5 rounded-3xl mb-14 reveal-up"
+                  style={{
+                    background: theme.cream,
+                    border: `1px solid ${theme.gold}33`,
+                    boxShadow: `0 12px 40px -12px ${selectedProblem.accent}33, 0 2px 8px ${theme.ink}08`
+                  }}>
+                  <div className="relative flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden"
+                      style={{
+                        border: `2px solid ${theme.cream}`,
+                        boxShadow: `0 6px 16px ${selectedProblem.accent}44`
+                      }}>
+                      {rep.photo
+                        ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center text-xl font-display"
+                             style={{ background: theme.mist, color: theme.gold }}>
+                            {rep.name.charAt(0) || '?'}
+                          </div>}
+                    </div>
+                    {/* Soft accent dot */}
+                    <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full"
+                      style={{ background: selectedProblem.accent, border: `2px solid ${theme.cream}` }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] tracking-[0.2em] uppercase mb-1.5 font-medium" style={{ color: theme.gold }}>
+                      {rep.name.split(' ')[0]} {t('rep_card_says_suffix', 'ამბობს')}
+                    </p>
+                    <p className="text-sm sm:text-base italic font-display-lat leading-snug" style={{ color: theme.ink }}>
+                      "{selectedProblem.bridge.repNote || t('rep_note_default', 'ბევრს დავეხმარე ამ გზის გავლაში — შენც გვერდში გაგიდექი.')}"
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Soft scroll prompt — natural transition to what comes next */}
+              <div className="text-center reveal-up">
+                <div className="inline-flex flex-col items-center gap-3" style={{ color: theme.ink + '66' }}>
+                  <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: selectedProblem.accent }}>
+                    {(() => {
+                      const hasVideos = (rep.customerVideos || []).filter(v =>
+                        !v.problem || v.problem === selectedProblem.id
+                      ).length > 0;
+                      return hasVideos
+                        ? t('act3_scroll_prompt_with_videos', 'ნახე ვინ გაიარა ეს გზა')
+                        : t('act3_scroll_prompt_no_videos', 'ნახე რამ უშველათ');
+                    })()}
+                  </p>
+                  <div className="w-px h-14 animate-pulse"
+                    style={{ background: `linear-gradient(to bottom, ${selectedProblem.accent}88, transparent)` }} />
+                  <Ic name="chevron-down" className="w-4 h-4" style={{ color: selectedProblem.accent + 'AA' }} />
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT IV — SCIENCE: WHAT'S ACTUALLY HAPPENING                    ║ */}
+          {/* ║ Free knowledge before any product mention. Trust through      ║ */}
+          {/* ║ understanding, not emotional manipulation.                    ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          {selectedProblem.bridge?.science && (
+            <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+              style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
+              {/* Atmospheric knowledge glow — cool tone */}
+              <div className="absolute -top-20 right-1/4 w-[500px] h-[400px] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+                style={{ background: '#0EA5E9' }} />
+              <div className="absolute bottom-0 left-1/4 w-[400px] h-[300px] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
+                style={{ background: theme.gold }} />
+
+              <div className="relative max-w-3xl mx-auto">
+                {/* Editorial chapter marker — IV. გაცნობიერება */}
+                <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+                  <span className="font-display-lat italic text-2xl" style={{ color: theme.ink }}>IV.</span>
+                  <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                  <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                    {t('act4_chapter', 'გაცნობიერება')}
+                  </span>
+                </div>
+
+                <div className="text-center mb-14 reveal-up">
+                  <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                    {t('act4_eyebrow', '✦ რა ხდება სინამდვილეში')}
+                  </p>
+                  <h2 className="font-display leading-[0.95] mb-4"
+                    style={{
+                      fontSize: 'clamp(2rem, 5.5vw, 3.75rem)',
+                      color: theme.ink,
+                      letterSpacing: '-0.02em'
+                    }}>
+                    {t('act4_headline_left', 'ცოდნა')} <span className="font-display-lat italic font-normal" style={{ color: theme.ink + '66' }}>&gt;</span> {t('act4_headline_right', 'იმპულსი')}
+                  </h2>
+                  <p className="font-display-lat italic text-base sm:text-lg max-w-lg mx-auto" style={{ color: theme.ink + 'AA' }}>
+                    {t('act4_subtitle', 'სანამ კოსმეტიკას ცდი — გასაგები რატომ.')}
+                  </p>
+                </div>
+
+                {/* Science paragraphs — each with a decorative marker icon */}
+                <div className="space-y-7 max-w-2xl mx-auto">
+                  {selectedProblem.bridge.science.split(/\n+/).filter(Boolean).map((para, i) => {
+                    const cycleIcons = ['sparkles', 'lightbulb', 'compass'];
+                    const iconName = cycleIcons[i % cycleIcons.length];
+                    return (
+                      <div key={i} className="flex gap-4 sm:gap-5 reveal-up"
+                        style={{ animationDelay: `${i * 120}ms` }}>
+                        <div className="flex-shrink-0">
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center mt-1"
+                            style={{
+                              background: theme.gold + '12',
+                              border: `1px solid ${theme.gold}33`,
+                              boxShadow: `0 4px 12px ${theme.gold}22`
+                            }}>
+                            <Ic name={iconName} className="w-4 h-4 sm:w-[18px] sm:h-[18px]" style={{ color: theme.gold }} />
+                          </div>
+                        </div>
+                        <p className="flex-1 text-base sm:text-lg leading-[1.8] pt-1.5"
+                          style={{ color: theme.ink + 'D0' }}>
+                          {para}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT V — TRY THIS TODAY (free, no purchase)                     ║ */}
+          {/* ║ Genuine value delivered before any product mention.           ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          {(selectedProblem.bridge?.tipsDo || selectedProblem.bridge?.tipsAvoid) && (
+            <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+              style={{ background: `linear-gradient(180deg, ${theme.ivory}, ${theme.cream})` }}>
+              {/* Dual-tone atmospheric glow — green for DO, red for AVOID */}
+              <div className="absolute top-1/3 left-0 w-[500px] h-[500px] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
+                style={{ background: '#10B981' }} />
+              <div className="absolute bottom-0 right-0 w-[450px] h-[450px] rounded-full opacity-[0.07] blur-3xl pointer-events-none"
+                style={{ background: '#EF4444' }} />
+
+              <div className="relative max-w-5xl mx-auto">
+                {/* Editorial chapter marker — V. რჩევა */}
+                <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+                  <span className="font-display-lat italic text-2xl" style={{ color: '#10B981' }}>V.</span>
+                  <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                  <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                    {t('act5_chapter', 'რჩევა')}
+                  </span>
+                </div>
+
+                <div className="text-center mb-14 reveal-up">
+                  <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                    {t('act5_eyebrow', '✦ უფასო — დღესვე შესასრულებელი')}
+                  </p>
+                  <h2 className="font-display leading-[0.95] mb-4"
+                    style={{
+                      fontSize: 'clamp(2.25rem, 6vw, 4rem)',
+                      color: theme.ink,
+                      letterSpacing: '-0.02em'
+                    }}>
+                    {t('act5_headline_left', 'ცადე ეს —')} <span className="font-display-lat italic font-normal" style={{ color: theme.gold }}>{t('act5_headline_right', 'დღესვე')}</span>
+                  </h2>
+                  <p className="font-display-lat italic text-base sm:text-lg max-w-lg mx-auto" style={{ color: theme.ink + 'AA' }}>
+                    {t('act5_subtitle', 'ფასი არ აქვს. პროდუქტი არ ჭირდება. ერთი კვირა სცადე და ნახე.')}
+                  </p>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-6 sm:gap-7">
+                  {/* DO column — green accent */}
+                  {selectedProblem.bridge?.tipsDo && (
+                    <div className="reveal-up rounded-3xl p-7 sm:p-8"
+                      style={{
+                        background: theme.cream,
+                        border: `1px solid #10B98144`,
+                        boxShadow: `0 16px 40px -16px #10B98133, 0 2px 8px ${theme.ink}08`
+                      }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center"
+                          style={{ background: '#10B98115', boxShadow: `0 4px 12px #10B98133` }}>
+                          <Ic name="check" className="w-5 h-5" style={{ color: '#10B981' }} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] tracking-[0.3em] uppercase mb-0.5" style={{ color: '#10B981' }}>
+                            {t('act5_do_eyebrow', 'გააკეთე')}
+                          </p>
+                          <h3 className="font-display text-xl sm:text-2xl" style={{ color: theme.ink, lineHeight: 1.1 }}>
+                            {t('act5_do_title', 'ეს გააკეთე')}
+                          </h3>
+                        </div>
+                      </div>
+                      <ul className="space-y-3.5">
+                        {selectedProblem.bridge.tipsDo.split('✦').map(s => s.trim()).filter(Boolean).map((tip, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm sm:text-[15px] leading-relaxed"
+                            style={{ color: theme.ink + 'CC' }}>
+                            <span className="flex-shrink-0 w-1.5 h-1.5 mt-2.5 rounded-full" style={{ background: '#10B981' }} />
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* AVOID column — red accent */}
+                  {selectedProblem.bridge?.tipsAvoid && (
+                    <div className="reveal-up rounded-3xl p-7 sm:p-8"
+                      style={{
+                        background: theme.cream,
+                        border: `1px solid #EF444444`,
+                        boxShadow: `0 16px 40px -16px #EF444433, 0 2px 8px ${theme.ink}08`,
+                        animationDelay: '120ms'
+                      }}>
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-11 h-11 rounded-full flex items-center justify-center"
+                          style={{ background: '#EF444415', boxShadow: `0 4px 12px #EF444433` }}>
+                          <Ic name="x" className="w-5 h-5" style={{ color: '#EF4444' }} />
+                        </div>
+                        <div>
+                          <p className="text-[9px] tracking-[0.3em] uppercase mb-0.5" style={{ color: '#EF4444' }}>
+                            {t('act5_avoid_eyebrow', 'მოერიდე')}
+                          </p>
+                          <h3 className="font-display text-xl sm:text-2xl" style={{ color: theme.ink, lineHeight: 1.1 }}>
+                            {t('act5_avoid_title', 'ამას მოერიდე')}
+                          </h3>
+                        </div>
+                      </div>
+                      <ul className="space-y-3.5">
+                        {selectedProblem.bridge.tipsAvoid.split('✦').map(s => s.trim()).filter(Boolean).map((tip, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm sm:text-[15px] leading-relaxed"
+                            style={{ color: theme.ink + 'CC' }}>
+                            <span className="flex-shrink-0 w-1.5 h-1.5 mt-2.5 rounded-full" style={{ background: '#EF4444' }} />
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT VI — WHEN THIS ISN'T A COSMETIC ISSUE                      ║ */}
+          {/* ║ Honesty about limits. Strongest trust signal possible.        ║ */}
+          {/* ║ A rep who says "see a doctor" earns 10x more credibility.     ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          {selectedProblem.bridge?.doctor && (
+            <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+              style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.mist} 50%, ${theme.cream})` }}>
+              {/* Honesty glow — wine tone */}
+              <div className="absolute -top-20 left-1/3 w-[500px] h-[400px] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+                style={{ background: theme.wine }} />
+
+              <div className="relative max-w-3xl mx-auto">
+                {/* Editorial chapter marker — VI. გულახდილობა */}
+                <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+                  <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>VI.</span>
+                  <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                  <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                    {t('act6_chapter', 'გულახდილობა')}
+                  </span>
+                </div>
+
+                <div className="text-center mb-12 reveal-up">
+                  <div className="inline-flex w-14 h-14 rounded-full items-center justify-center mb-5"
+                    style={{
+                      background: theme.wine + '15',
+                      boxShadow: `0 8px 24px ${theme.wine}33`
+                    }}>
+                    <Ic name="shield" className="w-6 h-6" style={{ color: theme.wine }} />
+                  </div>
+                  <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                    {t('act6_eyebrow', '✦ მე გულახდილი ვარ')}
+                  </p>
+                  <h2 className="font-display leading-[0.95] mb-4"
+                    style={{
+                      fontSize: 'clamp(2rem, 5.5vw, 3.75rem)',
+                      color: theme.ink,
+                      letterSpacing: '-0.02em'
+                    }}>
+                    {t('act6_headline_left', 'ზოგ შემთხვევაში —')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act6_headline_right', 'ექიმთან')}</span>
+                  </h2>
+                </div>
+
+                <div className="rounded-3xl p-7 sm:p-10 reveal-up"
+                  style={{
+                    background: theme.cream,
+                    border: `1px solid ${theme.wine}33`,
+                    boxShadow: `0 20px 50px -20px ${theme.wine}33, 0 4px 16px ${theme.ink}08`
+                  }}>
+                  <p className="font-display-lat italic text-base sm:text-lg leading-[1.7] mb-7 text-center" style={{ color: theme.ink + 'CC' }}>
+                    {rep.name && rep.name.split(' ')[0]
+                      ? `${rep.name.split(' ')[0]}${t('act6_quote_prefix', '-ის სიტყვა: ')}`
+                      : ''}
+                    "{t('act6_quote', 'ჩემი პროდუქტი ცილოვანი დახმარებაა, არა მედიცინა. თუ ქვემოთ ჩამოთვლილი რომელიმე ემთხვევა — ფასიც კი არ ღირს კოსმეტიკის ცდა, სანამ ექიმი არ მოიკითხავს.')}"
+                  </p>
+                  <ul className="space-y-4">
+                    {selectedProblem.bridge.doctor.split('✦').map(s => s.trim()).filter(Boolean).map((sign, i) => (
+                      <li key={i} className="flex items-start gap-3.5 text-sm sm:text-[15px] leading-relaxed reveal-up"
+                        style={{
+                          color: theme.ink + 'CC',
+                          animationDelay: `${i * 80}ms`
+                        }}>
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
+                          style={{ background: theme.wine + '12' }}>
+                          <Ic name="alert-triangle" className="w-3.5 h-3.5" style={{ color: theme.wine }} />
+                        </span>
+                        <span>{sign}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-8 pt-6 border-t text-center" style={{ borderColor: theme.ink + '11' }}>
+                    <p className="text-sm sm:text-base font-display-lat italic" style={{ color: theme.ink + 'AA' }}>
+                      {t('act6_closing', 'ჯერ მიზეზი დავადგინოთ — მერე გავაკეთოთ რიტუალი.')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT VII — CUSTOMER STORIES (after empathy + education)         ║ */}
+          {/* ║ Trust is built through stories, after real value delivered.   ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          {(() => {
+            const allVideos = rep.customerVideos || [];
+            const filteredVideos = allVideos.filter(v => !v.problem || v.problem === selectedProblem.id);
+            if (filteredVideos.length === 0) return null;
+            return (
+              <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-24"
+                style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
+                {/* Atmospheric glow */}
+                <div className="absolute -top-20 left-1/4 w-[500px] h-[400px] rounded-full opacity-15 blur-3xl pointer-events-none"
+                  style={{ background: theme.blush }} />
+
+                <div className="relative max-w-6xl mx-auto">
+                  {/* Editorial chapter marker — VII. ისტორიები */}
+                  <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+                    <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>VII.</span>
+                    <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+                    <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+                      {t('act7_chapter', 'ისტორიები')}
+                    </span>
+                  </div>
+
+                  <div className="text-center mb-12 reveal-up">
+                    <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+                      {t('act7_eyebrow', '✦ მათ გაიარეს იგივე')}
+                    </p>
+                    <h2 className="font-display leading-[0.95] mb-4"
+                      style={{
+                        fontSize: 'clamp(2.25rem, 6vw, 4rem)',
+                        color: theme.ink,
+                        letterSpacing: '-0.02em'
+                      }}>
+                      {t('act7_headline_left', 'ნამდვილი')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act7_headline_right', 'ისტორიები')}</span>
+                    </h2>
+                    <p className="font-display-lat italic max-w-md mx-auto text-base sm:text-lg" style={{ color: theme.ink + 'AA' }}>
+                      "{selectedProblem.label}" — {t('act7_subtitle_suffix', 'მათივე სიტყვებით')}
+                    </p>
+                  </div>
+
+                  <div className={`grid gap-5 sm:gap-6 ${
+                    filteredVideos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+                    filteredVideos.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
+                    'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                  }`}>
+                    {filteredVideos.map((v, idx) => {
+                      const parsed = parseVideoUrl(v.url);
+                      if (!parsed) return null;
+                      const isVertical = parsed.orientation === 'vertical';
+                      return (
+                        <div key={idx} className="group reveal-up" style={{ animationDelay: `${idx * 100}ms` }}>
+                          <button onClick={() => setVideoToPlay(v.url)}
+                            className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
+                            style={{
+                              background: `linear-gradient(135deg, ${selectedProblem.accent || theme.wine}, ${theme.ink})`,
+                              boxShadow: `0 20px 50px -10px ${selectedProblem.accent || theme.wine}44`,
+                              border: `2px solid ${theme.cream}`
+                            }}>
+                            <div className="absolute inset-0 opacity-25"
+                              style={{ background: `radial-gradient(circle at 30% 20%, ${theme.gold}, transparent 50%), radial-gradient(circle at 70% 80%, ${theme.rose}, transparent 50%)` }} />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="relative">
+                                <div className="absolute inset-0 rounded-full animate-ping"
+                                  style={{ background: theme.cream + '44', animationDuration: '2.5s' }} />
+                                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                                  style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
+                                  <Ic name="play" className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: selectedProblem.accent || theme.wine, marginLeft: '4px' }} />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium"
+                              style={{ background: 'rgba(255,255,255,0.18)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
+                              {parsed.type}
+                            </div>
+                            {v.caption && (
+                              <div className="absolute bottom-0 left-0 right-0 p-4"
+                                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
+                                <p className="text-sm italic text-center font-display-lat" style={{ color: theme.cream }}>
+                                  "{v.caption}"
+                                </p>
+                              </div>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Soft transition prompt to products */}
+                  <div className="text-center mt-14 reveal-up">
+                    <div className="inline-flex flex-col items-center gap-3" style={{ color: theme.ink + '66' }}>
+                      <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: theme.gold }}>
+                        {t('act7_scroll_prompt', 'ნახე რა გამოიყენეს')}
+                      </p>
+                      <div className="w-px h-12 animate-pulse"
+                        style={{ background: `linear-gradient(to bottom, ${theme.gold}88, transparent)` }} />
+                    </div>
+                  </div>
+                </div>
+              </section>
+            );
+          })()}
+
+          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
+          {/* ║ ACT VIII — THE RITUAL (products, finally)                      ║ */}
+          {/* ║ Empathy + education + honesty + stories already delivered.    ║ */}
+          {/* ║ Now products are EARNED — not pushed.                         ║ */}
+          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
+          <ProblemProductShowcase
+            products={dynamicProducts.filter(p => p.problemId === selectedProblem.id && p.active)}
+            problem={selectedProblem}
+            repWhatsapp={rep.whatsapp}
+            t={t}
+            cart={cart}
+          />
+
+        </div>
+      ) : (
+        /* No problem selected — gentle hint to scroll up to quiz */
+        <section className="px-5 py-20 text-center" style={{ background: theme.cream }}>
+          <div className="max-w-md mx-auto">
+            <div className="w-14 h-14 mx-auto mb-5 rounded-full flex items-center justify-center anim-pulse-soft"
+              style={{ background: theme.wine + '15', color: theme.wine }}>
+              <Ic name="arrow-up" className="w-6 h-6" />
+            </div>
+            <p className="font-display text-2xl mb-3" style={{ color: theme.ink }}>
+              {t('no_problem_title', 'აირჩიე პრობლემა')}
+            </p>
+            <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+              {t('no_problem_subtitle', 'ზემოთ მონიშნე რა გაწუხებს — გამოგიჩვენებ კონკრეტულ პროდუქტებს, შედეგებსა და ვიდეო-რეცენზიებს, რომლებიც სწორედ შენი პრობლემისთვისაა.')}
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ REP'S CURATED PICKS — Personal favorite products ═══ */}
+      {repPicks.length > 0 && (
+        <section className="px-5 py-16 sm:py-20" style={{ background: theme.cream }}>
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
+                {t('picks_eyebrow', '✦ ჩემი არჩევანი ✦')}
+              </p>
+              <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
+                {rep.name ? `${rep.name.split(' ')[0]}${t('picks_title_suffix', '-ს რჩეული')}` : t('picks_title_fallback', 'რჩეული პროდუქტები')}
+              </h2>
+              <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
+                {t('picks_subtitle', 'ის პროდუქტები რომელიც პირადად ვცადე და ვრეკომენდირებ — ნამდვილ შედეგზე გადამოწმებული')}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {repPicks.map(p => (
+                <div key={p.row || p.id}
+                  className="rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
+                  style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, boxShadow: '0 8px 30px -12px rgba(0,0,0,0.15)' }}
+                  onClick={() => setPickModalProduct(p)}>
+                  {p.image && (
+                    <div className="aspect-[5/4] overflow-hidden flex items-center justify-center p-8 sm:p-12" style={{ background: theme.cream }}>
+                      <img src={p.image} alt={p.name}
+                        className="max-w-[75%] max-h-[85%] object-contain transition duration-500 hover:scale-105"
+                        style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }} />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <p className="font-display text-lg mb-1 leading-tight" style={{ color: theme.ink }}>
+                      {p.name}
+                    </p>
+                    <p className="text-sm mb-3" style={{ color: theme.wine }}>
+                      {p.price} ₾
+                    </p>
+                    {p.note && (
+                      <div className="rounded-lg p-3 mb-3" style={{ background: theme.gold + '11', borderLeft: `3px solid ${theme.gold}` }}>
+                        <p className="text-xs italic leading-relaxed" style={{ color: theme.ink + 'CC' }}>
+                          "{p.note}"
+                          <span className="block mt-1 not-italic text-[10px]" style={{ color: theme.gold }}>
+                            — {rep.name ? rep.name.split(' ')[0] : t('picks_author_fallback', 'რეპი')}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                    <button className="text-xs tracking-wider uppercase flex items-center gap-2"
+                      style={{ color: theme.wine }}>
+                      {t('picks_button_view', 'დაწვრილებით')} <Ic name="arrow-right" className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ CATALOG — all products with cart buttons ═══ */}
+      {catalogProducts.length > 0 && (
+        <section id="catalog-section" className="px-5 py-16 sm:py-20" style={{ background: '#ECE7DE' }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
+              <div>
+                <p className="premium-kicker mb-3" style={{ color: theme.gold }}>
+                  {t('catalog_eyebrow', 'პროდუქტების კატალოგი')}
+                </p>
+                <h2 className="font-display text-3xl sm:text-5xl leading-tight mb-3" style={{ color: theme.ink }}>
+                  {t('catalog_title', 'აირჩიე და დაამატე კალათაში')}
+                </h2>
+                <p className="text-sm leading-relaxed max-w-xl" style={{ color: theme.ink + 'AA' }}>
+                  {t('catalog_subtitle', 'დაათვალიერე პროდუქტები ამავე გვერდზე — შეკვეთის გასაფორმებლად აღარ გჭირდება სხვა კატალოგში გადასვლა.')}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                <div className="relative flex-1 lg:w-72">
+                  <Ic name="search" className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: theme.ink + '66' }} />
+                  <input value={catalogQuery} onChange={(e) => { setCatalogQuery(e.target.value); setCatalogLimit(12); }}
+                    placeholder={t('catalog_search_placeholder', 'ძებნა პროდუქტში...')}
+                    className="w-full pl-11 pr-4 py-3 rounded-full outline-none text-sm"
+                    style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }} />
+                </div>
+                {catalogCategories.length > 2 && (
+                  <select value={catalogCategory} onChange={(e) => { setCatalogCategory(e.target.value); setCatalogLimit(12); }}
+                    className="px-4 py-3 rounded-full outline-none text-sm"
+                    style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }}>
+                    {catalogCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat === 'all' ? t('catalog_all_categories', 'ყველა კატეგორია') : cat}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {visibleCatalogProducts.map(p => (
+                <article key={p.id || p.product_id || p.name}
+                  className="relative overflow-hidden flex min-h-[220px]"
+                  style={{
+                    background: 'linear-gradient(135deg, #f8f5ef 0%, #ffffff 58%, #eee7dd 100%)',
+                    border: '1px solid rgba(16,19,18,.10)',
+                    borderRadius: 4,
+                    boxShadow: '0 18px 45px -28px rgba(16,19,18,.55)'
+                  }}>
+                  <div className="absolute inset-y-0 left-0 w-1" style={{ background: p.accent || theme.wine }} />
+                  <button onClick={() => onProduct(p)}
+                    className="w-[44%] min-w-[135px] p-4 flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,.64)' }}>
+                    {p.image
+                      ? <img src={p.image} alt={p.name} className="max-w-full max-h-44 object-contain transition hover:scale-105"
+                          style={{ filter: 'drop-shadow(0 18px 28px rgba(0,0,0,.16))' }} />
+                      : <Ic name="package" className="w-12 h-12" style={{ color: theme.gold }} />}
+                  </button>
+                  <div className="p-4 sm:p-5 flex flex-col flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        {(p.cat || p.category) && (
+                          <p className="text-[9px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.gold }}>
+                            {p.cat || p.category}
+                          </p>
+                        )}
+                        <button onClick={() => onProduct(p)} className="text-left font-display text-lg sm:text-xl leading-tight"
+                          style={{ color: theme.ink }}>
+                          {p.name}
+                        </button>
+                      </div>
+                      {cart && (
+                        <button onClick={() => { cart.addItem({ product_id: p.id, name: p.name, price: p.price, image: p.image, quantity: 1 }); cart.setOpen(true); }}
+                          className="w-11 h-11 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-95 flex-shrink-0"
+                          style={{ background: theme.ink, color: theme.cream, boxShadow: '0 10px 24px -12px rgba(16,19,18,.8)' }}
+                          aria-label={t('catalog_add_to_cart', 'კალათში დამატება')}>
+                          <Ic name="shopping-cart" className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-auto">
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: theme.ink + '66' }}>
+                            ID #{p.sku || p.id}
+                          </p>
+                          <p className="font-display text-3xl leading-none" style={{ color: theme.ink }}>
+                            {Number(p.price).toFixed(2)}
+                            <span className="text-base ml-1">₾</span>
+                          </p>
+                        </div>
+                        <button onClick={() => { if (cart) { cart.addItem({ product_id: p.id, name: p.name, price: p.price, image: p.image, quantity: 1 }); cart.setOpen(true); } }}
+                          className="px-4 py-2 rounded-full text-[10px] tracking-[0.14em] uppercase font-semibold transition hover:scale-[1.02]"
+                          style={{ background: theme.wine, color: theme.cream }}>
+                          {t('catalog_add_short', 'დამატება')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {visibleCatalogProducts.length === 0 && (
+              <div className="text-center py-12">
+                <Ic name="search-x" className="w-10 h-10 mx-auto mb-3" style={{ color: theme.gold }} />
+                <p className="text-sm" style={{ color: theme.ink + '88' }}>
+                  {t('catalog_empty', 'ამ ძებნით პროდუქტი ვერ მოიძებნა')}
+                </p>
+              </div>
+            )}
+
+            {hasMoreCatalogProducts && (
+              <div className="text-center mt-10">
+                <p className="text-xs mb-3" style={{ color: theme.ink + '77' }}>
+                  {visibleCatalogProducts.length} / {filteredCatalogProducts.length}
+                </p>
+                <button onClick={() => setCatalogLimit(n => n + 12)}
+                  className="px-7 py-3 rounded-full text-xs tracking-[0.16em] uppercase font-semibold inline-flex items-center gap-2 transition hover:scale-[1.01]"
+                  style={{ background: theme.ink, color: theme.cream }}>
+                  {t('catalog_show_more', 'მეტის ჩვენება')}
+                  <Ic name="chevron-down" className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ CONTACT FORM — Lead capture ═══ */}
+      <section className="px-5 py-16 sm:py-20" style={{ background: theme.ivory }}>
+        <div className="max-w-xl mx-auto">
+          <div className="text-center mb-10">
+            <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
+              {t('lead_form_eyebrow', '✦  დაგვიკავშირდი  ✦')}
+            </p>
+            <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
+              {t('lead_form_title', 'დატოვე კონტაქტი')}
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+              {t('lead_form_subtitle', 'შეავსე ფორმა — დაგიკავშირდები მოკლე დროში და უფასოდ გავცემ რჩევას')}
+            </p>
+          </div>
+
+          {leadSent ? (
+            // ─── Success state ───
+            <div className="rounded-2xl p-8 text-center anim-fadeup"
+              style={{ background: theme.cream, border: `1px solid ${theme.gold}55` }}>
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
+                style={{ background: theme.gold + '22' }}>
+                <Ic name="check" className="w-8 h-8" style={{ color: theme.gold }} />
+              </div>
+              <h3 className="font-display text-2xl mb-2" style={{ color: theme.ink }}>
+                {t('lead_form_success_title', 'გმადლობთ!')}
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_success_message', 'მივიღე შენი შეტყობინება — დაგიკავშირდები მალე 🌹')}
+              </p>
+            </div>
+          ) : (
+            // ─── Form ───
+            <div className="rounded-2xl p-6 sm:p-8"
+              style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, boxShadow: '0 10px 40px -20px rgba(0,0,0,0.15)' }}>
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_name_label', 'სახელი')}
+              </label>
+              <input type="text" value={leadName} onChange={(e) => { setLeadName(e.target.value); setLeadError(''); }}
+                placeholder={t('lead_form_name_placeholder', 'შენი სახელი')}
+                className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-4"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_phone_label', 'ტელეფონი')}
+              </label>
+              <input type="tel" value={leadPhone} onChange={(e) => { setLeadPhone(e.target.value); setLeadError(''); }}
+                placeholder={t('lead_form_phone_placeholder', '+995 5XX XX XX XX')}
+                className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-4"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+              <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                {t('lead_form_message_label', 'შეტყობინება (სურვილისამებრ)')}
+              </label>
+              <textarea value={leadMessage} onChange={(e) => setLeadMessage(e.target.value)}
+                placeholder={t('lead_form_message_placeholder', 'მაგ: მაინტერესებს თმის სერუმი...')}
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-2 resize-none"
+                style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+              {leadError && (
+                <p className="text-xs mt-2 mb-2" style={{ color: theme.rose }}>{leadError}</p>
+              )}
+
+              <button
+                onClick={async () => {
+                  setLeadError('');
+                  if (!leadName.trim()) { setLeadError(t('lead_form_error_no_name', 'გთხოვ შეავსე სახელი')); return; }
+                  if (!leadPhone.trim()) { setLeadError(t('lead_form_error_no_phone', 'გთხოვ შეავსე ტელეფონი')); return; }
+                  setLeadSending(true);
+                  try {
+                    const res = await api({
+                      action: 'submit_lead',
+                      pid: repCode,
+                      visitor_name: leadName.trim(),
+                      visitor_phone: leadPhone.trim(),
+                      message: leadMessage.trim(),
+                      product_id: selectedProblem && selectedProblem.productId ? selectedProblem.productId : '',
+                    });
+                    if (res.ok) {
+                      setLeadSent(true);
+                    } else {
+                      setLeadError(t('lead_form_error_generic', 'შეცდომა — სცადე ხელახლა'));
+                    }
+                  } catch (err) {
+                    setLeadError(t('lead_form_error_generic', 'შეცდომა — სცადე ხელახლა'));
+                  } finally {
+                    setLeadSending(false);
+                  }
+                }}
+                disabled={leadSending}
+                className="w-full mt-4 px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm tracking-wider uppercase font-medium transition hover:scale-[1.01] disabled:opacity-60"
+                style={{ background: theme.wine, color: theme.cream }}>
+                {leadSending
+                  ? <><Ic name="loader" className="w-4 h-4 animate-spin" /> {t('lead_form_button_sending', 'იგზავნება...')}</>
+                  : <>{t('lead_form_button_submit', 'გაგზავნა')} <Ic name="arrow-right" className="w-4 h-4" /></>}
+              </button>
+
+              <p className="text-[10px] text-center mt-4 leading-relaxed" style={{ color: theme.ink + '77' }}>
+                {t('lead_form_privacy', '🔒 შენი მონაცემები მხოლოდ რეპს გადაეცემა — არ გავაზიარებთ მესამე მხარისთვის')}
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══ CATALOG CTA — Full FARMASI Catalog (PDF Flipbook) ═══ */}
+      <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-28"
+        style={{ background: `linear-gradient(135deg, ${theme.cream}, ${theme.ivory})` }}>
+        {/* Decorative glows */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none"
+          style={{ background: theme.gold }} />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full opacity-15 blur-3xl pointer-events-none"
+          style={{ background: theme.wine }} />
+
+        <div className="relative max-w-3xl mx-auto text-center">
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-4" style={{ color: theme.gold }}>
+            ✦ {t('catalog_eyebrow', 'სრული კატალოგი')} ✦
+          </p>
+          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl mb-5 leading-tight" style={{ color: theme.ink }}>
+            {t('catalog_title', 'ნახე FARMASI-ის მთლიანი კოლექცია')}
+          </h2>
+          <p className="text-base sm:text-lg mb-10 leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
+            {t('catalog_subtitle', 'ოფიციალური ციფრული კატალოგი — 700+ პროდუქტი ერთ ფურცელში. გადახედე და დამიკავშირდი.')}
+          </p>
+
+          {/* Mock catalog preview cards */}
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-lg rotate-[-8deg] transition hover:rotate-0"
+              style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
+              <div className="h-full flex items-center justify-center text-3xl">📖</div>
+            </div>
+            <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl transition hover:scale-105 z-10"
+              style={{ background: `linear-gradient(135deg, ${theme.gold}, ${theme.rose})`, boxShadow: `0 20px 40px -10px ${theme.gold}AA` }}>
+              <div className="h-full flex items-center justify-center text-5xl">💎</div>
+            </div>
+            <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-lg rotate-[8deg] transition hover:rotate-0"
+              style={{ background: `linear-gradient(135deg, ${theme.rose}, ${theme.wine})`, boxShadow: `0 10px 30px -8px ${theme.rose}88` }}>
+              <div className="h-full flex items-center justify-center text-3xl">✨</div>
+            </div>
+          </div>
+
+          <a href={t('catalog_url', 'https://online.fliphtml5.com/mabrw/emtm/')}
+            target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 py-4 px-8 sm:px-10 rounded-full font-medium text-sm sm:text-base tracking-wider uppercase transition hover:scale-[1.03]"
+            style={{ background: theme.ink, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.ink}AA` }}>
+            <Ic name="book-open" className="w-5 h-5" />
+            {t('catalog_cta', 'გახსენი კატალოგი')}
+            <Ic name="external-link" className="w-4 h-4 opacity-70" />
+          </a>
+
+          <p className="text-xs mt-5 opacity-60" style={{ color: theme.ink }}>
+            {t('catalog_hint', '700+ პროდუქტი · ფასები · აღწერა · ფოტოები')}
+          </p>
+        </div>
+      </section>
+
+      {/* ═══ FOOTER — Editorial Sign-off ═══ */}
+      <footer className="relative overflow-hidden" style={{ background: theme.ink, color: theme.cream }}>
+        {/* Atmospheric glow */}
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10 blur-3xl"
+          style={{ background: theme.wine }} />
+
+        <div className="relative max-w-5xl mx-auto px-5 sm:px-12 py-16">
+          {/* Top editorial bar */}
+          <div className="flex items-center justify-between text-[10px] tracking-[0.3em] uppercase mb-12 opacity-60">
+            <div className="flex items-center gap-2">
+              <span style={{ color: theme.gold }}>✦</span>
+              <span className="hidden sm:inline">{t('footer_topbar_full', 'END · CONTACT')}</span>
+              <span className="sm:hidden">{t('footer_topbar_short', 'CONTACT')}</span>
+            </div>
+            <div className="font-display-lat italic">{t('footer_edition', '№ 01')}</div>
+          </div>
+
+          <div className="h-px mb-12" style={{ background: theme.cream + '15' }} />
+
+          {/* Rep name — massive editorial */}
+          <div className="text-center mb-3">
+            <h2 className="font-display leading-[0.95] mb-3"
+              style={{
+                fontSize: 'clamp(2.5rem, 7vw, 5rem)',
+                color: theme.cream,
+                letterSpacing: '-0.02em'
+              }}>
+              {rep.name || t('hero_name_placeholder', 'შენი სახელი')}
+            </h2>
+            <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: theme.gold }}>
+              {t('footer_brand', 'FARMASI · TANTALIZE COSMETICS')}
+            </p>
+          </div>
+
+          {/* Italic line */}
+          <div className="flex items-center justify-center gap-4 mb-12 mt-6">
+            <div className="h-px w-16" style={{ background: theme.gold + '66' }} />
+            <p className="font-display-lat italic text-base" style={{ color: theme.cream + 'CC' }}>
+              {t('footer_contact_lead', 'დაგვიკავშირდი')}
+            </p>
+            <div className="h-px w-16" style={{ background: theme.gold + '66' }} />
+          </div>
+
+          {/* Primary contact buttons — WhatsApp + Phone */}
+          {(rep.whatsapp || rep.phone) && (
+            <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-lg mx-auto mb-10">
+              {rep.whatsapp && (
+                <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`} target="_blank" rel="noreferrer"
+                  className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.02]"
+                  style={{ background: '#25D366', color: '#fff', boxShadow: `0 20px 50px -15px #25D36677` }}>
+                  <SocialIcon name="whatsapp" className="w-4 h-4" />
+                  {t('footer_whatsapp_btn', 'WhatsApp')}
+                  <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+                </a>
+              )}
+              {rep.phone && (
+                <a href={`tel:${rep.phone}`}
+                  className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.02]"
+                  style={{ background: theme.cream + '15', color: theme.cream, border: `1px solid ${theme.cream}33` }}>
+                  <Ic name="phone" className="w-4 h-4" />
+                  {t('footer_call_btn', 'დარეკე')}
+                  <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Social platform links — minimal magazine style */}
+          {socials.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-3 mb-12 text-[10px] tracking-[0.3em] uppercase">
+              {socials.map((s, i) => (
+                <a key={i} href={s.href} target="_blank" rel="noreferrer"
+                  className="flex items-center gap-2 transition hover:opacity-100 hover:underline"
+                  style={{ color: theme.cream + '99' }}>
+                  <SocialIcon name={s.icon} className="w-3.5 h-3.5" />
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          )}
+
+          {/* Bottom hairline */}
+          <div className="h-px mb-8" style={{ background: theme.cream + '15' }} />
+
+          {/* Bottom row — copyright + ID + back-to-top */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] tracking-[0.25em] uppercase opacity-60">
+            <div className="text-center sm:text-left">
+              <p>© {new Date().getFullYear()} {t('footer_copyright_holder', 'FARMASI GEORGIA')}</p>
+              <p className="font-mono mt-1 normal-case tracking-normal">{t('footer_id_prefix', 'ID #')}{repCode}</p>
+            </div>
+
+            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="flex items-center gap-2 transition hover:opacity-100 hover:gap-3"
+              style={{ color: theme.cream }}>
+              <Ic name="arrow-up" className="w-3 h-3" />
+              {t('footer_back_to_top', 'ზემოთ დაბრუნება')}
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      <button onClick={() => setChatOpen(true)}
+        className="fixed bottom-5 left-5 z-[70] flex items-center justify-center gap-2 px-5 py-3 sm:gap-0 sm:px-0 sm:py-0 sm:w-12 sm:h-12 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 anim-chat-glow opacity-100 translate-y-0"
+        style={{ background: theme.ink, color: theme.cream }}
+        title={t('chat_button_tooltip', 'მესიჯი')}>
+        <Ic name="message-square" className="w-5 h-5" />
+        <span className="text-sm font-medium tracking-wide sm:hidden">
+          {t('chat_button_label', 'უფასო კონსულტაცია')}
+        </span>
+      </button>
+
+      {rep.whatsapp && (
+        <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`}
+          target="_blank" rel="noreferrer"
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
+          style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.6)' }}>
+          <SocialIcon name="whatsapp" className="w-5 h-5" />
+          <span className="text-sm font-medium">{t('floating_whatsapp_label', 'WhatsApp')}</span>
+        </a>
+      )}
+
+      {/* Floating scroll-to-top button — appears after scrolling 600px */}
+      <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={`fixed bottom-20 sm:bottom-20 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+        style={{
+          background: theme.cream,
+          color: theme.ink,
+          border: `1px solid ${theme.gold}33`,
+          boxShadow: '0 8px 24px -8px rgba(0,0,0,0.25)'
+        }}
+        title={t('footer_back_to_top', 'ზემოთ დაბრუნება')}>
+        <Ic name="arrow-up" className="w-4 h-4" />
+      </button>
+
+      {chatOpen && <ChatModal rep={rep} onClose={() => setChatOpen(false)} t={t} />}
+
+      {/* Photo Zoom Lightbox */}
+      {photoZoom && rep.photo && (
+        <div onClick={() => setPhotoZoom(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fadeup"
+          style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(8px)' }}>
+          <button onClick={() => setPhotoZoom(false)}
+            className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110"
+            style={{ background: theme.cream, color: theme.ink }}>
+            <Ic name="x" className="w-5 h-5" />
+          </button>
+          <div className="relative max-w-3xl max-h-[85vh] w-full" onClick={(e) => e.stopPropagation()}>
+            <img src={rep.photo} alt={rep.name}
+              className="w-full h-full object-contain rounded-2xl"
+              style={{ maxHeight: '85vh', boxShadow: '0 30px 80px -20px rgba(0,0,0,0.5)' }} />
+            <div className="absolute bottom-0 left-0 right-0 p-5 rounded-b-2xl text-center"
+              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
+              <p className="font-display text-2xl" style={{ color: theme.cream }}>{rep.name}</p>
+              {rep.city && <p className="text-sm opacity-80" style={{ color: theme.cream }}>{rep.city}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video lightbox modal — opens when ANY video play button is clicked (rep greeting OR customer video) */}
+      {videoToPlay && (() => {
+        const parsed = parseVideoUrl(videoToPlay);
+        if (!parsed) return null;
+        const isVertical = parsed.orientation === 'vertical';
+        return (
+          <div onClick={() => setVideoToPlay(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fadeup"
+            style={{ background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(8px)' }}>
+            <button onClick={() => setVideoToPlay(null)}
+              className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 z-10"
+              style={{ background: theme.cream, color: theme.ink }}>
+              <Ic name="x" className="w-5 h-5" />
+            </button>
+            <div onClick={(e) => e.stopPropagation()}
+              className={`relative ${isVertical ? 'h-[85vh] aspect-[9/16]' : 'w-[92vw] max-w-5xl aspect-video'} rounded-3xl overflow-hidden`}
+              style={{ background: theme.ink, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
+              <VideoIntro url={videoToPlay} />
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Floating cart button + drawer */}
+      {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
+
+      {/* Pick product modal — opens elegant detail view when clicking on rep's curated picks */}
+      {pickModalProduct && (
+        <ProductDetailModal
+          product={pickModalProduct}
+          onClose={() => setPickModalProduct(null)}
+          repWhatsapp={rep.whatsapp}
+          t={t}
+          onAddToCart={cart ? (prod) => { cart.addItem({ product_id: prod.id, name: prod.name, price: prod.price, image: prod.image, quantity: 1 }); cart.setOpen(true); setPickModalProduct(null); } : null}
+        />
+      )}
+    </div>
+  );
+}
+
+function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, rep = {}, t = (k, fb) => fb }) {
+  const handleClick = (problem) => {
+    onSelect(problem);
+  };
+
+  return (
+    <section className="px-5 py-16 relative overflow-hidden" style={{ background: theme.cream }}>
+      {/* Ambient gradients */}
+      <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-25 blur-3xl"
+        style={{ background: theme.blush }} />
+      <div className="absolute -bottom-20 -right-20 w-72 h-72 rounded-full opacity-25 blur-3xl"
+        style={{ background: theme.gold + '66' }} />
+
+      <div className="relative max-w-5xl mx-auto reveal-up">
+        {/* Editorial chapter marker */}
+        <div className="flex items-center gap-4 mb-12 max-w-2xl mx-auto">
+          <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>II.</span>
+          <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+          <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+            {t('act2_chapter', 'დიაგნოსტიკა')}
+          </span>
+        </div>
+
+        {/* Header — dramatic editorial */}
+        <div className="text-center mb-14">
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-5 font-medium" style={{ color: theme.gold }}>
+            {t('act2_eyebrow', '✦ შენთვის შერჩეული')}
+          </p>
+          <h2 className="font-display leading-[0.95] mb-6"
+            style={{
+              fontSize: 'clamp(2.5rem, 8vw, 5.5rem)',
+              color: theme.ink,
+              letterSpacing: '-0.02em'
+            }}>
+            {t('act2_headline_left', 'რა')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act2_headline_right', 'გაწუხებს?')}</span>
+          </h2>
+          <div className="flex items-center justify-center gap-3 mb-5">
+            <div className="h-px w-12" style={{ background: theme.wine + '66' }} />
+            <span className="text-[9px] tracking-[0.3em] uppercase" style={{ color: theme.wine }}>
+              {t('act2_single_choice', 'ერთი არჩევანი')}
+            </span>
+            <div className="h-px w-12" style={{ background: theme.wine + '66' }} />
+          </div>
+          <p className="font-display-lat italic max-w-md mx-auto text-lg" style={{ color: theme.ink + 'AA' }}>
+            {t('act2_subtitle', 'გაჩვენებ რიტუალს, რომელმაც სხვებს დაეხმარა')}
+          </p>
+        </div>
+
+        {/* Grid — only active problems shown. Layout adapts to count */}
+        {(() => {
+          const activeProblems = problems.filter(p => p.productId);
+          const totalCards = activeProblems.length + 1; // +1 for "other" consultation card
+          const gridClass = totalCards === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
+                            totalCards === 2 ? 'grid-cols-2 max-w-md mx-auto' :
+                            totalCards === 3 ? 'grid-cols-3 max-w-2xl mx-auto' :
+                            'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 max-w-4xl mx-auto';
+          return (
+        <div className={`grid gap-3 sm:gap-4 ${gridClass}`}>
+          {activeProblems.map(p => {
+            const isSelected = selectedId === p.id;
+            return (
+              <button key={p.id} onClick={() => handleClick(p)}
+                className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition group hover:scale-105 hover:shadow-xl cursor-pointer ${isSelected ? 'ring-2 ring-offset-2' : ''}`}
+                style={{
+                  background: isSelected
+                    ? `linear-gradient(135deg, ${p.accent}33, ${theme.cream})`
+                    : `linear-gradient(135deg, ${p.accent}15, ${theme.cream})`,
+                  border: `${isSelected ? '2px' : '1px'} solid ${p.accent + (isSelected ? '' : '55')}`,
+                  boxShadow: isSelected ? `0 8px 30px -8px ${p.accent}66` : `0 4px 20px -8px ${p.accent}44`,
+                  '--tw-ring-color': p.accent
+                }}>
+                {isSelected && (
+                  <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center shadow-md"
+                    style={{ background: p.accent, color: theme.cream }}>
+                    <Ic name="check" className="w-3.5 h-3.5" />
+                  </div>
+                )}
+                {/* Hover glow */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition pointer-events-none"
+                  style={{ background: `radial-gradient(circle at center, ${p.accent}22, transparent 70%)` }} />
+
+                {/* Icon */}
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                  style={{ background: p.accent + '22' }}>
+                  <Ic name={p.icon} className="w-5 h-5 sm:w-6 sm:h-6"
+                    style={{ color: p.accent }} />
+                </div>
+
+                {/* Label */}
+                <p className="relative text-xs sm:text-sm text-center leading-tight font-medium px-1"
+                  style={{ color: theme.ink }}>
+                  {p.label}
+                </p>
+
+                {/* Top-right pulse indicator */}
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full"
+                  style={{ background: p.accent, boxShadow: `0 0 8px ${p.accent}`, animation: 'pulse 2s infinite' }} />
+              </button>
+            );
+          })}
+          {/* "Other problem" card — direct WhatsApp consultation for visitors with un-listed concerns */}
+          {rep.whatsapp && (
+            <a
+              href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა${rep.name ? ', ' + rep.name : ''}! მინდა უფასო კონსულტაცია — ვერ ვირჩევ რომელი პუნქტი მერგება. დამეხმარე? 🌹`)}`}
+              target="_blank" rel="noreferrer"
+              className="relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 p-3 transition group hover:scale-105 hover:shadow-xl cursor-pointer"
+              style={{
+                background: `linear-gradient(135deg, ${theme.wine}15, ${theme.cream})`,
+                border: `1px dashed ${theme.wine}88`,
+                boxShadow: `0 4px 20px -8px ${theme.wine}44`
+              }}>
+              {/* Hover glow */}
+              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition pointer-events-none"
+                style={{ background: `radial-gradient(circle at center, ${theme.wine}22, transparent 70%)` }} />
+
+              {/* Icon */}
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                style={{ background: theme.wine + '22' }}>
+                <Ic name="message-circle" className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.wine }} />
+              </div>
+
+              {/* Label */}
+              <p className="relative text-[10px] sm:text-xs text-center leading-tight font-medium px-1"
+                style={{ color: theme.ink }}>
+                {t('quiz_other_label', 'სხვა — მომწერე')}
+              </p>
+
+              {/* "Free" badge */}
+              <span className="absolute top-2 right-2 text-[8px] tracking-[0.15em] uppercase font-medium px-1.5 py-0.5 rounded-full anim-badge-pulse"
+                style={{ background: theme.wine, color: theme.cream }}>
+                {t('quiz_other_badge', 'უფასო')}
+              </span>
+            </a>
+          )}
+        </div>
+          );
+        })()}
+
+        {/* Footnote */}
+        <p className="text-center text-xs mt-8 max-w-md mx-auto" style={{ color: theme.ink + '77' }}>
+          🌱 ყოველი რიტუალის უკან ნამდვილი ისტორიაა — დააკლიკე და ნახე
+        </p>
+      </div>
+
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
+    </section>
+  );
+}
+
+function PainBridge({ rep, problem, onProceed, onBack }) {
+  if (!problem || !problem.bridge) return null;
+  const b = problem.bridge;
+
+  return (
+    <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+      {/* Soft cinematic ambient gradients */}
+      <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none"
+        style={{ background: theme.blush }} />
+      <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full opacity-25 blur-3xl pointer-events-none"
+        style={{ background: problem.accent + '88' }} />
+      <div className="absolute bottom-0 right-0 w-80 h-80 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: theme.gold }} />
+
+      {/* Sticky top bar with back */}
+      <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center"
+        style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
+        <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase transition hover:gap-3"
+          style={{ color: theme.ink }}>
+          <Ic name="arrow-left" className="w-4 h-4" /> უკან
+        </button>
+      </div>
+
+      <div className="relative max-w-3xl mx-auto px-5 py-12 sm:py-20">
+        {/* Eyebrow with problem icon */}
+        <div className="text-center mb-8 anim-fadeup">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ background: problem.accent + '11', border: `1px solid ${problem.accent}33` }}>
+            <Ic name={problem.icon} className="w-3.5 h-3.5" style={{ color: problem.accent }} />
+            <span className="text-[10px] tracking-[0.25em] uppercase font-medium" style={{ color: problem.accent }}>
+              {b.eyebrow} · {problem.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Headline */}
+        <h1 className="font-display text-center mb-10 anim-fadeup"
+          style={{ fontSize: 'clamp(2.5rem, 7vw, 5rem)', color: theme.ink, lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          {b.headline}
+        </h1>
+
+        {/* Empathy paragraphs */}
+        <div className="max-w-xl mx-auto space-y-5 mb-12">
+          {b.paragraphs.map((p, i) => (
+            <p key={i} className="font-display-lat italic text-center leading-relaxed anim-fadeup"
+              style={{ color: theme.ink + 'CC', fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', animationDelay: `${i * 100}ms` }}>
+              {p}
+            </p>
+          ))}
+        </div>
+
+        {/* "You're not alone" stat */}
+        {b.stat && (
+          <div className="max-w-xl mx-auto rounded-3xl p-6 sm:p-8 mb-10 text-center anim-fadeup"
+            style={{ background: `linear-gradient(135deg, ${theme.blush}88, ${theme.cream})`,
+                     border: `1px solid ${problem.accent}33`,
+                     boxShadow: `0 4px 30px -8px ${problem.accent}22` }}>
+            <div className="flex justify-center mb-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ background: problem.accent + '22' }}>
+                <Ic name="users" className="w-4 h-4" style={{ color: problem.accent }} />
+              </div>
+            </div>
+            <p className="text-base sm:text-lg leading-relaxed font-display" style={{ color: theme.ink }}>
+              {b.stat}
+            </p>
+          </div>
+        )}
+
+        {/* Rep card — personal touch */}
+        {rep.name && b.repNote && (
+          <div className="max-w-md mx-auto flex items-center gap-4 p-4 rounded-3xl mb-10 anim-fadeup"
+            style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+            <div className="relative flex-shrink-0">
+              <div className="w-14 h-14 rounded-full overflow-hidden"
+                style={{ border: `2px solid ${theme.cream}`, boxShadow: `0 4px 12px ${problem.accent}33` }}>
+                {rep.photo
+                  ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-lg"
+                       style={{ background: theme.mist, color: theme.gold }}>{rep.name.charAt(0) || '?'}</div>}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] tracking-widest uppercase mb-0.5" style={{ color: theme.gold }}>{rep.name}</p>
+              <p className="text-sm italic font-display-lat leading-snug" style={{ color: theme.ink }}>
+                "{b.repNote}"
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* CTA */}
+        <div className="text-center anim-fadeup">
+          <button onClick={onProceed}
+            className="group relative inline-flex items-center gap-3 py-5 px-8 sm:px-10 rounded-full font-medium text-sm tracking-[0.2em] uppercase transition hover:scale-[1.03]"
+            style={{ background: problem.accent, color: theme.cream,
+                     boxShadow: `0 20px 50px -10px ${problem.accent}66` }}>
+            <span>✦</span>
+            {b.cta}
+            <Ic name="arrow-right" className="w-4 h-4" />
+          </button>
+          <p className="text-xs mt-5" style={{ color: theme.ink + '77' }}>
+            არანაირი ვალდებულება — მხოლოდ შენი რიტუალის ჩვენება
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ProblemProductShowcase — Editorial product display for non-hair-loss problems (from Sheet)
+// Shows products in elegant cinematic style without the heavy hair-loss-specific narrative
+function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k, fb) => fb, cart }) {
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  if (!products || products.length === 0) return null;
+
+  const shopMessage = `${t('whatsapp_problem_msg_prefix', 'გამარჯობა! მაინტერესებს რჩევა')} ${problem.label}${t('whatsapp_problem_msg_suffix', '-სთვის.')}`;
+
+  return (
+    <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+      style={{ background: theme.ink, color: theme.cream }}>
+      {/* Atmospheric glow */}
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full opacity-[0.12] blur-3xl"
+        style={{ background: problem.accent || theme.wine }} />
+
+      <div className="relative max-w-5xl mx-auto">
+        {/* Eyebrow */}
+        <div className="text-center mb-12">
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-5 font-medium" style={{ color: theme.gold }}>
+            {t('act8_eyebrow', '✦ შენი რიტუალი')}
+          </p>
+          <h2 className="font-display leading-[0.95] mb-4"
+            style={{
+              fontSize: 'clamp(2.25rem, 6vw, 4rem)',
+              color: theme.cream,
+              letterSpacing: '-0.02em'
+            }}>
+            {t('act8_headline_prefix', 'შერჩეული')} <span className="font-display-lat italic font-normal" style={{ color: problem.accent || theme.gold }}>
+              {problem.label}{t('act8_headline_suffix', '-სთვის')}
+            </span>
+          </h2>
+          <p className="font-display-lat italic max-w-md mx-auto text-lg" style={{ color: theme.cream + 'AA' }}>
+            {products.length === 1
+              ? t('act8_subtitle_single', 'ერთი პროდუქტი — ერთი მიზანი')
+              : `${products.length} ${t('act8_subtitle_multi_suffix', 'პროდუქტი — ერთი რიტუალი')}`}
+          </p>
+        </div>
+
+        {/* Products grid — adapts to count */}
+        <div className={`grid gap-6 sm:gap-8 mb-12 ${
+          products.length === 1 ? 'max-w-md mx-auto' :
+          products.length === 2 ? 'sm:grid-cols-2 max-w-3xl mx-auto' :
+          'sm:grid-cols-2 lg:grid-cols-3'
+        }`}>
+          {products.map((p, idx) => (
+            <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent}
+              onClick={() => setSelectedProduct(p)}
+              onAddToCart={cart ? (prod) => { cart.addItem({ product_id: prod.id, name: prod.name, price: prod.price, image: prod.image, quantity: 1 }); cart.setOpen(true); } : null} />
+          ))}
+        </div>
+
+        {/* Bundle CTA — combine WhatsApp message */}
+        {repWhatsapp && (
+          <div className="text-center reveal-up">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="h-px w-16" style={{ background: theme.gold + '66' }} />
+              <p className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.gold }}>
+                {t('act8_bundle_lead', 'ან გაიგე მეტი')}
+              </p>
+              <div className="h-px w-16" style={{ background: theme.gold + '66' }} />
+            </div>
+            <a href={`https://wa.me/${repWhatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(shopMessage)}`}
+              target="_blank" rel="noreferrer"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-full font-medium text-xs tracking-[0.2em] uppercase transition hover:scale-[1.02]"
+              style={{ background: '#25D366', color: '#fff', boxShadow: `0 20px 50px -15px #25D36677` }}>
+              <SocialIcon name="whatsapp" className="w-4 h-4" />
+              {t('act8_bundle_cta', 'მაცნობე მეტი')}
+              <Ic name="arrow-right" className="w-4 h-4" />
+            </a>
+            <p className="text-[11px] mt-4 opacity-60" style={{ color: theme.cream }}>
+              {t('act8_bundle_note', 'გავუგზავნი ინდივიდუალურ რეცეპტს შენი ვითარებიდან გამომდინარე')}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Product Detail Modal */}
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          repWhatsapp={repWhatsapp}
+          t={t}
+          onAddToCart={cart ? (prod) => { cart.addItem({ product_id: prod.id, name: prod.name, price: prod.price, image: prod.image, quantity: 1 }); cart.setOpen(true); setSelectedProduct(null); } : null}
+        />
+      )}
+    </section>
+  );
+}
+
+// ProductDetailModal — Full-screen product detail with long description
+function ProductDetailModal({ product, onClose, repWhatsapp, t = (k, fb) => fb, onAddToCart }) {
+  const accent = product.accent || theme.wine;
+  const imageSrc = product.image
+    ? (product.image.startsWith('http') ? product.image : `/${product.image}`)
+    : null;
+  const productMessage = `${t('whatsapp_product_msg_prefix', 'გამარჯობა! მაინტერესებს')} ${product.name} (#${product.id}) — ${product.price} ₾`;
+  const waLink = repWhatsapp
+    ? `https://wa.me/${repWhatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(productMessage)}`
+    : '#';
+
+  // Lock body scroll when modal open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  // Smart description parser — handles paragraphs AND ✦ bullets even without newlines
+  // Detects: leadout phrases (ending with ":"), bullets (✦), and trailing paragraphs
+  const parseDescription = (text) => {
+    if (!text) return [];
+
+    // ─── Pre-process: normalize flat imported text from FARMASI catalog ───
+    let normalized = text;
+
+    // 1. Fix missing space after period/colon when followed by capital letter or Georgian char
+    //    e.g. "ვიზუალს.გამოიყენეთ" → "ვიზუალს. გამოიყენეთ"
+    normalized = normalized.replace(/([.!?])([\u10A0-\u10FF\u2D00-\u2D2FA-Z])/g, '$1 $2');
+    //    Same for colons: "შემადგენლობა:წყალი" → "შემადგენლობა: წყალი"
+    normalized = normalized.replace(/(:)([\u10A0-\u10FF\u2D00-\u2D2FA-Z])/g, '$1 $2');
+
+    // 2. Insert paragraph breaks before known section markers
+    const sectionMarkers = [
+      'ძირითადი ინგრედიენტები',
+      'ძირითადი თვისებები',
+      'ძირითადი ინგრედიენტი',
+      'სრული შემადგენლობა',
+      'გამოყენების წესი',
+      'გამოყენების ინსტრუქცია',
+      'მიღების წესი',
+      'შენახვის პირობები',
+      'ფორმულა გამდიდრებულია',
+      'რეკომენდებულია',
+      'შემადგენლობა:',
+      'ინგრედიენტები:',
+      'პროდუქტის შესახებ',
+      'რატომ შეგიყვარდებათ',
+      'ნაკრებში შედის',
+      'გაფრთხილება',
+    ];
+    sectionMarkers.forEach(marker => {
+      // Insert \n\n before marker (unless already at start or after newline)
+      const re = new RegExp('([^\\n])\\s*(' + marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'g');
+      normalized = normalized.replace(re, '$1\n\n$2');
+    });
+
+    // 3. Auto-detect ingredient bullets: "სიტყვა - " or "სიტყვა — " at start of sentence
+    //    Pattern: after newline OR after period+space, word(s) followed by " - " or " — "
+    normalized = normalized.replace(
+      /(\n|^|\.\s+)([\u10A0-\u10FF\u2D00-\u2D2F][\u10A0-\u10FF\u2D00-\u2D2F\s()A-Za-z0-9-]{2,40})(\s[-—]\s)/g,
+      (match, before, word, dash) => {
+        // Skip if word looks like a sentence (too long or starts with lowercase Georgian)
+        if (word.length > 40) return match;
+        return (before === '\n' || before === '' ? '' : before) + '\n✦ ' + word.trim() + dash;
+      }
+    );
+
+    // Try newline split now
+    const lines = normalized.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    if (lines.length > 1) {
+      return lines.map(l => l.startsWith('✦')
+        ? { type: 'bullet', text: l.replace(/^✦\s*/, '') }
+        : { type: 'paragraph', text: l });
+    }
+
+    // No newlines — split by ✦ markers
+    if (!normalized.includes('✦')) {
+      return [{ type: 'paragraph', text: normalized }];
+    }
+
+    const parts = normalized.split('✦').map(s => s.trim()).filter(Boolean);
+    const sections = [];
+
+    // INTRO (before first ✦) — try to detect leadout sentence ending with ":"
+    const intro = parts[0];
+    const colonIdx = intro.lastIndexOf(':');
+    if (colonIdx > 0) {
+      const beforeColon = intro.substring(0, colonIdx);
+      const lastSentenceEnd = Math.max(
+        beforeColon.lastIndexOf('. '),
+        beforeColon.lastIndexOf('! '),
+        beforeColon.lastIndexOf('? ')
+      );
+      if (lastSentenceEnd > 0) {
+        sections.push({ type: 'paragraph', text: intro.substring(0, lastSentenceEnd + 1).trim() });
+        sections.push({ type: 'paragraph', text: intro.substring(lastSentenceEnd + 1).trim() });
+      } else {
+        sections.push({ type: 'paragraph', text: intro });
+      }
+    } else {
+      sections.push({ type: 'paragraph', text: intro });
+    }
+
+    // BULLETS — for last bullet, detect trailing paragraphs by known markers
+    const trailingMarkers = ['კრემი საუკეთესოა', 'გამოყენების წესი', 'გამოყენება:', 'წაისვით', 'რეკომენდირებულია'];
+    for (let i = 1; i < parts.length; i++) {
+      let bulletText = parts[i];
+      if (i === parts.length - 1) {
+        // For last bullet, check if it has trailing paragraphs
+        let earliestMarker = -1;
+        let foundMarker = '';
+        for (const marker of trailingMarkers) {
+          const idx = bulletText.indexOf(marker);
+          if (idx > 0 && (earliestMarker === -1 || idx < earliestMarker)) {
+            earliestMarker = idx;
+            foundMarker = marker;
+          }
+        }
+        if (earliestMarker > 0) {
+          sections.push({ type: 'bullet', text: bulletText.substring(0, earliestMarker).trim() });
+          let remaining = bulletText.substring(earliestMarker).trim();
+          // Check for another marker in remaining
+          let secondMarker = -1;
+          for (const marker of trailingMarkers) {
+            if (marker === foundMarker) continue;
+            const idx = remaining.indexOf(marker);
+            if (idx > 0 && (secondMarker === -1 || idx < secondMarker)) {
+              secondMarker = idx;
+            }
+          }
+          if (secondMarker > 0) {
+            sections.push({ type: 'paragraph', text: remaining.substring(0, secondMarker).trim() });
+            sections.push({ type: 'paragraph', text: remaining.substring(secondMarker).trim() });
+          } else {
+            sections.push({ type: 'paragraph', text: remaining });
+          }
+          continue;
+        }
+      }
+      sections.push({ type: 'bullet', text: bulletText });
+    }
+
+    return sections;
+  };
+  const descSections = parseDescription(product.description);
+
+  // Render via Portal at document.body — escapes any transformed ancestors
+  // so that position:fixed centers correctly relative to viewport
+  const modalContent = (
+    <div className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-6 anim-fadeup"
+      onClick={onClose}
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
+      <div className="relative w-full sm:max-w-3xl h-[100dvh] sm:h-auto sm:max-h-[92vh] overflow-y-auto sm:rounded-3xl flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+        style={{ background: theme.ink, color: theme.cream, border: `1px solid ${theme.cream}11` }}>
+
+        {/* Back arrow — top left, fixed within scroll container */}
+        <button onClick={onClose}
+          className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs tracking-[0.15em] uppercase font-medium transition hover:scale-105 backdrop-blur-md"
+          style={{
+            background: theme.ink + 'CC',
+            color: theme.cream,
+            border: `1px solid ${theme.cream}33`,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+          }}>
+          <Ic name="arrow-left" className="w-3.5 h-3.5" />
+          <span>{t('modal_back', 'უკან')}</span>
+        </button>
+
+        {/* Image area — responsive: square on portrait mobile, wider on landscape, capped height */}
+        <div className="relative w-full overflow-hidden flex items-center justify-center flex-shrink-0"
+          style={{
+            background: `linear-gradient(135deg, ${accent}22, ${theme.ink})`,
+            aspectRatio: '4/3',
+            maxHeight: '55vh',
+            minHeight: '200px'
+          }}>
+          {/* Spotlight glow */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-50"
+              style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }} />
+          </div>
+          {imageSrc && (
+            <ProductImage src={imageSrc} alt={product.name}
+              className="relative z-[1] max-h-full max-w-full object-contain p-6 sm:p-10 anim-float"
+              style={{ filter: `drop-shadow(0 30px 60px ${accent}88) drop-shadow(0 0 80px ${accent}44)` }}
+              onError={(e) => { e.target.style.display = 'none'; }} />
+          )}
+          {/* Tag */}
+          {product.tag && (
+            <span className="absolute top-3 right-3 sm:top-4 sm:right-4 text-[9px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md font-medium z-[2]"
+              style={{ background: theme.cream + 'EE', color: theme.ink }}>
+              {product.tag}
+            </span>
+          )}
+        </div>
+
+        {/* Content area */}
+        <div className="px-5 sm:px-10 py-6 sm:py-8 flex-1">
+          {/* Category */}
+          {product.cat && (
+            <p className="text-[10px] sm:text-[11px] tracking-[0.35em] uppercase mb-3 font-medium" style={{ color: theme.gold }}>
+              {product.cat}
+            </p>
+          )}
+
+          {/* Title */}
+          <h2 className="font-display leading-[1.1] mb-4"
+            style={{
+              fontSize: 'clamp(1.5rem, 6vw, 2.5rem)',
+              color: theme.cream,
+              letterSpacing: '-0.01em'
+            }}>
+            {product.name}
+          </h2>
+
+          {/* Price + ID row */}
+          <div className="flex items-center gap-4 mb-6 flex-wrap">
+            <p className="font-display" style={{ color: accent, fontSize: 'clamp(1.5rem, 7vw, 2.25rem)' }}>
+              {product.price ? `${product.price} ₾` : ''}
+            </p>
+            <span className="text-[10px] tracking-[0.25em] uppercase opacity-60 font-mono">
+              ID #{product.id}
+            </span>
+            {onAddToCart && product.price && (
+              <button onClick={() => onAddToCart(product)}
+                aria-label="კალათში დამატება"
+                className="cart-add-btn group/cart relative rounded-full cursor-pointer hover:scale-110 active:scale-95 transition-transform"
+                style={{ background: theme.cream, color: theme.ink, width: 36, height: 36, border: `2px solid ${accent}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                  style={{ width: 16, height: 16, display: 'block' }}>
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover/cart:opacity-100 pointer-events-none transition-opacity"
+                  style={{ background: theme.ink, color: theme.cream, boxShadow: `0 4px 12px ${theme.ink}66` }}>
+                  კალათში დამატება
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Hairline */}
+          <div className="h-px mb-6" style={{ background: theme.cream + '15' }} />
+
+          {/* Full description — rendered as paragraphs and bullets */}
+          {descSections.length > 0 && (
+            <div className="mb-7">
+              <p className="font-display-lat italic text-xs sm:text-sm tracking-[0.2em] uppercase mb-4" style={{ color: theme.gold }}>
+                {t('product_description_eyebrow', '✦ აღწერილობა')}
+              </p>
+              <div className="space-y-3.5">
+                {descSections.map((section, idx) => {
+                  if (section.type === 'bullet') {
+                    return (
+                      <div key={idx} className="flex gap-3 items-start">
+                        <div className="flex-shrink-0 mt-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center"
+                          style={{ background: accent + '22', color: accent }}>
+                          <Ic name="sparkles" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        </div>
+                        <p className="flex-1 text-sm sm:text-base leading-[1.7]" style={{ color: theme.cream + 'CC' }}>
+                          {section.text}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p key={idx} className="text-sm sm:text-base leading-[1.75]" style={{ color: theme.cream + 'CC' }}>
+                      {section.text}
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* WhatsApp CTA */}
+          {repWhatsapp && (
+            <a href={waLink} target="_blank" rel="noreferrer"
+              className="group flex items-center justify-center gap-2 sm:gap-3 px-6 py-3.5 sm:py-4 rounded-full font-medium text-xs tracking-[0.2em] uppercase transition hover:scale-[1.01] hover:gap-4"
+              style={{ background: '#25D366', color: '#fff', boxShadow: `0 20px 50px -15px #25D36677` }}>
+              <SocialIcon name="whatsapp" className="w-4 h-4" />
+              {t('product_order_cta', 'შეუკვეთე ან გაიგე მეტი')}
+              <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(modalContent, document.body);
+}
+
+// ProductImage — simple wrapper that displays the image as-is.
+// Supports both local files (calendula-cream.png) and external URLs (FARMASI CDN).
+// Note: External URLs with white backgrounds will display with white bg —
+// to remove white bg, upload transparent PNG to GitHub root instead.
+function ProductImage({ src, alt, className, style, onError }) {
+  if (!src) return null;
+  return <img src={src} alt={alt} className={className} style={style} onError={onError} decoding="async" />;
+}
+
+// Single product card for ProblemProductShowcase — with 3D tilt
+function ProblemProductCard({ product, index, accent, onClick, onAddToCart }) {
+  const tiltRef = useRef(null);
+
+  const containerRef = useRef(null);
+  const handleMouseMove = (e) => {
+    if (!containerRef.current || !tiltRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    tiltRef.current.style.transform =
+      `perspective(1200px) rotateY(${px * 18}deg) rotateX(${-py * 12}deg) scale(1.05)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (tiltRef.current) tiltRef.current.style.transform = '';
+  };
+
+  // Build absolute path — supports both:
+  // 1. Filename (image at GitHub root): "calendula-cream.png" → "/calendula-cream.png"
+  // 2. Full URL (FARMASI CDN, etc): "https://farmasi.ge/..." → use as-is
+  const imageSrc = product.image
+    ? (product.image.startsWith('http') ? product.image : `/${product.image}`)
+    : null;
+
+  return (
+    <div className="reveal-up relative h-full" style={{ animationDelay: `${index * 80}ms` }}>
+      <button onClick={onClick}
+        className="block w-full h-full text-left rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02] hover:shadow-2xl group flex flex-col"
+        style={{
+          background: `linear-gradient(135deg, ${accent}22, ${theme.ink})`,
+          border: `1px solid ${theme.cream}11`
+        }}>
+        {/* Image area */}
+        <div ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+          className="relative aspect-[4/5] flex items-center justify-center overflow-hidden"
+          style={{ perspective: '1200px' }}>
+          {/* Spotlight glow */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-40"
+              style={{ background: `radial-gradient(circle, ${accent}, transparent 70%)` }} />
+          </div>
+          {/* Tilt container with image */}
+          <div ref={tiltRef} className="product-tilt-3d relative z-10 w-full h-full flex items-center justify-center anim-float p-8">
+            {imageSrc ? (
+              <ProductImage src={imageSrc} alt={product.name}
+                className="max-w-full max-h-full object-contain"
+                style={{ filter: `drop-shadow(0 30px 50px ${accent}66)` }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            ) : (
+              <div className="text-center opacity-60">
+                <div className="w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center"
+                  style={{ background: theme.cream + '11' }}>
+                  <Ic name="image" className="w-8 h-8" style={{ color: theme.cream }} />
+                </div>
+                <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.cream + '88' }}>
+                  ფოტო მალე
+                </p>
+              </div>
+            )}
+          </div>
+          {/* Tag */}
+          {product.tag && (
+            <span className="absolute top-4 right-4 text-[9px] tracking-[0.2em] uppercase px-3 py-1 rounded-full backdrop-blur-md font-medium"
+              style={{ background: theme.cream + 'EE', color: theme.ink }}>
+              {product.tag}
+            </span>
+          )}
+          {/* Hover hint — appears on hover */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 transition pointer-events-none"
+            style={{ background: theme.cream + 'EE', color: theme.ink, boxShadow: `0 8px 20px ${theme.ink}66` }}>
+            <span className="text-[10px] tracking-[0.2em] uppercase font-medium flex items-center gap-2">
+              <Ic name="zoom-in" className="w-3 h-3" /> დააკლიკე → დეტალები
+            </span>
+          </div>
+        </div>
+
+        {/* Info area */}
+        <div className="p-5 sm:p-6 flex-1 flex flex-col">
+          {product.cat && (
+            <p className="text-[10px] tracking-[0.2em] uppercase mb-2" style={{ color: theme.gold }}>
+              {product.cat}
+            </p>
+          )}
+          <h3 className="font-display text-xl mb-2 leading-tight" style={{ color: theme.cream }}>
+            {product.name}
+          </h3>
+          {product.description && (
+            <p className="text-sm leading-relaxed mb-4 font-display-lat italic"
+              style={{
+                color: theme.cream + 'AA',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                maxHeight: '4.5em'
+              }}>
+              {product.description.length > 130
+                ? product.description.slice(0, 130).trim() + '...'
+                : product.description}
+            </p>
+          )}
+          <div className="flex items-center justify-between pt-2 mt-auto"
+            style={{ borderTop: `1px solid ${theme.cream}11` }}>
+            <p className="font-display text-2xl" style={{ color: accent }}>
+              {product.price ? `${product.price} ₾` : ''}
+            </p>
+            <div className="flex items-center gap-3">
+              {product.id && (
+                <p className="text-[10px] tracking-widest uppercase opacity-60" style={{ color: theme.cream }}>
+                  ID #{product.id}
+                </p>
+              )}
+              {onAddToCart && product.price && (
+                <span role="button" tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); onAddToCart(product); } }}
+                  aria-label="კალათში დამატება"
+                  className="cart-add-btn group/cart relative rounded-full cursor-pointer hover:scale-110 active:scale-95 transition-transform"
+                  style={{ background: theme.cream, color: theme.ink, width: 36, height: 36, border: `2px solid ${accent}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                    style={{ width: 16, height: 16, display: 'block' }}>
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  <span className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg text-xs whitespace-nowrap opacity-0 group-hover/cart:opacity-100 pointer-events-none transition-opacity"
+                    style={{ background: theme.ink, color: theme.cream, boxShadow: `0 4px 12px ${theme.ink}66` }}>
+                    კალათში დამატება
+                  </span>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+}
+
+function ProductCard({ p, onClick, featured }) {
+  const Mockup = p.mockup ? Mockups[p.mockup] : null;
+  const hasImage = !!p.image;
+  const tiltRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // 3D tilt — mouse-tracking for natural product rotation feel
+  const handleMouseMove = (e) => {
+    if (!containerRef.current || !tiltRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;  // -0.5 to 0.5
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    tiltRef.current.style.transform =
+      `perspective(1000px) rotateY(${px * 22}deg) rotateX(${-py * 14}deg) scale(1.06)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (tiltRef.current) tiltRef.current.style.transform = '';
+  };
+
+  return (
+    <button onClick={onClick}
+      className={`product-card text-left rounded-2xl overflow-hidden transition hover:shadow-2xl group block w-full ${featured ? 'sm:flex' : ''}`}
+      style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`, boxShadow: '0 4px 20px -8px rgba(35,23,18,0.1)' }}>
+      <div ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+        className={`relative flex items-center justify-center overflow-hidden ${featured ? 'sm:w-3/5 aspect-[4/3] sm:aspect-auto' : 'aspect-square'}`}
+        style={{ background: `linear-gradient(135deg, ${p.bg[0]}, ${p.bg[1]})`, perspective: '1200px' }}>
+        <div className="absolute top-4 right-4 w-20 h-20 rounded-full opacity-30 blur-2xl" style={{ background: p.accent }} />
+        <div className="absolute bottom-6 left-6 w-32 h-32 rounded-full opacity-20 blur-3xl" style={{ background: p.accent }} />
+        {hasImage ? (
+          <div className={`relative z-10 ${featured ? 'w-3/5 sm:w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float p-4`}>
+            <div ref={tiltRef} className="product-tilt-3d w-full h-full flex items-center justify-center">
+              <img src={p.image} alt={p.name}
+                className="max-w-full max-h-full object-contain"
+                style={{ filter: 'drop-shadow(0 20px 30px rgba(35,23,18,0.25))' }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </div>
+          </div>
+        ) : Mockup ? (
+          <div className={`relative z-10 ${featured ? 'w-2/3' : 'w-3/5'} h-full flex items-center justify-center anim-float`}>
+            <div ref={tiltRef} className="product-tilt-3d w-full h-full flex items-center justify-center">
+              <Mockup accent={p.accent} />
+            </div>
+          </div>
+        ) : null}
+        {p.tag && (
+          <span className="absolute top-3 left-3 text-[9px] tracking-[0.15em] uppercase px-2.5 py-1 rounded-full backdrop-blur-md"
+            style={{ background: theme.ink + 'EE', color: theme.cream }}>{p.tag}</span>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+          style={{ background: theme.ink + 'AA' }}>
+          <span className="text-xs tracking-[0.2em] uppercase flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{ background: theme.cream, color: theme.ink }}>
+            <Ic name="eye" className="w-3.5 h-3.5" /> ნახე
+          </span>
+        </div>
+      </div>
+      <div className={`p-4 ${featured ? 'sm:w-2/5 sm:flex sm:flex-col sm:justify-center sm:p-8' : ''}`}>
+        <p className="text-[10px] tracking-[0.15em] uppercase mb-1" style={{ color: theme.gold }}>{p.cat}</p>
+        <p className={`font-display leading-tight ${featured ? 'text-2xl mb-3' : 'text-base mb-1'}`} style={{ color: theme.ink }}>
+          {p.name}
+        </p>
+        {featured && (
+          <p className="text-sm leading-relaxed mb-4" style={{ color: theme.ink + '99' }}>
+            {p.description || 'შერჩეული ჩემს მიერ პირადად — ულუფა აუცილებელი მოვლისთვის'}
+          </p>
+        )}
+        <div className="flex items-center justify-between">
+          <p className={`font-display ${featured ? 'text-3xl' : 'text-base'}`} style={{ color: theme.wine }}>
+            {p.price} ₾
+          </p>
+          {featured && (
+            <span className="text-xs tracking-widest uppercase flex items-center gap-1" style={{ color: theme.wine }}>
+              ნახე <Ic name="arrow-right" className="w-3 h-3" />
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+//   PRODUCT PAGE — individual product landing
+// ═══════════════════════════════════════════════════════════
+function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, cart }) {
+  try {
+    // ⚠️ VALIDATION CHECK
+    if (!product || !product.id) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
+          <div className="text-center">
+            <p style={{ marginBottom: '20px', color: '#333' }}>პროდუქტი ვერ იტვირთა</p>
+            <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+          </div>
+        </div>
+      );
+    }
+
+    const t = (key, fallback = '') => (labels && labels[key]) || fallback;
+    const [chatOpen, setChatOpen] = useState(false);
+    const [qty, setQty] = useState(1);
+    // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
+    const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
+    const goShop = () => window.open(referralUrl, '_blank');
+    const productUrl = `farmasi-rep.ge/r/${repCode}/p/${product.id}`;
+    const Mockup = product.mockup ? Mockups[product.mockup] : null;
+    
+    const features = product.features || [
+      { ic: 'leaf', t: 'არ იტესტება ცხოველებზე' },
+      { ic: 'sparkles', t: 'მდგრადი ფორმულა' },
+      { ic: 'shield-check', t: 'დერმატოლოგიურად დადასტურებული' },
+      { ic: 'heart', t: 'ნატურალური ინგრედიენტები' },
+    ];
+
+    const otherProducts = products.filter(p => p.id !== product.id).slice(0, 3);
+
+    const shareWA = () => {
+      const text = `${product.name} — ${product.price} ₾\nფასდაკავშირდი ${rep.name}-ს FARMASI ლენდინგზე`;
+      const url = `https://wa.me/${(rep.whatsapp || '').replace(/[^\d]/g,'')}?text=${encodeURIComponent(text)}`;
+      if (rep.whatsapp) window.open(url, '_blank');
+    };
+
+    return (
+      <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
+        {/* Sticky top bar */}
+        <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center justify-between"
+          style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
+          <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: theme.ink }}>
+            <Ic name="arrow-left" className="w-4 h-4" /> უკან
+          </button>
+          <span className="font-mono text-[10px]" style={{ color: theme.gold }}>#{product.id}</span>
+          <button onClick={shareWA} className="flex items-center gap-1 text-xs" style={{ color: theme.wine }}>
+            <Ic name="share-2" className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* HERO — large product showcase */}
+        <section className="relative overflow-hidden pt-8 pb-12 px-5"
+          style={{ background: `linear-gradient(180deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}66 0%, ${theme.cream} 100%)` }}>
+          <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl"
+            style={{ background: product.accent }} />
+          <div className="absolute top-40 -left-20 w-80 h-80 rounded-full opacity-20 blur-3xl"
+            style={{ background: product.accent }} />
+
+          <div className="relative max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            {/* Product visual */}
+            <div className="relative aspect-square rounded-3xl overflow-hidden flex items-center justify-center anim-fadeup"
+              style={{ background: `linear-gradient(135deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}, ${product.bg?.[1] ?? product.accent ?? '#f5f0eb'})`,
+                       boxShadow: `0 30px 80px -20px ${product.accent}55` }}>
+              <div className="absolute top-8 right-8 w-40 h-40 rounded-full opacity-30 blur-3xl" style={{ background: product.accent }} />
+              <div className="absolute bottom-12 left-12 w-56 h-56 rounded-full opacity-20 blur-3xl" style={{ background: product.accent }} />
+              {product.tag && (
+                <span className="absolute top-5 left-5 z-10 text-[10px] tracking-[0.2em] uppercase px-3 py-1.5 rounded-full backdrop-blur-md"
+                  style={{ background: theme.ink + 'EE', color: theme.cream }}>{product.tag}</span>
+              )}
+              {product.heroImage ? (
+                <img src={product.heroImage} alt={product.name}
+                  className="relative z-10 w-full h-full object-cover" />
+              ) : product.image ? (
+                <div className="relative z-10 w-3/4 h-3/4 flex items-center justify-center anim-float p-6">
+                  <img src={product.image} alt={product.name}
+                    className="max-w-full max-h-full object-contain"
+                    style={{ filter: 'drop-shadow(0 30px 40px rgba(35,23,18,0.3))' }} />
+                </div>
+              ) : Mockup ? (
+                <div className="relative z-10 w-3/4 h-3/4 flex items-center justify-center anim-float">
+                  <Mockup accent={product.accent} />
+                </div>
+              ) : null}
+            </div>
+
+            {/* Product info */}
+            <div className="anim-fadeup">
+              <p className="text-[10px] tracking-[0.2em] uppercase mb-3" style={{ color: theme.gold }}>{product.cat}</p>
+              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl leading-tight mb-2" style={{ color: theme.ink }}>
+                {product.headline || product.name}
+              </h1>
+              {product.subheadline ? (
+                <p className="text-base leading-relaxed mt-3 mb-2 font-display-lat" style={{ color: theme.ink + 'BB' }}>
+                  {product.subheadline}
+                </p>
+              ) : product.fullName && product.fullName !== product.name ? (
+                <p className="text-sm font-display-lat mb-2" style={{ color: theme.ink + '88' }}>{product.fullName}</p>
+              ) : null}
+
+              {/* Rating + SKU */}
+              <div className="flex items-center gap-3 mb-5 flex-wrap">
+                {product.rating && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex">
+                      {[1,2,3,4,5].map(i => (
+                        <Ic key={i} name="star" className="w-3.5 h-3.5"
+                          style={{ color: i <= Math.round(product.rating) ? theme.gold : theme.ink + '22',
+                                   fill: i <= Math.round(product.rating) ? theme.gold : 'none' }} />
+                      ))}
+                    </div>
+                    <span className="text-xs font-mono" style={{ color: theme.ink }}>{product.rating}</span>
+                    {product.reviewCount && <span className="text-xs" style={{ color: theme.ink + '77' }}>({product.reviewCount} შეფასება)</span>}
+                  </div>
+                )}
+                {product.sku && (
+                  <>
+                    <span className="text-xs" style={{ color: theme.ink + '33' }}>·</span>
+                    <span className="text-xs font-mono" style={{ color: theme.ink + '77' }}>კოდი: {product.sku}</span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-baseline gap-3 mb-6">
+                <p className="font-display text-5xl" style={{ color: theme.wine }}>{product.price} ₾</p>
+                <span className="text-xs tracking-widest uppercase" style={{ color: theme.ink + '77' }}>
+                  ოფიციალური ფასი
+                </span>
+              </div>
+
+              {product.description && (
+                <p className="text-base leading-relaxed mb-6" style={{ color: theme.ink + 'CC' }}>
+                  {product.description}
+                </p>
+              )}
+
+              {/* Quantity */}
+              <div className="flex items-center gap-4 mb-6">
+                <span className="text-xs tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>{t('prod_quantity_label', 'რაოდენობა')}</span>
+                <div className="flex items-center rounded-full overflow-hidden" style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+                  <button onClick={() => setQty(Math.max(1, qty - 1))}
+                    className="w-9 h-9 flex items-center justify-center" style={{ color: theme.ink }}>
+                    <Ic name="minus" className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="w-10 text-center font-mono" style={{ color: theme.ink }}>{qty}</span>
+                  <button onClick={() => setQty(qty + 1)}
+                    className="w-9 h-9 flex items-center justify-center" style={{ color: theme.ink }}>
+                    <Ic name="plus" className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <span className="text-sm" style={{ color: theme.ink + '99' }}>
+                  = <span className="font-display text-base" style={{ color: theme.wine }}>{(product.price * qty).toFixed(2)} ₾</span>
+                </span>
+              </div>
+
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                {cart && (
+                  <button onClick={() => { cart.addItem({ product_id: product.id, name: product.name, price: product.price, image: product.image, quantity: qty }); cart.setOpen(true); }}
+                    className="flex-1 py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                    style={{ background: theme.ink, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.ink}88` }}>
+                    <Ic name="shopping-bag" className="w-4 h-4" /> კალათაში დამატება
+                  </button>
+                )}
+                {rep.whatsapp && (
+                  <button onClick={shareWA}
+                    className="py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                    style={{ background: theme.ivory, color: theme.ink, border: `1.5px solid ${theme.gold}66` }}>
+                    <SocialIcon name="whatsapp" className="w-4 h-4" style={{ color: '#25D366' }} /> ვკითხო
+                  </button>
+                )}
+              </div>
+
+              {/* Trust line */}
+              <div className="flex items-center gap-4 text-xs flex-wrap" style={{ color: theme.ink + '88' }}>
+                <span className="flex items-center gap-1.5">
+                  <Ic name="badge-check" className="w-3.5 h-3.5" style={{ color: theme.gold }} /> ოფიციალური FARMASI
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Ic name="truck" className="w-3.5 h-3.5" style={{ color: theme.gold }} /> სწრაფი მიწოდება
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* PROBLEMS — empathic mirror, "is this you?" hook */}
+        {product.problems && (
+          <section className="px-5 py-16 relative overflow-hidden"
+            style={{ background: `linear-gradient(180deg, ${theme.ivory} 0%, ${theme.cream} 100%)` }}>
+            <div className="absolute top-1/3 -left-20 w-72 h-72 rounded-full opacity-20 blur-3xl"
+              style={{ background: theme.rose }} />
+            <div className="absolute bottom-1/3 -right-20 w-80 h-80 rounded-full opacity-15 blur-3xl"
+              style={{ background: theme.gold }} />
+
+            <div className="relative max-w-5xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_story_label', 'თქვენი ისტორია')}</p>
+                <h2 className="font-display text-3xl sm:text-5xl mb-3 leading-tight" style={{ color: theme.ink }}>
+                  {product.problems.headline}
+                </h2>
+                <p className="text-base font-display-lat italic" style={{ color: theme.ink + 'AA' }}>
+                  {product.problems.subtitle}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {product.problems.items.map((p, i) => (
+                  <div key={i} className="flex gap-4 p-6 rounded-3xl transition hover:scale-[1.01]"
+                    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`,
+                             boxShadow: '0 4px 16px -4px rgba(35,23,18,0.05)' }}>
+                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
+                      style={{ background: theme.wine + '11' }}>
+                      <Ic name={p.ic} className="w-5 h-5" style={{ color: theme.wine }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-display text-lg mb-1.5" style={{ color: theme.ink }}>{p.t}</p>
+                      <p className="text-sm leading-relaxed font-display-lat italic" style={{ color: theme.ink + '99' }}>
+                        "{p.d}"
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center mt-10">
+                <p className="font-display text-2xl sm:text-3xl leading-tight max-w-xl mx-auto" style={{ color: theme.ink }}>
+                  ეს გრძნობა <span className="font-display-lat italic" style={{ color: theme.wine }}>{t('prod_complete_label', 'დასრულდება')}</span> — დავიწყოთ ერთად.
+                </p>
+                <button onClick={goShop}
+                  className="mt-6 py-4 px-8 rounded-2xl inline-flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                  style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
+                  <Ic name="arrow-down" className="w-4 h-4" /> ნახე გადაწყვეტა
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* FEATURES strip */}
+        <section className="px-5 py-10" style={{ background: theme.ivory }}>
+          <div className="max-w-5xl mx-auto">
+            <p className="text-xs tracking-widest uppercase mb-6 text-center" style={{ color: theme.gold }}>{t('prod_features_title', 'მახასიათებლები')}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {features.map((f, i) => (
+                <div key={i} className="text-center p-4 rounded-2xl"
+                  style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                  <div className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
+                    style={{ background: theme.wine + '11' }}>
+                    <Ic name={f.ic} className="w-4 h-4" style={{ color: theme.wine }} />
+                  </div>
+                  <p className="text-xs leading-tight" style={{ color: theme.ink }}>{f.t}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* BENEFITS — why choose this product */}
+        {product.benefits && (
+          <section className="px-5 py-16">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_why_title', 'რატომ ეს პროდუქტი')}</p>
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                  ოთხი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_main_label', 'მთავარი')}</span> უპირატესობა
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {product.benefits.map((b, i) => (
+                  <div key={i} className="flex gap-4 p-6 rounded-2xl transition hover:shadow-lg"
+                    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                    <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center"
+                      style={{ background: `linear-gradient(135deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}, ${product.bg?.[1] ?? product.accent ?? '#f5f0eb'})` }}>
+                      <Ic name={b.ic} className="w-5 h-5" style={{ color: theme.wine }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-display text-lg mb-1" style={{ color: theme.ink }}>{b.t}</p>
+                      <p className="text-sm leading-relaxed" style={{ color: theme.ink + '99' }}>{b.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* RESULTS — before & after evidence */}
+        {product.beforeAfter && (
+          <section className="px-5 py-16">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-[10px] tracking-widest uppercase"
+                  style={{ background: theme.wine + '11', color: theme.wine, border: `1px solid ${theme.wine}33` }}>
+                  <Ic name="check-circle" className="w-3 h-3" /> ნამდვილი შედეგები
+                </div>
+                <h2 className="font-display text-3xl sm:text-4xl mb-3" style={{ color: theme.ink }}>
+                  შედეგები რომ <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_speak_label', 'ლაპარაკობენ')}</span>
+                </h2>
+                <p className="text-base max-w-xl mx-auto" style={{ color: theme.ink + '99' }}>
+                  რეალური მომხმარებლების ფოტოები — გამოყენების ციკლის შემდეგ
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {product.beforeAfter.map((b, i) => (
+                  <div key={i} className="rounded-3xl overflow-hidden anim-fadeup"
+                    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`,
+                             boxShadow: '0 20px 50px -20px rgba(35,23,18,0.2)' }}>
+                    {/* Image */}
+                    <div className="relative aspect-[4/3] overflow-hidden"
+                      style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.cream})` }}>
+                      <img src={b.image} alt={b.title}
+                        className="w-full h-full object-cover" />
+                      {/* Result badge */}
+                      <div className="absolute top-4 right-4 px-3 py-2 rounded-full backdrop-blur-md flex items-center gap-1.5"
+                        style={{ background: theme.cream + 'EE', color: theme.wine, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                        <Ic name="trending-up" className="w-3.5 h-3.5" />
+                        <span className="text-xs font-display">{b.result}</span>
+                      </div>
+                    </div>
+
+                    {/* Info */}
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="font-display text-xl" style={{ color: theme.ink }}>{b.title}</p>
+                        <div className="flex">
+                          {[1,2,3,4,5].map(s => (
+                            <Ic key={s} name="star" className="w-3 h-3"
+                              style={{ color: theme.gold, fill: theme.gold }} />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm font-display-lat italic mb-3" style={{ color: theme.wine }}>{b.subtitle}</p>
+                      <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'AA' }}>{b.note}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-center mt-8 max-w-2xl mx-auto" style={{ color: theme.ink + '77' }}>
+                * შედეგები შეიძლება განსხვავდებოდეს ინდივიდუალურად, კანის ტიპის, ცხოვრების სტილისა და გამოყენების რეგულარობის მიხედვით
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* VIDEOS — product demo videos */}
+        {product.videos && (
+          <section className="px-5 py-16" style={{ background: theme.ivory }}>
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_video_title', 'ვიდეო პრეზენტაცია')}</p>
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                  ნახე <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_action_label', 'მოქმედებაში')}</span>
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {product.videos.map((v, i) => <ProductVideo key={i} video={v} />)}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* HOW IT WORKS — 3-step formula explanation */}
+        {product.howItWorks && (
+          <section className="px-5 py-16 relative overflow-hidden"
+            style={{ background: `linear-gradient(180deg, ${theme.ink} 0%, #2a1610 100%)` }}>
+            <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20 blur-3xl"
+              style={{ background: product.accent }} />
+            <div className="absolute -bottom-40 -left-40 w-96 h-96 rounded-full opacity-15 blur-3xl"
+              style={{ background: theme.gold }} />
+
+            <div className="relative max-w-5xl mx-auto">
+              <div className="text-center mb-12">
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_how_title', 'როგორ მუშაობს ფორმულა')}</p>
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.cream }}>
+                  სამი <span className="font-display-lat italic font-normal" style={{ color: theme.gold }}>{t('prod_phase_label', 'ფაზა')}</span> — ერთი შედეგი
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 relative">
+                {/* connecting line */}
+                <div className="hidden sm:block absolute top-12 left-[16%] right-[16%] h-px"
+                  style={{ background: `linear-gradient(90deg, ${theme.gold}00, ${theme.gold}66, ${theme.gold}00)` }} />
+
+                {product.howItWorks.map((s, i) => (
+                  <div key={i} className="text-center relative">
+                    <div className="relative inline-flex w-24 h-24 rounded-full mb-5 items-center justify-center"
+                      style={{ background: `linear-gradient(135deg, ${theme.cream}11, ${theme.cream}05)`,
+                               border: `1px solid ${theme.gold}44`,
+                               backdropFilter: 'blur(10px)' }}>
+                      <Ic name={s.ic} className="w-8 h-8" style={{ color: theme.gold }} />
+                      <span className="absolute -top-2 -right-2 w-7 h-7 rounded-full font-display text-sm flex items-center justify-center"
+                        style={{ background: theme.gold, color: theme.ink }}>
+                        0{s.step}
+                      </span>
+                    </div>
+                    <p className="font-display text-2xl mb-2" style={{ color: theme.cream }}>{s.title}</p>
+                    <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: theme.cream + '99' }}>{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* INGREDIENTS — key actives */}
+        {product.ingredients && (
+          <section className="px-5 py-16">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_ingredients_title', 'აქტიური კომპონენტები')}</p>
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                  რა <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_works_label', 'ამუშავებს')}</span>
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {product.ingredients.map((ing, i) => (
+                  <div key={i} className="flex gap-4 p-5 rounded-2xl"
+                    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-display"
+                      style={{ background: `linear-gradient(135deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}, ${product.bg?.[1] ?? product.accent ?? '#f5f0eb'})`, color: theme.wine }}>
+                      {String(i+1).padStart(2,'0')}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-display text-base mb-1" style={{ color: theme.ink }}>{ing.name}</p>
+                      <p className="text-xs leading-relaxed" style={{ color: theme.ink + '99' }}>{ing.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* HOW TO USE */}
+        {product.howToUse && (
+          <section className="px-5 py-16" style={{ background: theme.ivory }}>
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_howto_title', 'გამოყენების წესი')}</p>
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                  სამი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_simple_label', 'მარტივი')}</span> ნაბიჯი
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
+                {/* Connecting line */}
+                <div className="hidden sm:block absolute top-10 left-[16%] right-[16%] h-px" style={{ background: `${theme.gold}44` }} />
+
+                {product.howToUse.map((s, i) => (
+                  <div key={i} className="text-center relative">
+                    <div className="relative inline-flex w-20 h-20 rounded-full mb-4 items-center justify-center font-display text-2xl"
+                      style={{ background: theme.cream, border: `2px solid ${theme.gold}66`, color: theme.wine,
+                               boxShadow: '0 8px 24px -8px rgba(122,30,44,0.15)' }}>
+                      0{s.step}
+                    </div>
+                    <p className="font-display text-lg mb-2" style={{ color: theme.ink }}>{s.title}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: theme.ink + '99' }}>{s.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* SUITABLE FOR */}
+        {product.suitableFor && (
+          <section className="px-5 py-12">
+            <div className="max-w-3xl mx-auto rounded-3xl p-6 sm:p-10"
+              style={{ background: `linear-gradient(135deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}, ${product.bg?.[1] ?? product.accent ?? '#f5f0eb'})`,
+                       border: `1px solid ${theme.gold}22` }}>
+              <p className="text-xs tracking-widest uppercase mb-3" style={{ color: theme.gold }}>{t('prod_audience_title', 'ვისთვის გამოდგება')}</p>
+              <h2 className="font-display text-2xl sm:text-3xl mb-6" style={{ color: theme.ink }}>
+                {t('prod_ideal_pre', 'იდეალურია')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_ideal_if', 'თუ')}</span>
+              </h2>
+              <ul className="space-y-3">
+                {product.suitableFor.map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mt-0.5"
+                      style={{ background: theme.wine, color: theme.cream }}>
+                      <Ic name="check" className="w-3 h-3" />
+                    </div>
+                    <span className="text-base" style={{ color: theme.ink }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {/* RITUAL — CINEMATIC LUX masterclass */}
+        {product.ritual && (
+          <section className="relative overflow-hidden"
+            style={{ background: '#0a0808', color: theme.cream }}>
+            {/* Cinematic ambient gradients */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[600px] opacity-40 blur-3xl"
+              style={{ background: `radial-gradient(ellipse at center top, ${theme.wine}, transparent 60%)` }} />
+            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] rounded-full opacity-20 blur-3xl"
+              style={{ background: '#A21CAF' }} />
+            <div className="absolute top-1/2 right-0 w-[500px] h-[500px] rounded-full opacity-15 blur-3xl"
+              style={{ background: theme.gold }} />
+
+            {/* Top ornamental frame */}
+            <div className="relative px-5 pt-16 pb-8">
+              <div className="max-w-6xl mx-auto">
+                <div className="flex items-center gap-4 text-[10px] tracking-[0.3em] uppercase opacity-70">
+                  <span style={{ color: theme.gold }}>✦</span>
+                  <span>FARMASI</span>
+                  <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${theme.gold}66, transparent)` }} />
+                  <span>EST. 1950</span>
+                  <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${theme.gold}66)` }} />
+                  <span>COLLECTION 2026</span>
+                  <span style={{ color: theme.gold }}>✦</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative px-5 py-12">
+              <div className="max-w-6xl mx-auto">
+                {/* Cinema title */}
+                <div className="text-center mb-20">
+                  <div className="text-[10px] tracking-[0.5em] uppercase mb-6" style={{ color: theme.gold }}>
+                    ◆ {' '} A FARMASI PRESENTATION {' '} ◆
+                  </div>
+
+                  <h2 className="font-display-lat italic mb-4"
+                    style={{ fontSize: 'clamp(3rem, 9vw, 8rem)', lineHeight: 0.95, color: theme.cream, fontWeight: 400 }}>
+                    Vitalizing
+                  </h2>
+
+                  <div className="flex items-center justify-center gap-3 mb-6">
+                    <div className="w-12 h-px" style={{ background: theme.gold }} />
+                    <span style={{ color: theme.gold }}>✦</span>
+                    <p className="text-xs tracking-[0.4em] uppercase" style={{ color: theme.gold }}>
+                      HAIR CARE COLLECTION
+                    </p>
+                    <span style={{ color: theme.gold }}>✦</span>
+                    <div className="w-12 h-px" style={{ background: theme.gold }} />
+                  </div>
+
+                  <p className="text-base sm:text-lg max-w-2xl mx-auto leading-relaxed font-display-lat italic mt-6"
+                    style={{ color: theme.cream + 'CC' }}>
+                    {product.ritual.subtitle}
+                  </p>
+                </div>
+
+                {/* Three cinematic acts */}
+                <div className="space-y-24 sm:space-y-32">
+                  {product.ritual.items.map((item, i) => (
+                    <CinematicAct key={i} item={item} index={i} reverse={i % 2 === 1} onShop={goShop} />
+                  ))}
+                </div>
+
+                {/* Bundle finale */}
+                <div className="mt-24 relative">
+                  {/* Top ornament */}
+                  <div className="flex items-center gap-3 mb-10 justify-center">
+                    <div className="w-20 h-px" style={{ background: `linear-gradient(90deg, transparent, ${theme.gold})` }} />
+                    <span className="text-xs tracking-[0.4em] uppercase" style={{ color: theme.gold }}>FINALE</span>
+                    <div className="w-20 h-px" style={{ background: `linear-gradient(90deg, ${theme.gold}, transparent)` }} />
+                  </div>
+
+                  <div className="relative rounded-[2rem] overflow-hidden"
+                    style={{ background: `linear-gradient(135deg, #1a0e0c 0%, #0a0808 100%)`,
+                             border: `1px solid ${theme.gold}33` }}>
+                    <div className="absolute top-0 right-0 w-96 h-96 rounded-full opacity-30 blur-3xl"
+                      style={{ background: theme.wine, transform: 'translate(30%, -30%)' }} />
+                    <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full opacity-20 blur-3xl"
+                      style={{ background: theme.gold, transform: 'translate(-30%, 30%)' }} />
+
+                    <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 items-center p-8 sm:p-12">
+                      {/* Bundle photo with subtle radial glow behind */}
+                      <div className="relative aspect-[4/3] flex items-center justify-center">
+                        {/* Spotlight glow behind transparent products */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-3/4 h-3/4 rounded-full blur-3xl"
+                            style={{ background: `radial-gradient(circle, ${theme.wine}66, transparent 70%)` }} />
+                        </div>
+                        <img src={product.ritual.bundleImage} alt="Vitalizing კოლექცია"
+                          className="relative z-10 w-full h-full object-contain p-4 anim-float-bundle"
+                          style={{ filter: `drop-shadow(0 30px 60px ${theme.wine}66) drop-shadow(0 0 40px rgba(255,255,255,0.1))` }} />
+                      </div>
+
+                      {/* Pricing finale */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <span style={{ color: theme.gold }}>◆</span>
+                          <span className="text-[10px] tracking-[0.3em] uppercase" style={{ color: theme.gold }}>
+                            THE COMPLETE COLLECTION
+                          </span>
+                        </div>
+                        <h3 className="font-display text-3xl sm:text-4xl lg:text-5xl mb-4 leading-tight">
+                          სამივე ერთად <span className="font-display-lat italic" style={{ color: theme.gold }}>·</span><br/>
+                          <span className="font-display-lat italic" style={{ color: theme.gold }}>{t('prod_single_price_label', 'ერთი ფასი')}</span>
+                        </h3>
+
+                        <div className="flex items-center gap-3 mb-6 flex-wrap">
+                          <span className="font-display text-5xl sm:text-6xl">{product.ritual.bundlePrice} ₾</span>
+                          {product.ritual.savings > 0 && (
+                            <>
+                              <span className="text-base line-through opacity-50">
+                                {(product.ritual.items.reduce((s, i) => s + i.price, 0)).toFixed(2)} ₾
+                              </span>
+                              <span className="px-2.5 py-1 rounded-full text-[10px] tracking-wider font-medium"
+                                style={{ background: theme.gold, color: '#0a0808' }}>
+                                −{product.ritual.savings} ₾
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-4 mt-5 text-[10px] tracking-widest uppercase opacity-60 flex-wrap">
+                          <span className="flex items-center gap-1.5">
+                            <Ic name="truck" className="w-3 h-3" /> უფასო მიწოდება
+                          </span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1.5">
+                            <Ic name="rotate-ccw" className="w-3 h-3" /> 14 დღე დაბრუნება
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Closing manifesto — like film credits */}
+                {product.ritual.tagline && (
+                  <div className="text-center mt-24 mb-8 max-w-3xl mx-auto">
+                    <div className="text-7xl mb-3 leading-none" style={{ color: theme.gold, opacity: 0.4 }}>"</div>
+                    <p className="font-display-lat italic leading-tight -mt-10"
+                      style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: theme.cream }}>
+                      {product.ritual.tagline}
+                    </p>
+                    <div className="flex items-center justify-center gap-3 mt-8">
+                      <div className="w-12 h-px" style={{ background: theme.gold }} />
+                      <span style={{ color: theme.gold }}>✦</span>
+                      <div className="w-12 h-px" style={{ background: theme.gold }} />
+                    </div>
+                    <p className="text-[10px] tracking-[0.4em] uppercase mt-4" style={{ color: theme.gold }}>
+                      Dr. C. Tuna · Vitalizing Hair Care
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Bottom ornamental frame */}
+            <div className="relative px-5 pb-10">
+              <div className="max-w-6xl mx-auto flex items-center gap-4 text-[10px] tracking-[0.3em] uppercase opacity-50">
+                <span style={{ color: theme.gold }}>◆</span>
+                <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+                <span>FARMASI · GEORGIA</span>
+                <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
+                <span style={{ color: theme.gold }}>◆</span>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* REVIEWS */}
+        {product.reviews && (
+          <section className="px-5 py-16" style={{ background: theme.ivory }}>
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
+                <div>
+                  <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_reviews_title', 'შეფასებები')}</p>
+                  <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                    რას <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_say_label', 'ამბობენ')}</span>
+                  </h2>
+                </div>
+                {product.rating && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex">
+                      {[1,2,3,4,5].map(i => (
+                        <Ic key={i} name="star" className="w-5 h-5"
+                          style={{ color: i <= Math.round(product.rating) ? theme.gold : theme.ink + '22',
+                                   fill: i <= Math.round(product.rating) ? theme.gold : 'none' }} />
+                      ))}
+                    </div>
+                    <div>
+                      <span className="font-display text-2xl" style={{ color: theme.ink }}>{product.rating}</span>
+                      <span className="text-xs ml-2" style={{ color: theme.ink + '77' }}>{product.reviewCount} შეფასებიდან</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {product.reviews.map((r, i) => (
+                  <div key={i} className="p-5 rounded-2xl"
+                    style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                    <div className="flex mb-3">
+                      {[1,2,3,4,5].map(s => (
+                        <Ic key={s} name="star" className="w-3.5 h-3.5"
+                          style={{ color: s <= r.stars ? theme.gold : theme.ink + '22',
+                                   fill: s <= r.stars ? theme.gold : 'none' }} />
+                      ))}
+                    </div>
+                    <p className="text-sm leading-relaxed mb-4 font-display-lat" style={{ color: theme.ink + 'CC' }}>"{r.text}"</p>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium" style={{ color: theme.ink }}>{r.name}</span>
+                      <span style={{ color: theme.ink + '77' }}>{r.date}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* FAQ */}
+        {product.faqs && (
+          <section className="px-5 py-16">
+            <div className="max-w-3xl mx-auto">
+              <div className="text-center mb-10">
+                <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_faq_title', 'ხშირი კითხვები')}</p>
+                <h2 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+                  FAQ
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {product.faqs.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* FULL INGREDIENTS — collapsible */}
+        {product.fullIngredients && (
+          <section className="px-5 py-12" style={{ background: theme.ivory }}>
+            <div className="max-w-3xl mx-auto">
+              <FaqItem
+                q="სრული შემადგენლობა (INCI)"
+                a={product.fullIngredients}
+                mono
+              />
+            </div>
+          </section>
+        )}
+
+        {/* DELIVERY INFO */}
+        <section className="px-5 py-12">
+          <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { ic: 'truck',         t: 'სწრაფი მიწოდება',  d: '1–2 სამუშაო დღე საქართველოში' },
+              { ic: 'rotate-ccw',    t: 'დაბრუნება',        d: '14 დღე გახსნამდე' },
+              { ic: 'badge-check',   t: 'ორიგინალი',         d: 'პირდაპირ FARMASI-დან' },
+            ].map((b, i) => (
+              <div key={i} className="flex items-start gap-3 p-5 rounded-2xl"
+                style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+                  style={{ background: theme.wine + '11' }}>
+                  <Ic name={b.ic} className="w-4 h-4" style={{ color: theme.wine }} />
+                </div>
+                <div>
+                  <p className="font-display text-base mb-0.5" style={{ color: theme.ink }}>{b.t}</p>
+                  <p className="text-xs" style={{ color: theme.ink + '99' }}>{b.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Sticky bottom CTA bar (mobile-friendly) */}
+        <div className="sticky bottom-0 z-30 px-5 py-3 backdrop-blur-md border-t"
+          style={{ background: theme.cream + 'EE', borderColor: theme.gold + '33' }}>
+          <div className="max-w-5xl mx-auto flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] tracking-widest uppercase truncate" style={{ color: theme.ink + '77' }}>{product.name}</p>
+              <p className="font-display text-xl" style={{ color: theme.wine }}>{product.price} ₾</p>
+            </div>
+            {rep.whatsapp && (
+              <button onClick={shareWA}
+                className="px-4 py-3 rounded-xl flex items-center justify-center text-xs"
+                style={{ background: theme.ivory, color: theme.ink, border: `1.5px solid ${theme.gold}66` }}>
+                <SocialIcon name="whatsapp" className="w-4 h-4" style={{ color: '#25D366' }} />
+              </button>
+            )}
+            {cart && (
+              <button onClick={() => { cart.addItem({ product_id: product.id, name: product.name, price: product.price, image: product.image, quantity: qty }); cart.setOpen(true); }}
+                className="flex-1 py-3 px-5 rounded-xl flex items-center justify-center gap-2 font-medium text-xs tracking-wider uppercase"
+                style={{ background: theme.ink, color: theme.cream }}>
+                <Ic name="shopping-bag" className="w-4 h-4" /> კალათაში დამატება
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Rep card — who is selling this */}
+        <section className="px-5 py-12">
+          <div className="max-w-2xl mx-auto rounded-3xl p-6 sm:p-8 flex items-center gap-5"
+            style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`, boxShadow: '0 4px 20px -8px rgba(35,23,18,0.1)' }}>
+            <div className="relative flex-shrink-0">
+              <div className="absolute -inset-1 rounded-full"
+                style={{ background: `conic-gradient(${theme.gold}, ${theme.rose}, ${theme.wine}, ${theme.gold})`, opacity: 0.4, filter: 'blur(4px)' }} />
+              <div className="relative w-20 h-20 rounded-full overflow-hidden"
+                style={{ border: `2px solid ${theme.ivory}` }}>
+                {rep.photo
+                  ? <img src={rep.photo} alt={rep.name} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full flex items-center justify-center text-2xl"
+                       style={{ background: theme.mist, color: theme.gold }}>{rep.name.charAt(0) || '?'}</div>}
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{t('prod_sells_label', 'გყიდის')}</p>
+              <p className="font-display text-xl truncate" style={{ color: theme.ink }}>{rep.name}</p>
+              {rep.city && (
+                <p className="text-xs flex items-center gap-1 mt-0.5" style={{ color: theme.ink + '88' }}>
+                  <Ic name="map-pin" className="w-3 h-3" /> {rep.city}
+                </p>
+              )}
+            </div>
+            <button onClick={onBack}
+              className="text-xs tracking-widest uppercase px-4 py-2 rounded-full hidden sm:block"
+              style={{ background: theme.ink, color: theme.cream }}>
+              პროფილი
+            </button>
+          </div>
+        </section>
+
+        {/* Other products — Complete Vitalizing ritual with synergy explanation */}
+        <section className="px-5 py-12" style={{ background: theme.ivory }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-8">
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>✦ სწრაფი შედეგი</p>
+              <h2 className="font-display text-2xl sm:text-3xl mb-3" style={{ color: theme.ink }}>
+                მთლიანი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>Vitalizing</span> რიტუალი
+              </h2>
+              <p className="text-sm sm:text-base max-w-xl mx-auto leading-relaxed" style={{ color: theme.ink + 'AA' }}>
+                ცალცალკე პროდუქტები ნაწილობრივ მუშაობს. <span style={{ color: theme.wine, fontWeight: 600 }}>{t('prod_combo_hint', 'სრული ეფექტისთვის სასურველია კომბინაცია')}</span> — შამპუნი ყოველდღიურ მოვლას უზრუნველყოფს, საპონი ღრმა გაწმენდას, FORTE კი გაძლიერებულ ფორმულას მძიმე შემთხვევებში.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              {otherProducts.map(p => <ProductCard key={p.id} p={p} onClick={() => onProduct(p)} />)}
+            </div>
+            {rep.whatsapp && (
+              <div className="text-center">
+                <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent('გამარჯობა! მაინტერესებს მთლიანი Vitalizing რიტუალი — გთხოვთ მირჩიოთ რომელი პროდუქტები შემიძინო ერთად.')}`}
+                  target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
+                  style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
+                  <SocialIcon name="whatsapp" className="w-4 h-4" /> მთლიანი რიტუალი — დამიკავშირდი
+                </a>
+                <p className="text-[11px] mt-3 opacity-60" style={{ color: theme.ink }}>
+                  გავუგზავნი ინდივიდუალურ რეცეპტს შენი ვითარებიდან გამომდინარე
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="px-5 py-10 text-center" style={{ background: theme.ink, color: theme.cream }}>
+          <p className="font-display text-xl mb-1">{rep.name}</p>
+          <p className="text-xs tracking-widest uppercase opacity-60 mb-4">FARMASI · Tantalize Cosmetics</p>
+          <p className="text-xs opacity-50">© FARMASI Georgia ოფიციალური წარმომადგენელი</p>
+          <p className="font-mono text-[10px] opacity-40 mt-1">{productUrl}</p>
+        </footer>
+
+        <button onClick={() => setChatOpen(true)}
+          className="fixed bottom-24 sm:bottom-5 left-5 z-40 w-12 h-12 rounded-full flex items-center justify-center transition hover:scale-110"
+          style={{ background: theme.ink, color: theme.cream, boxShadow: `0 10px 30px -8px rgba(0,0,0,0.4)` }}
+          title={t('chat_message_title', 'მესიჯი')}>
+          <Ic name="message-square" className="w-5 h-5" />
+        </button>
+
+        {rep.whatsapp && (
+          <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა! "${product.name}"-ს შესახებ მაინტერესებს...`)}`}
+            target="_blank" rel="noreferrer"
+            className="fixed bottom-24 sm:bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
+            style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.6)' }}>
+            <SocialIcon name="whatsapp" className="w-5 h-5" />
+            <span className="text-sm font-medium">WhatsApp</span>
+          </a>
+        )}
+
+        {chatOpen && <ChatModal rep={rep} product={product} onClose={() => setChatOpen(false)} />}
+
+        {/* Floating cart button + drawer */}
+        {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
+      </div>
+    );
+  } catch (err) {
+    console.error('ProductPage Error:', err);
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
+        <div className="text-center">
+          <p style={{ marginBottom: '20px', color: '#333' }}>რაღაც არ ჯდა</p>
+          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+        </div>
+      </div>
+    );
+  }
+}
+
+function BrandVideo({ videoId, thumbnail }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <div className="relative aspect-video rounded-3xl overflow-hidden cursor-pointer group"
+      style={{ boxShadow: '0 30px 60px -20px rgba(35,23,18,0.3)' }}
+      onClick={() => setPlaying(true)}>
+      {playing ? (
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
+          title="FARMASI"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+          style={{ border: 0 }}
+        />
+      ) : (
+        <>
+          <img src={thumbnail} alt="FARMASI"
+            className="w-full h-full object-cover transition group-hover:scale-105"
+            onError={(e) => { e.target.src = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`; }} />
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, rgba(229,5,113,0.4), rgba(0,0,0,0.5))' }}>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full anim-float"
+                style={{ background: theme.cream, opacity: 0.3, filter: 'blur(20px)', transform: 'scale(1.5)' }} />
+              <button className="relative w-20 h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                style={{ background: theme.cream, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)' }}>
+                <svg viewBox="0 0 24 24" className="w-8 h-8 ml-1" fill={theme.wine}>
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-5"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)' }}>
+            <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.cream + 'CC' }}>FARMASI ისტორია</p>
+            <p className="font-display text-lg" style={{ color: theme.cream }}>გაიცანი ჩვენი მსოფლიო</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProductVideo({ video }) {
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef(null);
+  const handlePlay = () => {
+    setPlaying(true);
+    setTimeout(() => videoRef.current?.play(), 100);
+  };
+  return (
+    <div className="relative aspect-video rounded-3xl overflow-hidden group"
+      style={{ background: theme.ink, boxShadow: '0 20px 50px -20px rgba(35,23,18,0.3)' }}>
+      <video ref={videoRef}
+        src={video.src}
+        poster={video.poster}
+        controls={playing}
+        className="w-full h-full object-cover"
+        onEnded={() => setPlaying(false)}
+      />
+      {!playing && (
+        <button onClick={handlePlay}
+          className="absolute inset-0 flex items-center justify-center cursor-pointer"
+          style={{ background: 'linear-gradient(135deg, rgba(229,5,113,0.3), rgba(0,0,0,0.5))' }}>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full anim-float"
+              style={{ background: theme.cream, opacity: 0.3, filter: 'blur(20px)', transform: 'scale(1.5)' }} />
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+              style={{ background: theme.cream, boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5)' }}>
+              <svg viewBox="0 0 24 24" className="w-7 h-7 ml-1" fill={theme.wine}>
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 p-5 text-left"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
+            <p className="text-[10px] tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{video.subtitle}</p>
+            <p className="font-display text-lg sm:text-xl" style={{ color: theme.cream }}>{video.title}</p>
+          </div>
+        </button>
+      )}
+    </div>
+  );
+}
+
+// CINEMATIC ACT — masterclass-style dark luxury showcase
+function CinematicAct({ item, index, reverse, onShop }) {
+  const tiltRef = useRef(null);
+  const containerRef = useRef(null);
+
+  // 3D tilt — same physics as ProductCard for consistency
+  const handleMouseMove = (e) => {
+    if (!containerRef.current || !tiltRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    tiltRef.current.style.transform =
+      `perspective(1200px) rotateY(${px * 18}deg) rotateX(${-py * 12}deg) scale(1.04)`;
+  };
+
+  const handleMouseLeave = () => {
+    if (tiltRef.current) tiltRef.current.style.transform = '';
+  };
+  const stepLabel = String(index + 1).padStart(2, '0');
+  return (
+    <div className="relative">
+      {/* Top ornamental ACT divider */}
+      <div className="flex items-center gap-3 mb-10">
+        <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: '#B8924E' }}>
+          ACT {stepLabel}
+        </span>
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, #B8924E66, transparent)' }} />
+        <span style={{ color: '#B8924E' }}>✦</span>
+        <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, transparent, #B8924E66)' }} />
+        <span className="text-[10px] tracking-[0.4em] uppercase font-display-lat italic" style={{ color: '#B8924E' }}>
+          {item.subtitle}
+        </span>
+      </div>
+
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}>
+        {/* Photo — full bleed against black */}
+        <div className="lg:col-span-6 relative">
+          <div ref={containerRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+            className="relative aspect-[3/4] flex items-center justify-center"
+            style={{ perspective: '1400px' }}>
+            {/* Spotlight glow behind product */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-3/4 h-3/4 rounded-full blur-3xl opacity-40"
+                style={{ background: `radial-gradient(circle, ${item.accent}, transparent 70%)` }} />
+            </div>
+            {/* Watermark step number */}
+            <div className="absolute top-0 left-0 z-0 select-none pointer-events-none font-display-lat italic"
+              style={{ fontSize: 'clamp(8rem, 22vw, 22rem)', lineHeight: 0.85,
+                       color: '#FFFFFF', opacity: 0.04, fontWeight: 400 }}>
+              {stepLabel}
+            </div>
+            {/* The product image with 3D tilt — wraps the floating image */}
+            <div ref={tiltRef} className="product-tilt-3d relative z-10 w-full h-full flex items-center justify-center anim-float-big">
+              <img src={item.image} alt={item.name}
+                className="max-w-full max-h-full object-contain"
+                style={{ filter: `drop-shadow(0 40px 60px ${item.accent}66) drop-shadow(0 0 80px ${item.accent}33)` }} />
+            </div>
+          </div>
+
+          {/* Volume tag at bottom */}
+          {item.volume && (
+            <div className="text-center mt-4">
+              <span className="text-[10px] tracking-[0.3em] uppercase" style={{ color: '#B8924E' }}>
+                ◆ {item.volume} ◆
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Content — cinematic typography */}
+        <div className="lg:col-span-6">
+          {/* Step indicator with diamond */}
+          <div className="flex items-center gap-3 mb-5">
+            <span className="font-display-lat italic"
+              style={{ fontSize: 'clamp(3rem, 6vw, 5rem)', lineHeight: 1,
+                       color: '#B8924E', fontWeight: 400 }}>
+              {stepLabel}
+            </span>
+            <div className="flex-1">
+              <div className="h-px" style={{ background: '#B8924E66' }} />
+              <p className="text-[10px] tracking-[0.4em] uppercase mt-2" style={{ color: '#B8924E' }}>
+                CHAPTER {stepLabel} · OF 03
+              </p>
+            </div>
+          </div>
+
+          {/* Big title */}
+          <h3 className="font-display mb-2 leading-[1.05]"
+            style={{ fontSize: 'clamp(2rem, 4.5vw, 3.5rem)', color: '#F8F6F1' }}>
+            {item.name}
+          </h3>
+
+          {/* Subtitle italic */}
+          <p className="font-display-lat italic mb-6"
+            style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', color: item.accent }}>
+            {item.subtitle}
+          </p>
+
+          {/* Quote — cinematic blockquote */}
+          {item.quote && (
+            <div className="relative mb-6 pl-6">
+              <div className="absolute left-0 top-0 bottom-0 w-px"
+                style={{ background: `linear-gradient(180deg, ${item.accent}, transparent)` }} />
+              <p className="font-display-lat italic leading-relaxed"
+                style={{ fontSize: 'clamp(1rem, 1.5vw, 1.25rem)', color: '#F8F6F1DD' }}>
+                "{item.quote}"
+              </p>
+            </div>
+          )}
+
+          {/* Description */}
+          <p className="text-sm sm:text-base leading-relaxed mb-6 max-w-xl" style={{ color: '#F8F6F1AA' }}>
+            {item.desc}
+          </p>
+
+          {/* Benefit highlight */}
+          {item.benefit && (
+            <div className="flex items-start gap-3 p-4 rounded-2xl mb-8"
+              style={{ background: `${item.accent}11`,
+                       border: `1px solid ${item.accent}44`,
+                       backdropFilter: 'blur(10px)' }}>
+              <span style={{ color: '#B8924E', fontSize: '1rem' }}>✦</span>
+              <p className="text-sm font-display leading-snug italic" style={{ color: '#F8F6F1' }}>
+                {item.benefit}
+              </p>
+            </div>
+          )}
+
+          {/* CTA + price row */}
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>ფასი</p>
+              <p className="font-display" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', color: '#F8F6F1' }}>
+                {item.price} ₾
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FaqItem({ q, a, mono }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl overflow-hidden"
+      style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+      <button onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-5 text-left transition"
+        style={{ color: theme.ink }}>
+        <span className="font-display text-base sm:text-lg pr-4">{q}</span>
+        <Ic name={open ? 'minus' : 'plus'} className="w-4 h-4 flex-shrink-0"
+          style={{ color: theme.wine, transition: 'transform 0.3s', transform: open ? 'rotate(0deg)' : 'rotate(0deg)' }} />
+      </button>
+      {open && (
+        <div className="px-5 pb-5 anim-fadeup">
+          <p className={`text-sm leading-relaxed ${mono ? 'font-mono text-xs' : ''}`}
+            style={{ color: theme.ink + 'BB' }}>{a}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChatModal({ rep, onClose, product, t = (k, fb) => fb }) {
+  const [msg, setMsg] = useState(product
+    ? `${t('chat_product_intro_prefix', 'გამარჯობა, "')}${product.name}${t('chat_product_intro_suffix', '"-ს შესახებ მაინტერესებს...')}`
+    : '');
+  const [toast, setToast] = useState(null);
+
+  // Helper: extract username from URL or raw value
+  const extractUsername = (val, domain) => {
+    if (!val) return '';
+    let v = val.replace('@', '').trim();
+    if (v.startsWith('http')) {
+      try {
+        const u = new URL(v);
+        v = u.pathname.split('/').filter(Boolean)[0] || '';
+      } catch {}
+    }
+    return v;
+  };
+
+  // Build available channels with URL builders
+  // autoFill=true means platform pre-fills text via URL (only WhatsApp & Telegram bot supports this)
+  const channels = [];
+
+  if (rep.whatsapp) {
+    channels.push({
+      type: 'whatsapp',
+      label: 'WhatsApp',
+      color: '#25D366',
+      autoFill: true,
+      primary: true,
+      build: (m) => `https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(m)}`
+    });
+  }
+
+  if (rep.telegram) {
+    const tgUser = extractUsername(rep.telegram);
+    channels.push({
+      type: 'telegram',
+      label: 'Telegram',
+      color: '#0088CC',
+      autoFill: false, // browsers don't pre-fill DMs
+      build: () => `https://t.me/${tgUser}`
+    });
+  }
+
+  if (rep.facebook) {
+    const fbUser = extractUsername(rep.facebook);
+    channels.push({
+      type: 'facebook',
+      label: 'Messenger',
+      color: '#0084FF',
+      autoFill: false,
+      build: () => `https://m.me/${fbUser}`
+    });
+  }
+
+  if (rep.instagram) {
+    const igUser = extractUsername(rep.instagram);
+    channels.push({
+      type: 'instagram',
+      label: 'Instagram',
+      color: '#E4405F',
+      autoFill: false,
+      build: () => `https://instagram.com/${igUser}`
+    });
+  }
+
+  if (rep.tiktok) {
+    let ttUser = extractUsername(rep.tiktok);
+    if (!ttUser.startsWith('@')) ttUser = '@' + ttUser;
+    channels.push({
+      type: 'tiktok',
+      label: 'TikTok',
+      color: '#000000',
+      autoFill: false,
+      build: () => `https://tiktok.com/${ttUser}`
+    });
+  }
+
+  // Separate primary (WhatsApp - direct fill) from secondary (need clipboard copy)
+  const primary = channels.find(c => c.primary);
+  const secondary = channels.filter(c => !c.primary);
+
+  const showToast = (text, isError = false) => {
+    setToast({ text, isError });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const sendVia = async (channel) => {
+    if (!msg.trim()) {
+      showToast(t('chat_toast_empty', '⚠️ ჯერ ჩაწერე მესიჯი'), true);
+      return;
+    }
+
+    const url = channel.build(msg);
+
+    if (!channel.autoFill) {
+      try {
+        await navigator.clipboard.writeText(msg);
+        showToast(t('chat_toast_copied', '✓ მესიჯი დაკოპირდა — ჩატში დააჭირე Ctrl+V (ან long-press → Paste)'));
+      } catch (err) {
+        // Fallback for older browsers / restricted contexts
+        showToast(t('chat_toast_copy_failed', '⚠️ ხელით დააკოპირე ტექსტი და ჩასვი ჩატში'), true);
+      }
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-10"
+      style={{ background: 'rgba(35,23,18,0.6)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
+      <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 anim-fadeup relative"
+        style={{ background: theme.ivory }} onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-xs tracking-widest uppercase" style={{ color: theme.gold }}>{t('chat_header_eyebrow', 'მომწერე')}</p>
+            <p className="font-display text-xl" style={{ color: theme.ink }}>{rep.name}</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ background: theme.cream, color: theme.ink }}>
+            <Ic name="x" className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Message textarea */}
+        <textarea value={msg} onChange={(e) => setMsg(e.target.value)} rows={4}
+          placeholder={t('chat_msg_placeholder', 'გამარჯობა! მაინტერესებს...')}
+          className="w-full p-3 rounded-xl outline-none text-sm resize-none"
+          style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
+
+        {/* Primary channel — WhatsApp (direct fill) */}
+        {primary && (
+          <button onClick={() => sendVia(primary)}
+            className="w-full mt-4 py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm font-medium transition hover:scale-[1.01]"
+            style={{ background: primary.color, color: '#fff', boxShadow: `0 10px 25px -10px ${primary.color}99` }}>
+            <SocialIcon name="whatsapp" className="w-4 h-4" />
+            {primary.label}{t('chat_send_via_suffix', '-ზე გაგზავნა')}
+            <span className="text-[10px] opacity-80 ml-1">{t('chat_autofill_hint', '✨ პირდაპირ ჩავარდება')}</span>
+          </button>
+        )}
+
+        {/* Secondary channels — copy + redirect */}
+        {secondary.length > 0 && (
+          <>
+            <div className="flex items-center gap-3 mt-5 mb-3">
+              <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
+              <p className="text-[9px] tracking-[0.3em] uppercase" style={{ color: theme.ink + '77' }}>
+                {t('chat_other_channels', 'ან აირჩიე სხვა არხი')}
+              </p>
+              <div className="flex-1 h-px" style={{ background: theme.ink + '22' }} />
+            </div>
+
+            <div className={`grid gap-2 ${secondary.length === 1 ? 'grid-cols-1' : secondary.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-' + Math.min(secondary.length, 4)}`}>
+              {secondary.map((ch) => (
+                <button key={ch.type} onClick={() => sendVia(ch)}
+                  className="py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-medium transition hover:scale-[1.02]"
+                  style={{
+                    background: '#fff',
+                    color: ch.color,
+                    border: `1.5px solid ${ch.color}33`
+                  }}>
+                  <SocialIcon name={ch.type} className="w-4 h-4" />
+                  {ch.label}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[10px] mt-2.5 text-center" style={{ color: theme.ink + '66' }}>
+              {t('chat_copy_hint', '↑ ტექსტი ავტომატურად დაკოპირდება — ჩასვი ჩატში')}
+            </p>
+          </>
+        )}
+
+        {/* Phone */}
+        {rep.phone && (
+          <p className="text-[10px] mt-4 text-center" style={{ color: theme.ink + '77' }}>
+            {t('chat_phone_lead', 'ან დარეკე:')} <a href={`tel:${rep.phone}`} className="underline font-medium" style={{ color: theme.wine }}>{rep.phone}</a>
+          </p>
+        )}
+
+        {/* Toast notification */}
+        {toast && (
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-16 px-4 py-3 rounded-xl shadow-2xl text-xs font-medium max-w-[90%] text-center anim-fadeup"
+            style={{
+              background: toast.isError ? '#DC2626' : theme.ink,
+              color: '#fff',
+              boxShadow: '0 20px 50px -15px rgba(0,0,0,0.5)'
+            }}>
+            {toast.text}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Mount React app to #root ───
+createRoot(document.getElementById('root')).render(<App />);
 
