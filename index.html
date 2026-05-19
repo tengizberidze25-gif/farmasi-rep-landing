@@ -106,6 +106,14 @@
     max-height: 100dvh;
     padding-top: env(safe-area-inset-top, 0px);
   }
+  /* Drawer entrance: slide up from bottom (only on mount, NOT on close — close is instant) */
+  @keyframes slideUpDrawer {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .anim-drawer-up {
+    animation: slideUpDrawer 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
   /* Add-to-cart success pulse — green confirmation flash */
   @keyframes pulseAdd {
     0%   { transform: scale(1);   box-shadow: 0 4px 12px -2px rgba(16,185,129,0.4); }
@@ -4655,22 +4663,23 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
 
   return (
     <>
-      {/* Backdrop */}
-      {open && (
-        <div onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 anim-fadeup"
-          style={{ background: 'rgba(15,15,15,0.55)', backdropFilter: 'blur(4px)' }} />
-      )}
+      {/* Drawer is only rendered when open — closing unmounts instantly (no exit animation) */}
+      {!open ? null : (
+        <>
+          {/* Backdrop */}
+          <div onClick={() => setOpen(false)}
+            className="fixed inset-0 z-40 anim-fadeup"
+            style={{ background: 'rgba(15,15,15,0.55)', backdropFilter: 'blur(4px)' }} />
 
-      {/* Drawer — fills full viewport (dvh respects mobile browser chrome) */}
-      <div
-        className={`shoppable-drawer fixed inset-x-0 bottom-0 z-50 transition-transform duration-300 ${open ? 'translate-y-0' : 'translate-y-full pointer-events-none'}`}
-        style={{
-          background: theme.cream,
-          boxShadow: '0 -20px 60px -10px rgba(15,15,15,0.4)',
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
+          {/* Drawer — slides up on mount, vanishes instantly on close */}
+          <div
+            className="shoppable-drawer anim-drawer-up fixed inset-x-0 bottom-0 z-50"
+            style={{
+              background: theme.cream,
+              boxShadow: '0 -20px 60px -10px rgba(15,15,15,0.4)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
 
         {/* Sticky header */}
         <div className="px-5 sm:px-8 pt-4 pb-3 border-b flex-shrink-0" style={{ borderColor: theme.gold + '22', background: theme.cream }}>
@@ -4836,6 +4845,8 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
           onAdd={handleQuickviewAdd}
           labels={labels}
         />
+      )}
+        </>
       )}
     </>
   );
