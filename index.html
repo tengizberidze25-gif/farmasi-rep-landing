@@ -1191,6 +1191,7 @@ function App() {
   const [rep, setRep] = useState({
     name: '', bio: '', photo: null, phone: '', whatsapp: '',
     instagram: '', facebook: '', tiktok: '', youtube: '', telegram: '', city: '', videoUrl: '', customerVideos: [],
+    referralLink: '', bankAccount: '', bankRecipient: '',
   });
 
   // ─── Shopping cart state ───
@@ -1333,6 +1334,8 @@ function App() {
         } catch { return []; }
       })(),
       referralLink: rep?.referral_link || '',
+      bankAccount: rep?.bank_account || '',
+      bankRecipient: rep?.bank_recipient || '',
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1464,6 +1467,8 @@ function App() {
               } catch { return []; }
             })(),
             referralLink: data.rep.referral_link || '',
+            bankAccount: data.rep.bank_account || '',
+            bankRecipient: data.rep.bank_recipient || '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
@@ -2672,6 +2677,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         video_url: rep.videoUrl || '',
         customer_videos: JSON.stringify(rep.customerVideos || []),
         referral_link: rep.referralLink || '',
+        bank_account: rep.bankAccount || '',
+        bank_recipient: rep.bankRecipient || '',
         // photo_url left out for now — base64 too large for JSONP, will handle separately
       });
       if (result.ok) {
@@ -3566,6 +3573,25 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             value={rep.referralLink || ''} onChange={upd('referralLink')}
             placeholder="https://farmasi.ge/ka/signup/549244"
             required hasError={validationAttempted && !(rep.referralLink || '').trim()} />
+        </Card>
+
+        {/* 🆕 BANK DETAILS — for customers who choose bank transfer at checkout */}
+        <Card>
+          <SectionLabel n="03c" t={L('profile_section_bank', 'საბანკო რეკვიზიტები')} />
+          <p className="text-xs mb-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            {L('profile_bank_hint', 'როცა მომხმარებელი აირჩევს "საბანკო გადარიცხვას" — შენი ანგარიში გამოჩნდება ინვოისზე. თუ ცარიელია, კლიენტი ვერ გადაირიცხავს თანხას ბანკით.')}
+          </p>
+          <div className="space-y-3">
+            <Input icon="user" label={L('profile_bank_recipient_label', 'მიმღების სახელი/გვარი')}
+              value={rep.bankRecipient || ''} onChange={upd('bankRecipient')}
+              placeholder="TENGIZ BERIDZE" />
+            <Input icon="credit-card" label={L('profile_bank_account_label', 'საბანკო ანგარიში (IBAN)')}
+              value={rep.bankAccount || ''} onChange={upd('bankAccount')}
+              placeholder="GE12TB7777777777777777" />
+          </div>
+          <p className="text-[10px] mt-3 leading-relaxed italic" style={{ color: theme.ink + '77' }}>
+            💡 {L('profile_bank_security_note', 'არავინ ვერ ნახავს ანგარიშის ნომერს, სანამ რეალური შეკვეთა არ მოვა და კლიენტი არ აირჩევს ბანკით გადახდას.')}
+          </p>
         </Card>
 
         <Card>
@@ -4653,6 +4679,12 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
       quantity: quickviewQty
     });
     setQuickview(null);
+    // 🚀 Auto-navigate to cart: wait briefly for fly-to-cart animation, then close catalog + open cart
+    setTimeout(() => {
+      setOpen(false); // close catalog drawer (instant since we removed exit animation)
+      // Tiny delay to let unmount complete before opening cart — prevents visual stutter
+      setTimeout(() => { if (cart.setOpen) cart.setOpen(true); }, 50);
+    }, 350);
   };
 
   const reset = () => {
