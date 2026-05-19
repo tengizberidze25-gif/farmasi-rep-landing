@@ -3104,7 +3104,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
               {/* Filter bar: search + category pills */}
               {allProducts.length > 0 && (() => {
                 const availableProducts = allProducts.filter(p => !myProducts.some(mp => String(mp.id) === String(p.id)));
-                const categories = Array.from(new Set(availableProducts.map(p => p.cat).filter(Boolean))).sort();
+                const categories = Array.from(new Set(availableProducts.map(p => String(p.cat || '').trim()).filter(Boolean))).sort();
                 return (
                   <div className="px-4 sm:px-6 py-3 border-b space-y-3" style={{ borderColor: theme.gold + '22', background: theme.cream }}>
                     {/* Search input */}
@@ -3114,7 +3114,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                         type="text"
                         value={pickerSearchQuery}
                         onChange={(e) => setPickerSearchQuery(e.target.value)}
-                        placeholder={L('myprods_picker_search', 'მოძებნე პროდუქტი...')}
+                        placeholder={L('myprods_picker_search', 'მოძებნე სახელით ან კოდით...')}
                         className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none"
                         style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, color: theme.ink }}
                       />
@@ -3155,11 +3155,13 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                   const q = pickerSearchQuery.trim().toLowerCase();
                   const filtered = allProducts
                     .filter(p => !myProducts.some(mp => String(mp.id) === String(p.id)))
-                    .filter(p => pickerCategoryFilter === 'all' || p.cat === pickerCategoryFilter)
+                    .filter(p => pickerCategoryFilter === 'all' || String(p.cat || '').trim() === pickerCategoryFilter)
                     .filter(p => {
                       if (!q) return true;
                       return String(p.name || '').toLowerCase().includes(q)
-                          || String(p.cat || '').toLowerCase().includes(q);
+                          || String(p.cat || '').toLowerCase().includes(q)
+                          || String(p.id || '').toLowerCase().includes(q)
+                          || String(p.tag || '').toLowerCase().includes(q);
                     });
                   if (filtered.length === 0) {
                     const isFiltering = pickerSearchQuery.trim() || pickerCategoryFilter !== 'all';
@@ -3182,11 +3184,18 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                           style={{ background: theme.cream }} />
                       )}
                       <div className="flex-1 min-w-0">
-                        {p.cat && (
-                          <p className="text-[9px] tracking-widest uppercase mb-0.5" style={{ color: theme.gold }}>
-                            {p.cat}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-2 mb-0.5">
+                          {p.cat && (
+                            <span className="text-[9px] tracking-widest uppercase" style={{ color: theme.gold }}>
+                              {String(p.cat).trim()}
+                            </span>
+                          )}
+                          {p.id && (
+                            <span className="text-[9px] font-mono" style={{ color: theme.ink + '66' }}>
+                              #{p.id}
+                            </span>
+                          )}
+                        </div>
                         <p className="font-display text-sm truncate" style={{ color: theme.ink }}>
                           {p.name}
                         </p>
