@@ -4473,6 +4473,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [leadError, setLeadError] = useState('');
   const [catalogQuery, setCatalogQuery] = useState('');
   const [catalogCategory, setCatalogCategory] = useState('all');
+  const [catalogLimit, setCatalogLimit] = useState(12);
   // Rep's curated products (Sheet: RepProducts) — shown as "rep's pick" section
   const [repPicks, setRepPicks] = useState([]);
   // Selected pick product → opens elegant ProductDetailModal (same as problem flow)
@@ -4573,13 +4574,15 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const featuredProduct = repPicks[0] || dynamicProducts.find(p => p && p.active) || dynamicProducts[0] || null;
   const catalogProducts = dynamicProducts.filter(p => p && p.active !== false && p.price);
   const catalogCategories = ['all', ...Array.from(new Set(catalogProducts.map(p => p.cat || p.category || '').filter(Boolean)))];
-  const visibleCatalogProducts = catalogProducts.filter(p => {
+  const filteredCatalogProducts = catalogProducts.filter(p => {
     const query = catalogQuery.trim().toLowerCase();
     const category = p.cat || p.category || '';
     const matchesCategory = catalogCategory === 'all' || category === catalogCategory;
     const matchesQuery = !query || [p.name, p.desc, p.cat, p.category, p.id, p.sku].filter(Boolean).join(' ').toLowerCase().includes(query);
     return matchesCategory && matchesQuery;
-  }).slice(0, 24);
+  });
+  const visibleCatalogProducts = filteredCatalogProducts.slice(0, catalogLimit);
+  const hasMoreCatalogProducts = visibleCatalogProducts.length < filteredCatalogProducts.length;
 
   return (
     <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
@@ -5541,13 +5544,13 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
                 <div className="relative flex-1 lg:w-72">
                   <Ic name="search" className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: theme.ink + '66' }} />
-                  <input value={catalogQuery} onChange={(e) => setCatalogQuery(e.target.value)}
+                  <input value={catalogQuery} onChange={(e) => { setCatalogQuery(e.target.value); setCatalogLimit(12); }}
                     placeholder={t('catalog_search_placeholder', 'ძებნა პროდუქტში...')}
                     className="w-full pl-11 pr-4 py-3 rounded-full outline-none text-sm"
                     style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }} />
                 </div>
                 {catalogCategories.length > 2 && (
-                  <select value={catalogCategory} onChange={(e) => setCatalogCategory(e.target.value)}
+                  <select value={catalogCategory} onChange={(e) => { setCatalogCategory(e.target.value); setCatalogLimit(12); }}
                     className="px-4 py-3 rounded-full outline-none text-sm"
                     style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }}>
                     {catalogCategories.map(cat => (
@@ -5628,6 +5631,20 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 <p className="text-sm" style={{ color: theme.ink + '88' }}>
                   {t('catalog_empty', 'ამ ძებნით პროდუქტი ვერ მოიძებნა')}
                 </p>
+              </div>
+            )}
+
+            {hasMoreCatalogProducts && (
+              <div className="text-center mt-10">
+                <p className="text-xs mb-3" style={{ color: theme.ink + '77' }}>
+                  {visibleCatalogProducts.length} / {filteredCatalogProducts.length}
+                </p>
+                <button onClick={() => setCatalogLimit(n => n + 12)}
+                  className="px-7 py-3 rounded-full text-xs tracking-[0.16em] uppercase font-semibold inline-flex items-center gap-2 transition hover:scale-[1.01]"
+                  style={{ background: theme.ink, color: theme.cream }}>
+                  {t('catalog_show_more', 'მეტის ჩვენება')}
+                  <Ic name="chevron-down" className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>
