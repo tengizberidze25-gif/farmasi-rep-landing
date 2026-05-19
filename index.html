@@ -97,6 +97,15 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  /* Shoppable catalog drawer — viewport height that respects mobile browser chrome
+     (Safari address bar, iPhone notch, etc.). `dvh` is dynamic viewport unit. */
+  .shoppable-drawer {
+    height: 100vh;               /* fallback for older browsers */
+    height: 100dvh;              /* modern: shrinks when Safari shows chrome */
+    max-height: 100vh;
+    max-height: 100dvh;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
   /* Add-to-cart success pulse — green confirmation flash */
   @keyframes pulseAdd {
     0%   { transform: scale(1);   box-shadow: 0 4px 12px -2px rgba(16,185,129,0.4); }
@@ -4653,13 +4662,11 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
           style={{ background: 'rgba(15,15,15,0.55)', backdropFilter: 'blur(4px)' }} />
       )}
 
-      {/* Drawer — slides up from bottom, 92vh height */}
+      {/* Drawer — fills full viewport (dvh respects mobile browser chrome) */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 rounded-t-3xl transition-transform duration-300 ${open ? 'translate-y-0' : 'translate-y-full pointer-events-none'}`}
+        className={`shoppable-drawer fixed inset-x-0 bottom-0 z-50 transition-transform duration-300 ${open ? 'translate-y-0' : 'translate-y-full pointer-events-none'}`}
         style={{
           background: theme.cream,
-          height: '92vh',
-          maxHeight: '92vh',
           boxShadow: '0 -20px 60px -10px rgba(15,15,15,0.4)',
           display: 'flex',
           flexDirection: 'column'
@@ -4776,6 +4783,44 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
                   labels={labels}
                 />
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom sticky CTA bar — switches between "Go to cart" and "Close" */}
+        <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-t flex items-center gap-2"
+          style={{
+            borderColor: theme.gold + '22',
+            background: theme.cream,
+            paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))'
+          }}>
+          {/* Close — small secondary button */}
+          <button onClick={() => setOpen(false)}
+            className="flex-shrink-0 py-3 px-4 rounded-full font-medium text-xs sm:text-sm tracking-widest uppercase transition hover:scale-[1.03] active:scale-95 flex items-center gap-2"
+            style={{ background: theme.ivory, color: theme.ink, border: `1px solid ${theme.gold}33` }}>
+            <Ic name="x" className="w-4 h-4" />
+            <span className="hidden sm:inline">{L('catalog_modal_close_button', 'დახურვა')}</span>
+          </button>
+
+          {/* Go to cart — primary CTA, only when cart has items */}
+          {cart && cart.count > 0 ? (
+            <button onClick={() => {
+              setOpen(false);
+              // Wait for drawer close animation before opening cart
+              setTimeout(() => { if (cart.setOpen) cart.setOpen(true); }, 320);
+            }}
+              className="flex-1 py-3 px-4 rounded-full font-medium text-xs sm:text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+              style={{ background: theme.wine, color: theme.cream, boxShadow: `0 8px 20px -6px ${theme.wine}AA` }}>
+              <Ic name="shopping-bag" className="w-4 h-4" />
+              <span>{L('catalog_modal_view_cart', 'კალათის ნახვა')}</span>
+              <span className="opacity-80">·</span>
+              <span>{cart.count}</span>
+              <span className="opacity-80">·</span>
+              <span>{Number(cart.total || 0).toFixed(2)} ₾</span>
+            </button>
+          ) : (
+            <div className="flex-1 text-center text-xs italic" style={{ color: theme.ink + '88' }}>
+              {L('catalog_modal_empty_cart_hint', 'დაამატე პროდუქტი კალათაში 🛍')}
             </div>
           )}
         </div>
