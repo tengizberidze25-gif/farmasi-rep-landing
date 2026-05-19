@@ -231,6 +231,7 @@ const theme = {
 const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
 const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
 const SHIPPING_FEE = 5;
+const FREE_SHIPPING_THRESHOLD = 150;
 
 const Mockups = {
   serum: ({ accent = '#7A1E2C' }) => (
@@ -4077,7 +4078,9 @@ function OrderInvoicePage({ orderId, labels = {} }) {
 
 function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, remove, clear, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
-  const shippingFee = items.length > 0 ? SHIPPING_FEE : 0;
+  const freeShippingLeft = Math.max(0, FREE_SHIPPING_THRESHOLD - total);
+  const freeShippingProgress = items.length > 0 ? Math.min(100, Math.round((total / FREE_SHIPPING_THRESHOLD) * 100)) : 0;
+  const shippingFee = items.length > 0 && freeShippingLeft > 0 ? SHIPPING_FEE : 0;
   const grandTotal = Math.round((total + shippingFee) * 100) / 100;
   const [step, setStep] = useState('cart'); // 'cart' | 'checkout' | 'success'
   const [customerName, setCustomerName] = useState('');
@@ -4136,12 +4139,12 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
             quantity: it.quantity,
             price: it.price
           })),
-          {
+          ...(shippingFee > 0 ? [{
             product_id: 'shipping_georgia',
             name: L('shipping_item_name', 'საკურიერო მომსახურება მთელი საქართველოს მასშტაბით'),
             quantity: 1,
             price: SHIPPING_FEE
-          }
+          }] : [])
         ])
       });
       if (res.ok) {
@@ -4242,13 +4245,32 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                     
                     <div className="mt-5 pt-4 space-y-2"
                       style={{ borderTop: `1px solid ${theme.gold}33` }}>
+                      <div className="rounded-xl p-3 mb-3" style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <span className="text-xs font-semibold" style={{ color: theme.ink }}>
+                            {shippingFee === 0
+                              ? L('free_shipping_unlocked', 'უფასო მიწოდება გააქტიურდა')
+                              : `${L('free_shipping_left', 'უფასო მიწოდებამდე დაგრჩა')} ${freeShippingLeft.toFixed(2)} GEL`}
+                          </span>
+                          <span className="text-[10px] font-mono" style={{ color: theme.gold }}>{freeShippingProgress}%</span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                          <div className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${freeShippingProgress}%`, background: shippingFee === 0 ? '#1FAF5B' : theme.wine }} />
+                        </div>
+                        <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '70' }}>
+                          {L('free_shipping_rule', '150 GEL-ზე ზემოთ მიწოდება უფასოა მთელი საქართველოს მასშტაბით')}
+                        </p>
+                      </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'პროდუქტები:')}</span>
                         <span className="text-sm font-semibold" style={{ color: theme.ink }}>{total.toFixed(2)} GEL</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_shipping_label', 'საკურიერო მომსახურება:')}</span>
-                        <span className="text-sm font-semibold" style={{ color: theme.ink }}>{shippingFee.toFixed(2)} GEL</span>
+                        <span className="text-sm font-semibold" style={{ color: shippingFee === 0 ? '#1FAF5B' : theme.ink }}>
+                          {shippingFee === 0 ? L('free_shipping_price', 'უფასო') : `${shippingFee.toFixed(2)} GEL`}
+                        </span>
                       </div>
                       <p className="text-[11px] leading-relaxed" style={{ color: theme.ink + '70' }}>
                         {L('cart_shipping_note', 'მიწოდება მთელი საქართველოს მასშტაბით')}
@@ -4349,13 +4371,32 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
 
                 <div className="mt-4 pt-4 space-y-2"
                   style={{ borderTop: `1px solid ${theme.gold}33` }}>
+                  <div className="rounded-xl p-3 mb-3" style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-xs font-semibold" style={{ color: theme.ink }}>
+                        {shippingFee === 0
+                          ? L('free_shipping_unlocked', 'უფასო მიწოდება გააქტიურდა')
+                          : `${L('free_shipping_left', 'უფასო მიწოდებამდე დაგრჩა')} ${freeShippingLeft.toFixed(2)} GEL`}
+                      </span>
+                      <span className="text-[10px] font-mono" style={{ color: theme.gold }}>{freeShippingProgress}%</span>
+                    </div>
+                    <div className="h-2 rounded-full overflow-hidden" style={{ background: theme.gold + '22' }}>
+                      <div className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${freeShippingProgress}%`, background: shippingFee === 0 ? '#1FAF5B' : theme.wine }} />
+                    </div>
+                    <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '70' }}>
+                      {L('free_shipping_rule', '150 GEL-ზე ზემოთ მიწოდება უფასოა მთელი საქართველოს მასშტაბით')}
+                    </p>
+                  </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'პროდუქტები:')}</span>
                     <span className="text-sm font-semibold" style={{ color: theme.ink }}>{total.toFixed(2)} GEL</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_shipping_label', 'საკურიერო მომსახურება:')}</span>
-                    <span className="text-sm font-semibold" style={{ color: theme.ink }}>{shippingFee.toFixed(2)} GEL</span>
+                    <span className="text-sm font-semibold" style={{ color: shippingFee === 0 ? '#1FAF5B' : theme.ink }}>
+                      {shippingFee === 0 ? L('free_shipping_price', 'უფასო') : `${shippingFee.toFixed(2)} GEL`}
+                    </span>
                   </div>
                   <p className="text-[11px] leading-relaxed" style={{ color: theme.ink + '70' }}>
                     {L('cart_shipping_note', 'მიწოდება მთელი საქართველოს მასშტაბით')}
@@ -4525,6 +4566,9 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     rep.youtube   && { icon: 'youtube',   label: 'YouTube',   href: rep.youtube.startsWith('http') ? rep.youtube : `https://youtube.com/${rep.youtube}` },
     rep.telegram  && { icon: 'telegram',  label: 'Telegram',  href: rep.telegram.startsWith('http') ? rep.telegram : `https://t.me/${rep.telegram.replace('@','')}` },
   ].filter(Boolean);
+  const activeProblems = problems.filter(p => p.productId);
+  const quickTestProblems = activeProblems.slice(0, 3);
+  const featuredProduct = repPicks[0] || dynamicProducts.find(p => p && p.active) || dynamicProducts[0] || null;
 
   return (
     <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
@@ -4706,6 +4750,86 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             <div className="h-px flex-1" style={{ background: theme.ink + '14' }} />
             <span className="premium-kicker">{t('hero_scroll_hint', 'აირჩიე შენი საჭიროება')}</span>
             <div className="h-px flex-1" style={{ background: theme.ink + '14' }} />
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ WOW STRIP — Daily offer + fast test ═══ */}
+      <section className="px-5 sm:px-12 py-12" style={{ background: theme.cream }}>
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-5">
+          <div className="rounded-2xl p-5 sm:p-7" style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: theme.wine + '12', color: theme.wine }}>
+                <Ic name="sparkles" className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="premium-kicker mb-2" style={{ color: theme.gold }}>
+                  {t('daily_offer_eyebrow', 'დღის რჩეული შეთავაზება')}
+                </p>
+                <h2 className="font-display text-2xl sm:text-3xl leading-tight mb-2" style={{ color: theme.ink }}>
+                  {featuredProduct?.name || t('daily_offer_title', 'შეარჩიე ნაკრები კონსულტანტთან ერთად')}
+                </h2>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: theme.ink + 'AA' }}>
+                  {featuredProduct
+                    ? t('daily_offer_subtitle_product', 'დღეს ეს პროდუქტი გამოვყავით სწრაფი რეკომენდაციისთვის. შეგიძლია დაამატო კალათაში ან ჯერ კონსულტაცია მიიღო.')
+                    : t('daily_offer_subtitle_empty', 'მითხარი რა გჭირდება და დღესვე შეგირჩევ ყველაზე სწორ პროდუქტს ან ნაკრებს.')}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {featuredProduct && cart && (
+                    <button onClick={() => { cart.addItem({ product_id: featuredProduct.id, name: featuredProduct.name, price: featuredProduct.price, image: featuredProduct.image, quantity: 1 }); cart.setOpen(true); }}
+                      className="px-5 py-3 rounded-full text-xs tracking-[0.16em] uppercase font-semibold flex items-center justify-center gap-2 transition hover:scale-[1.01]"
+                      style={{ background: theme.ink, color: theme.cream }}>
+                      <Ic name="shopping-bag" className="w-4 h-4" />
+                      {t('daily_offer_add', 'კალათაში დამატება')}
+                    </button>
+                  )}
+                  <button onClick={() => document.getElementById('pain-quiz-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="px-5 py-3 rounded-full text-xs tracking-[0.16em] uppercase font-semibold flex items-center justify-center gap-2 transition hover:scale-[1.01]"
+                    style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}44` }}>
+                    <Ic name="wand-sparkles" className="w-4 h-4" />
+                    {t('daily_offer_test', 'სწრაფი ტესტი')}
+                  </button>
+                </div>
+              </div>
+              {featuredProduct?.image && (
+                <div className="hidden sm:flex w-24 h-24 rounded-xl items-center justify-center p-3 flex-shrink-0"
+                  style={{ background: theme.cream }}>
+                  <img src={featuredProduct.image} alt={featuredProduct.name} className="max-w-full max-h-full object-contain" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl p-5 sm:p-7" style={{ background: theme.ink, color: theme.cream }}>
+            <p className="premium-kicker mb-3" style={{ color: theme.gold }}>
+              {t('quick_test_eyebrow', '30 წამიანი სწრაფი ტესტი')}
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl leading-tight mb-4">
+              {t('quick_test_title', 'რა გინდა დღეს ყველაზე მეტად გააუმჯობესო?')}
+            </h2>
+            <div className="grid gap-2">
+              {quickTestProblems.map(p => (
+                <button key={p.id} onClick={() => handleProblemSelect(p)}
+                  className="w-full px-4 py-3 rounded-xl text-left flex items-center justify-between gap-3 transition hover:translate-x-1"
+                  style={{ background: theme.cream + '10', border: `1px solid ${theme.cream}18` }}>
+                  <span className="flex items-center gap-3 text-sm">
+                    <Ic name={p.icon} className="w-4 h-4" style={{ color: p.accent }} />
+                    {p.label}
+                  </span>
+                  <Ic name="arrow-right" className="w-4 h-4" style={{ color: theme.gold }} />
+                </button>
+              ))}
+              <button onClick={() => setChatOpen(true)}
+                className="w-full px-4 py-3 rounded-xl text-left flex items-center justify-between gap-3 transition hover:translate-x-1"
+                style={{ background: theme.gold + '20', border: `1px solid ${theme.gold}33` }}>
+                <span className="flex items-center gap-3 text-sm">
+                  <Ic name="message-circle" className="w-4 h-4" style={{ color: theme.gold }} />
+                  {t('quick_test_other', 'სხვა კითხვა მაქვს')}
+                </span>
+                <Ic name="arrow-right" className="w-4 h-4" style={{ color: theme.gold }} />
+              </button>
+            </div>
           </div>
         </div>
       </section>
