@@ -5072,9 +5072,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                   style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, boxShadow: '0 8px 30px -12px rgba(0,0,0,0.15)' }}
                   onClick={() => setPickModalProduct(p)}>
                   {p.image && (
-                    <div className="aspect-[4/3] overflow-hidden" style={{ background: theme.cream }}>
+                    <div className="aspect-[5/4] overflow-hidden flex items-center justify-center p-8 sm:p-12" style={{ background: theme.cream }}>
                       <img src={p.image} alt={p.name}
-                        className="w-full h-full object-cover" />
+                        className="max-w-[75%] max-h-[85%] object-contain transition duration-500 hover:scale-105"
+                        style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }} />
                     </div>
                   )}
                   <div className="p-5">
