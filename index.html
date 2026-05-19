@@ -4083,6 +4083,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [customerComment, setCustomerComment] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('bank');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -4121,7 +4122,12 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
         rep_pid: repPid,
         customer_name: customerName.trim(),
         customer_phone: normalizedPhone,
-        customer_address: `${customerAddress.trim()}\n${L('payment_order_prefix', 'გადახდის მეთოდი:')} ${paymentLabel}`,
+        customer_address: [
+          customerAddress.trim(),
+          customerComment.trim() ? `${L('cart_comment_order_prefix', 'კომენტარი:')} ${customerComment.trim()}` : '',
+          `${L('payment_order_prefix', 'გადახდის მეთოდი:')} ${paymentLabel}`
+        ].filter(Boolean).join('\n'),
+        customer_comment: customerComment.trim(),
         payment_method: paymentMethod,
         items: JSON.stringify([
           ...items.map(it => ({
@@ -4292,6 +4298,16 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                 <textarea value={customerAddress} onChange={(e) => { setCustomerAddress(e.target.value); setError(''); }}
                   placeholder={L('cart_field_address_placeholder', 'ქალაქი, უბანი, ქუჩა, კორპუსი, ბინა')}
                   rows={3}
+                  className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
+                  style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_comment', 'კომენტარი შეკვეთაზე')}
+                </label>
+                <textarea value={customerComment} onChange={(e) => { setCustomerComment(e.target.value); setError(''); }}
+                  placeholder={L('cart_field_comment_placeholder', 'მაგ: დამირეკეთ მიწოდებამდე, სადარბაზო 2, ან სასურველი დრო')}
+                  rows={2}
+                  maxLength={300}
                   className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
                   style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
 
