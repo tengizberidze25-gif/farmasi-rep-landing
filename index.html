@@ -4083,6 +4083,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('bank');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [orderId, setOrderId] = useState('');
@@ -4109,6 +4110,9 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     if (normalizedPhone.startsWith('995') && normalizedPhone.length > 9) normalizedPhone = normalizedPhone.substring(3);
     if (!/^5\d{8}$/.test(normalizedPhone)) return setError(L('cart_err_phone', 'ნომერი არასწორი ფორმატია (599XXXXXX)'));
     if (!customerAddress.trim()) return setError(L('cart_err_addr', 'მისამართი სავალდებულოა'));
+    const paymentLabel = paymentMethod === 'bank'
+      ? L('payment_bank_label', 'საბანკო გადარიცხვა')
+      : L('payment_courier_label', 'კურიერთან გადახდა');
     
     setSubmitting(true);
     try {
@@ -4117,7 +4121,8 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
         rep_pid: repPid,
         customer_name: customerName.trim(),
         customer_phone: normalizedPhone,
-        customer_address: customerAddress.trim(),
+        customer_address: `${customerAddress.trim()}\n${L('payment_order_prefix', 'გადახდის მეთოდი:')} ${paymentLabel}`,
+        payment_method: paymentMethod,
         items: JSON.stringify([
           ...items.map(it => ({
             product_id: it.product_id,
@@ -4289,6 +4294,42 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
                   style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
+
+                <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>
+                  {L('payment_method_title', 'გადახდის მეთოდი')}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                  <button type="button" onClick={() => setPaymentMethod('bank')}
+                    className="px-4 py-3 rounded-xl text-left transition hover:scale-[1.01]"
+                    style={{
+                      background: paymentMethod === 'bank' ? theme.ink : theme.ivory,
+                      color: paymentMethod === 'bank' ? theme.cream : theme.ink,
+                      border: `1.5px solid ${paymentMethod === 'bank' ? theme.ink : theme.gold + '44'}`
+                    }}>
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <Ic name="landmark" className="w-4 h-4" />
+                      {L('payment_bank_label', 'საბანკო გადარიცხვა')}
+                    </span>
+                    <span className="block text-[11px] mt-1 opacity-75 leading-relaxed">
+                      {L('payment_bank_note', 'რეკვიზიტებს წარმომადგენელი გამოგიგზავნის შეკვეთის დადასტურებისას')}
+                    </span>
+                  </button>
+                  <button type="button" onClick={() => setPaymentMethod('courier')}
+                    className="px-4 py-3 rounded-xl text-left transition hover:scale-[1.01]"
+                    style={{
+                      background: paymentMethod === 'courier' ? theme.ink : theme.ivory,
+                      color: paymentMethod === 'courier' ? theme.cream : theme.ink,
+                      border: `1.5px solid ${paymentMethod === 'courier' ? theme.ink : theme.gold + '44'}`
+                    }}>
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <Ic name="truck" className="w-4 h-4" />
+                      {L('payment_courier_label', 'კურიერთან გადახდა')}
+                    </span>
+                    <span className="block text-[11px] mt-1 opacity-75 leading-relaxed">
+                      {L('payment_courier_note', 'თანხას გადაიხდი შეკვეთის მიღებისას')}
+                    </span>
+                  </button>
+                </div>
 
                 <div className="mt-4 pt-4 space-y-2"
                   style={{ borderTop: `1px solid ${theme.gold}33` }}>
