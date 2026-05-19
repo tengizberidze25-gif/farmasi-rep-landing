@@ -2097,6 +2097,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerCategoryFilter, setPickerCategoryFilter] = useState('all'); // 'all' or category name
   const [pickerSearchQuery, setPickerSearchQuery] = useState(''); // text search in picker
+  const [pickerSortBy, setPickerSortBy] = useState('name'); // 'name' | 'code'
   const [editingNote, setEditingNote] = useState(null); // {row, currentNote}
   const [cardGenerating, setCardGenerating] = useState(false);
   const [cardError, setCardError] = useState('');
@@ -2242,6 +2243,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
     setPickerCategoryFilter('all');
     setPickerSearchQuery('');
+    setPickerSortBy('name');
     setPickerOpen(true);
   };
 
@@ -3134,6 +3136,12 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                   }
                   return true;
                 });
+                // Apply sort
+                if (pickerSortBy === 'name') {
+                  filtered.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ka'));
+                } else if (pickerSortBy === 'code') {
+                  filtered.sort((a, b) => String(a.id || '').localeCompare(String(b.id || ''), undefined, { numeric: true }));
+                }
                 const isFiltering = !!q || pickerCategoryFilter !== 'all';
                 return (
                   <>
@@ -3149,6 +3157,28 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                           className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none"
                           style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, color: theme.ink }}
                         />
+                      </div>
+                      {/* Sort toggle */}
+                      <div className="flex items-center gap-2 text-xs">
+                        <span style={{ color: theme.ink + '88' }}>
+                          {L('myprods_picker_sort_label', 'დახარისხება:')}
+                        </span>
+                        <button
+                          onClick={() => setPickerSortBy('name')}
+                          className="px-2.5 py-1 rounded-full transition hover:scale-[1.03]"
+                          style={pickerSortBy === 'name'
+                            ? { background: theme.wine, color: theme.cream }
+                            : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                          {L('myprods_picker_sort_name', 'სახელით')}
+                        </button>
+                        <button
+                          onClick={() => setPickerSortBy('code')}
+                          className="px-2.5 py-1 rounded-full transition hover:scale-[1.03]"
+                          style={pickerSortBy === 'code'
+                            ? { background: theme.wine, color: theme.cream }
+                            : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                          {L('myprods_picker_sort_code', 'კოდით')}
+                        </button>
                       </div>
                       {categories.length > 0 && (
                         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
@@ -3175,14 +3205,30 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                       )}
                     </div>
                     {/* Product list — key forces remount when filter changes */}
-                    <div className="overflow-y-auto p-4 space-y-2" key={`picker-body-${pickerCategoryFilter}|${q}`}>
-                      {filtered.length === 0 ? (
-                        <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
-                          {isFiltering
-                            ? L('myprods_picker_no_results', 'შედეგი ვერ მოიძებნა — სცადე სხვა საძიებო')
-                            : L('myprods_picker_all_added', 'ყველა პროდუქტი უკვე დამატებულია')}
-                        </p>
-                      ) : (
+                    <div className="overflow-y-auto p-4 space-y-2" key={`picker-body-${pickerCategoryFilter}|${q}|${pickerSortBy}`}>
+                      {filtered.length === 0 ? (() => {
+                        // Smart empty state: check if search matches already-selected product
+                        let alreadySelectedMatch = null;
+                        if (q && Array.isArray(myProducts)) {
+                          alreadySelectedMatch = myProducts.find(mp =>
+                            String(mp.id || '').toLowerCase().includes(q) ||
+                            String(mp.name || '').toLowerCase().includes(q)
+                          );
+                        }
+                        let message;
+                        if (alreadySelectedMatch) {
+                          message = `✓ "${alreadySelectedMatch.name}" უკვე გყავს რჩეულებში`;
+                        } else if (isFiltering) {
+                          message = L('myprods_picker_no_results', 'შედეგი ვერ მოიძებნა — სცადე სხვა საძიებო');
+                        } else {
+                          message = L('myprods_picker_all_added', 'ყველა პროდუქტი უკვე დამატებულია');
+                        }
+                        return (
+                          <p className="text-center py-12 text-sm italic" style={{ color: alreadySelectedMatch ? theme.gold : theme.ink + '77' }}>
+                            {message}
+                          </p>
+                        );
+                      })() : (
                         filtered.map(p => (
                           <button key={p.id}
                             onClick={() => { addProductToSelection(p.id); setPickerOpen(false); }}
