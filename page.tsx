@@ -22,9 +22,9 @@ export const config = { runtime: 'edge' };
 const APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycby0BJOvqZZz4eK5zHyep36R3vcPvweNk8ob-sOcCEokNoGto9m1BrfBxNlBcBB81pJ5/exec';
 
-const DEFAULT_TITLE = 'FARMASI · წარმომადგენლის Portfolio';
+const DEFAULT_TITLE = 'FARMASI წარმომადგენელი საქართველოში';
 const DEFAULT_DESC =
-  'აღმოაჩინე პროდუქტები, რომლებიც დაგეხმარება. გამიჭერი WhatsApp-ი — დაგეხმარები აირჩევა.';
+  'პერსონალური კონსულტაცია, შერჩეული პროდუქტები, კატალოგი და შეკვეთა ერთ სივრცეში.';
 
 // Apps Script returns JSONP-wrapped data: `cb({...})`. Strip the wrapper.
 async function fetchRep(action: string, params: Record<string, string>) {
@@ -97,9 +97,9 @@ export default async function handler(req: Request) {
       if (repBio) {
         desc = repBio.length > 180 ? repBio.substring(0, 177) + '...' : repBio;
       } else if (repCity) {
-        desc = `შენი პერსონალური FARMASI კონსულტანტი — ${repCity}.`;
+        desc = `შენი პერსონალური FARMASI კონსულტანტი — ${repCity}. კონსულტაცია, შეკვეთა და წარმომადგენლად რეგისტრაცია.`;
       } else {
-        desc = 'შენი პერსონალური FARMASI კონსულტანტი.';
+        desc = 'შენი პერსონალური FARMASI კონსულტანტი. კონსულტაცია, შეკვეთა და წარმომადგენლად რეგისტრაცია.';
       }
     }
     const titleEsc = escapeHtml(title);
