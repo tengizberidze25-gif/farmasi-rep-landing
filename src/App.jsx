@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 import * as lucide from 'lucide';
+import './tailwind.css';
 
 window.lucide = lucide;
 
