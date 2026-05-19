@@ -109,8 +109,8 @@
   }
   h1 {
     margin: 18px 0 22px;
-    font-size: clamp(42px, 7vw, 86px);
-    line-height: .98;
+    font-size: clamp(32px, 5vw, 56px);
+    line-height: 1.05;
   }
   .lede {
     max-width: 660px;
@@ -166,8 +166,8 @@
   }
   h2 {
     margin: 12px 0 12px;
-    font-size: clamp(30px, 5vw, 54px);
-    line-height: 1.06;
+    font-size: clamp(28px, 4.2vw, 44px);
+    line-height: 1.1;
   }
   .section-head p { margin: 0; color: var(--muted); }
   .grid-3 {
@@ -331,6 +331,7 @@
     .brand span { display: none; }
     .hero-actions .btn { width: 100%; }
     .card, .hero-card { padding: 20px; }
+    h1 { font-size: clamp(28px, 8vw, 38px); }
   }
 </style>
 </head>
@@ -346,6 +347,7 @@
       <a href="#profile">პროფილი</a>
       <a href="#products">პროდუქტები</a>
       <a href="#orders">შეკვეთები</a>
+      <a href="#leads">შეტყობინებები</a>
       <a href="#analytics">ვიზიტები</a>
       <a href="#checklist">Checklist</a>
     </nav>
@@ -353,228 +355,309 @@
 </header>
 
 <main id="start">
-  <section class="hero">
-    <div class="container hero-grid">
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <p class="kicker">FARMASI Georgia · სამუშაო ინსტრუქცია</p>
+      <h1 class="display">შენი პირადი გვერდი უნდა მუშაობდეს შენს ნაცვლადაც.</h1>
+      <p class="lede">
+        ეს გზამკვლევი გაჩვენებს როგორ შეავსო პროფილი, როგორ გამოიყენო კატალოგი, როგორ მიიღო შეკვეთები და როგორ გაზარდო ნდობა ერთი პირადი ლინკით.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-dark" href="#profile">დაწყება</a>
+        <a class="btn btn-light" href="#checklist">სწრაფი შემოწმება</a>
+      </div>
+    </div>
+    <aside class="hero-card">
+      <p class="kicker">რას იღებს წარმომადგენელი</p>
+      <div class="metric-grid" style="margin-top:18px;">
+        <div class="metric"><strong>1 ლინკი</strong><span>პროფილი, კატალოგი, კალათა და შეკვეთები ერთ სივრცეში.</span></div>
+        <div class="metric"><strong>24/7</strong><span>მომხმარებელს შეუძლია პროდუქტების ნახვა და შეკვეთის დატოვება ნებისმიერ დროს.</span></div>
+        <div class="metric"><strong>სრული კონტროლი</strong><span>ვიზიტები, შეკვეთები, რჩეული პროდუქტები და გაზიარება dashboard-იდან.</span></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">მოკლე ლოგიკა</p>
+      <h2 class="display">როგორ მუშაობს გვერდი</h2>
+      <p>წარმომადგენელი აზიარებს პირად ლინკს. მომხმარებელი არჩევს პროდუქტს, ავსებს შეკვეთას და წარმომადგენელი იღებს დეტალებს.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card"><span class="num">1</span><h3>მომხმარებელი ხსნის ლინკს</h3><p>პირველივე ეკრანზე ხედავს შენს სახელს, კონტაქტს, სწრაფ ტესტს და შეთავაზებებს.</p></div>
+      <div class="card"><span class="num">2</span><h3>არჩევს პროდუქტს</h3><p>შეუძლია გამოიყენოს სწრაფი ტესტი, დღის რჩეული ან პროდუქტის კატალოგი.</p></div>
+      <div class="card"><span class="num">3</span><h3>გაფორმდება შეკვეთა</h3><p>კალათაში ემატება პროდუქტები, მისამართი, კომენტარი, გადახდის მეთოდი და მიწოდება.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="profile" style="background:var(--ivory);">
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">პირველი ნაწილი</p>
+      <h2 class="display">პროფილი, რომელიც ნდობას აჩენს</h2>
+      <p>მომხმარებელი ჯერ ადამიანს ენდობა და შემდეგ პროდუქტს. ამიტომ პროფილი უნდა იყოს მკაფიო, ნამდვილი და მოწესრიგებული.</p>
+    </div>
+
+    <div class="step">
+      <div class="step-index">01</div>
       <div>
-        <p class="kicker">FARMASI Georgia · სამუშაო ინსტრუქცია</p>
-        <h1 class="display">შენი პირადი გვერდი უნდა მუშაობდეს შენს ნაცვლადაც.</h1>
-        <p class="lede">
-          ეს გზამკვლევი გაჩვენებს როგორ შეავსო პროფილი, როგორ გამოიყენო კატალოგი, როგორ მიიღო შეკვეთები და როგორ გაზარდო ნდობა ერთი პირადი ლინკით.
-        </p>
-        <div class="hero-actions">
-          <a class="btn btn-dark" href="#profile">დაწყება</a>
-          <a class="btn btn-light" href="#checklist">სწრაფი შემოწმება</a>
-        </div>
-      </div>
-      <aside class="hero-card">
-        <p class="kicker">რას იღებს წარმომადგენელი</p>
-        <div class="metric-grid" style="margin-top:18px;">
-          <div class="metric"><strong>1 ლინკი</strong><span>პროფილი, კატალოგი, კალათა და შეკვეთები ერთ სივრცეში.</span></div>
-          <div class="metric"><strong>24/7</strong><span>მომხმარებელს შეუძლია პროდუქტების ნახვა და შეკვეთის დატოვება ნებისმიერ დროს.</span></div>
-          <div class="metric"><strong>სრული კონტროლი</strong><span>ვიზიტები, შეკვეთები, რჩეული პროდუქტები და გაზიარება dashboard-იდან.</span></div>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <section>
-    <div class="container">
-      <div class="section-head">
-        <p class="kicker">მოკლე ლოგიკა</p>
-        <h2 class="display">როგორ მუშაობს გვერდი</h2>
-        <p>წარმომადგენელი აზიარებს პირად ლინკს. მომხმარებელი არჩევს პროდუქტს, ავსებს შეკვეთას და წარმომადგენელი იღებს დეტალებს.</p>
-      </div>
-      <div class="grid-3">
-        <div class="card"><span class="num">1</span><h3>მომხმარებელი ხსნის ლინკს</h3><p>პირველივე ეკრანზე ხედავს შენს სახელს, კონტაქტს, სწრაფ ტესტს და შეთავაზებებს.</p></div>
-        <div class="card"><span class="num">2</span><h3>არჩევს პროდუქტს</h3><p>შეუძლია გამოიყენოს სწრაფი ტესტი, დღის რჩეული ან პროდუქტის კატალოგი.</p></div>
-        <div class="card"><span class="num">3</span><h3>გაფორმდება შეკვეთა</h3><p>კალათაში ემატება პროდუქტები, მისამართი, კომენტარი, გადახდის მეთოდი და მიწოდება.</p></div>
+        <h3>შესვლა ტელეფონის ნომრით</h3>
+        <p>შედიხარ პირად dashboard-ში ტელეფონის ნომრით და SMS კოდით. PID-ის დამახსოვრება მომხმარებლისთვის საჭირო არ არის.</p>
+        <ul class="mini-list">
+          <li>გახსენი my.farmasi.ge</li>
+          <li>ჩაწერე ტელეფონის ნომერი</li>
+          <li>შეიყვანე მიღებული SMS კოდი</li>
+        </ul>
       </div>
     </div>
-  </section>
 
-  <section id="profile" style="background:var(--ivory);">
-    <div class="container">
-      <div class="section-head">
-        <p class="kicker">პირველი ნაწილი</p>
-        <h2 class="display">პროფილი, რომელიც ნდობას აჩენს</h2>
-        <p>მომხმარებელი ჯერ ადამიანს ენდობა და შემდეგ პროდუქტს. ამიტომ პროფილი უნდა იყოს მკაფიო, ნამდვილი და მოწესრიგებული.</p>
+    <div class="step">
+      <div class="step-index">02</div>
+      <div>
+        <h3>სახელი, გვარი, ქალაქი</h3>
+        <p>გამოიყენე ნამდვილი სახელი და გვარი. ქალაქი ეხმარება მომხმარებელს გაიგოს, ვისთან აქვს კომუნიკაცია.</p>
+        <div class="callout">არ გამოიყენო მეტსახელი ან ბუნდოვანი პროფილი. ოფიციალური გვერდი უნდა ჰგავდეს რეალურ წარმომადგენელს.</div>
       </div>
-      <div class="step">
-        <div class="step-index">01</div>
-        <div>
-          <h3>შესვლა ტელეფონის ნომრით</h3>
-          <p>შედიხარ პირად dashboard-ში ტელეფონის ნომრით და SMS კოდით. PID-ის დამახსოვრება მომხმარებლისთვის საჭირო არ არის.</p>
-          <ul class="mini-list">
-            <li>გახსენი my.farmasi.ge</li>
-            <li>ჩაწერე ტელეფონის ნომერი</li>
-            <li>შეიყვანე მიღებული SMS კოდი</li>
-          </ul>
-        </div>
+    </div>
+
+    <div class="step">
+      <div class="step-index">03</div>
+      <div>
+        <h3>ფოტო, ვიდეო და ბიო</h3>
+        <p>ფოტო უნდა იყოს ნათელი, სახე კარგად ჩანდეს. ბიოში 2-3 წინადადებით უთხარი მომხმარებელს რას სთავაზობ. შეგიძლია ვიდეო-მისალმებაც დაამატო.</p>
+        <ul class="mini-list">
+          <li>📸 ფოტოს ატვირთვა — Dashboard-ში "ფოტოს არჩევა" ღილაკი, ფაილი ავტომატურად აიტვირთება Google Drive-ზე</li>
+          <li>🎥 ვიდეო-მისალმება — ჩაწერე მოკლე (15-30 წამიანი) ვიდეო და ატვირთე იმავე გზით</li>
+          <li>💬 ბიო — მოკლე, ადამიანური, 100-200 სიმბოლო იდეალურია</li>
+          <li>📞 WhatsApp და ტელეფონი აუცილებლად შევსებული</li>
+        </ul>
       </div>
-      <div class="step">
-        <div class="step-index">02</div>
-        <div>
-          <h3>სახელი, გვარი, ქალაქი</h3>
-          <p>გამოიყენე ნამდვილი სახელი და გვარი. ქალაქი ეხმარება მომხმარებელს გაიგოს, ვისთან აქვს კომუნიკაცია.</p>
-          <div class="callout">არ გამოიყენო მეტსახელი ან ბუნდოვანი პროფილი. ოფიციალური გვერდი უნდა ჰგავდეს რეალურ წარმომადგენელს.</div>
-        </div>
+    </div>
+
+    <div class="step">
+      <div class="step-index">04</div>
+      <div>
+        <h3>სოციალური ქსელები</h3>
+        <p>დაამატე ბმულები Instagram, Facebook, TikTok, YouTube და Telegram-ზე. რაც მეტი არხია — მით უფრო მარტივად აღმოგაჩენენ მომხმარებლები.</p>
+        <ul class="mini-list">
+          <li>📷 Instagram — შენი ფავორიტი არხი</li>
+          <li>📘 Facebook — ფართო აუდიტორია</li>
+          <li>🎵 TikTok — სიახლე, before/after ვიდეოები</li>
+          <li>🎬 YouTube — ხანგრძლივი მიმოხილვები</li>
+          <li>✈️ Telegram — სწრაფი მიწერი</li>
+        </ul>
       </div>
-      <div class="step">
-        <div class="step-index">03</div>
-        <div>
-          <h3>ფოტო და მოკლე ბიო</h3>
-          <p>ფოტო უნდა იყოს ნათელი, სახე კარგად ჩანდეს. ბიოში 2-3 წინადადებით უთხარი მომხმარებელს რას სთავაზობ.</p>
-          <ul class="mini-list">
-            <li>კარგი განათება და სუფთა ფონი</li>
-            <li>მოკლე, ადამიანური ბიო</li>
-            <li>WhatsApp და ტელეფონი აუცილებლად შევსებული</li>
-          </ul>
-        </div>
+    </div>
+
+    <div class="step">
+      <div class="step-index">05</div>
+      <div>
+        <h3>პერსონალური URL (slug)</h3>
+        <p>გრძელი PID-ნომრის ნაცვლად შეგიძლია გქონდეს ლამაზი მისამართი. ეს ბევრად უფრო პროფესიონალურია მომხმარებლისთვის.</p>
+        <div class="script">PID-ით: my.farmasi.ge/?pid=549244
+slug-ით: my.farmasi.ge/nino
+ან:      my.farmasi.ge/velvet-bloom</div>
+        <ul class="mini-list">
+          <li>3-30 სიმბოლო, ლათინური ასოები, რიცხვები ან დეფისი</li>
+          <li>თუ შენი სახელი დაკავებულია — სცადე სხვა ვარიანტი (მაგ. nino-tbilisi)</li>
+          <li>შესაცვლელად — Dashboard-ში "ჩემი მისამართი"</li>
+        </ul>
       </div>
-      <div class="step">
-        <div class="step-index">04</div>
-        <div>
-          <h3>რეფერალური ლინკი</h3>
-          <p>რეფერალური ლინკი საჭიროა, რომ მომხმარებელი საჭირო ადგილზე გადავიდეს და გაყიდვა შენს PID-ს დაუკავშირდეს.</p>
-          <div class="script">მაგალითი:
+    </div>
+
+    <div class="step">
+      <div class="step-index">06</div>
+      <div>
+        <h3>რეფერალური ბმული</h3>
+        <p>რეფერალური ბმული საჭიროა, რომ მომხმარებელი საჭირო ადგილზე გადავიდეს და გაყიდვა შენს PID-ს დაუკავშირდეს.</p>
+        <div class="script">მაგალითი:
 https://farmasi.ge/ka/signup/შენი-PID</div>
-        </div>
       </div>
     </div>
-  </section>
 
-  <section id="products">
-    <div class="container">
-      <div class="section-head">
-        <p class="kicker">პროდუქტები და გაყიდვა</p>
-        <h2 class="display">საიტი უკვე პატარა კონსულტანტივით მუშაობს</h2>
-        <p>მომხმარებელს აღარ უწევს მხოლოდ PDF კატალოგის თვალიერება. მას შეუძლია პირდაპირ გვერდიდან დაამატოს პროდუქტი კალათაში.</p>
+  </div>
+</section>
+
+<section id="products">
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">პროდუქტები და გაყიდვა</p>
+      <h2 class="display">საიტი უკვე პატარა კონსულტანტივით მუშაობს</h2>
+      <p>მომხმარებელს აღარ უწევს მხოლოდ PDF კატალოგის თვალიერება. მას შეუძლია პირდაპირ გვერდიდან დაამატოს პროდუქტი კალათაში.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>სწრაფი ტესტი</h3>
+        <p>მომხმარებელი ირჩევს რა აწუხებს და გვერდი აჩვენებს შესაბამის რეკომენდაციას. ეს განსაკუთრებით კარგია მათთვის, ვინც არ იცის საიდან დაიწყოს.</p>
+        <ul class="mini-list">
+          <li>თმის ცვენა</li>
+          <li>მშრალი კანი</li>
+          <li>სხვა საჭიროება</li>
+        </ul>
       </div>
-      <div class="grid-2">
-        <div class="card">
-          <h3>სწრაფი ტესტი</h3>
-          <p>მომხმარებელი ირჩევს რა აწუხებს და გვერდი აჩვენებს შესაბამის რეკომენდაციას. ეს განსაკუთრებით კარგია მათთვის, ვინც არ იცის საიდან დაიწყოს.</p>
-          <ul class="mini-list">
-            <li>თმის ცვენა</li>
-            <li>მშრალი კანი</li>
-            <li>სხვა საჭიროება</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>დღის რჩეული შეთავაზება</h3>
-          <p>Products ცხრილში მონიშნე პროდუქტი `featured = TRUE` და ის გამოჩნდება დღის შეთავაზებად.</p>
-          <div class="script">Products ფურცელი:
+      <div class="card">
+        <h3>დღის რჩეული შეთავაზება</h3>
+        <p>Products ცხრილში მონიშნე პროდუქტი <strong>featured = TRUE</strong> და ის გამოჩნდება დღის შეთავაზებად.</p>
+        <div class="script">Products ფურცელი:
 featured = TRUE</div>
-        </div>
-        <div class="card">
-          <h3>პროდუქტების კატალოგი</h3>
-          <p>საიტზე ჩანს პროდუქტების ბარათები, ფასი, კოდი და კალათის ღილაკი. მომხმარებელი აჭერს და პროდუქტი კალათაში ხვდება.</p>
-        </div>
-        <div class="card">
-          <h3>რჩეული პროდუქტები</h3>
-          <p>RepProducts-ში შეგიძლია დაამატო შენი ფავორიტები. ეს აჩვენებს პირად რეკომენდაციას და ზრდის ნდობას.</p>
-        </div>
+      </div>
+      <div class="card">
+        <h3>პროდუქტების კატალოგი</h3>
+        <p>საიტზე ჩანს პროდუქტების ბარათები, ფასი, კოდი და კალათის ღილაკი. მომხმარებელი აჭერს და პროდუქტი კალათაში ხვდება.</p>
+      </div>
+      <div class="card">
+        <h3>რჩეული პროდუქტები (მაქს. 10)</h3>
+        <p>Dashboard-ში მონიშნე 5-10 ფავორიტი პროდუქტი. ისინი ემატება ბანერად მთავარი კატალოგის ნაცვლად. დაუმატე პერსონალური კომენტარი თითო პროდუქტს.</p>
+      </div>
+      <div class="card">
+        <h3>🎥 მომხმარებლების ვიდეოები</h3>
+        <p>ატვირთე მომხმარებლების reviews/testimonials ვიდეოები (before/after, შთაბეჭდილებები). სხვა ვიზიტორებს ეს კიდევ უფრო ზრდის ნდობას — ხედავენ, რომ შენი მომხმარებლები ბედნიერები არიან.</p>
+      </div>
+      <div class="card">
+        <h3>🔍 პრობლემაზე ორიენტირებული რეკომენდაცია</h3>
+        <p>თითო პრობლემას (თმის ცვენა, აკნე, ნაოჭები) მიბმული აქვს კონკრეტული პროდუქტი + "bridge" აღწერა: მეცნიერული ფონი, რჩევები, შენი პერსონალური შენიშვნა.</p>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="orders" class="highlight">
-    <div class="container">
-      <div class="section-head">
-        <p class="kicker">შეკვეთები</p>
-        <h2 class="display">კალათა, მიწოდება და ინვოისი</h2>
-        <p>შეკვეთის ფორმა უკვე აგროვებს საჭირო მონაცემებს: სახელს, ტელეფონს, მისამართს, კომენტარს და გადახდის მეთოდს.</p>
+<section id="orders" class="highlight">
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">შეკვეთები</p>
+      <h2 class="display">კალათა, მიწოდება და ინვოისი</h2>
+      <p>შეკვეთის ფორმა უკვე აგროვებს საჭირო მონაცემებს: სახელს, ტელეფონს, მისამართს, კომენტარს და გადახდის მეთოდს.</p>
+    </div>
+    <div class="flow">
+      <div><strong>კალათა</strong>მომხმარებელი ამატებს ერთ ან რამდენიმე პროდუქტს.</div>
+      <div><strong>მიწოდება</strong>საკურიერო მომსახურება 5 GEL, ხოლო 150 GEL-ზე ზემოთ უფასო მიწოდება.</div>
+      <div><strong>გადახდა</strong>მომხმარებელი ირჩევს საბანკო გადარიცხვას ან კურიერთან გადახდას.</div>
+      <div><strong>ინვოისი</strong>შეკვეთა ინახება dashboard-ში და ჩანს ინვოისის სახით.</div>
+    </div>
+    <div class="grid-2" style="margin-top:22px;">
+      <div class="card dark">
+        <h3>რას ავსებს მომხმარებელი</h3>
+        <ul class="mini-list">
+          <li>სახელი და გვარი</li>
+          <li>ტელეფონის ნომერი</li>
+          <li>მისამართი</li>
+          <li>კომენტარი შეკვეთაზე</li>
+          <li>გადახდის მეთოდი</li>
+        </ul>
       </div>
-      <div class="flow">
-        <div><strong>კალათა</strong>მომხმარებელი ამატებს ერთ ან რამდენიმე პროდუქტს.</div>
-        <div><strong>მიწოდება</strong>საკურიერო მომსახურება 5 GEL, ხოლო 150 GEL-ზე ზემოთ უფასო მიწოდება.</div>
-        <div><strong>გადახდა</strong>მომხმარებელი ირჩევს საბანკო გადარიცხვას ან კურიერთან გადახდას.</div>
-        <div><strong>ინვოისი</strong>შეკვეთა ინახება dashboard-ში და ჩანს ინვოისის სახით.</div>
-      </div>
-      <div class="grid-2" style="margin-top:22px;">
-        <div class="card dark">
-          <h3>რას ავსებს მომხმარებელი</h3>
-          <ul class="mini-list">
-            <li>სახელი და გვარი</li>
-            <li>ტელეფონის ნომერი</li>
-            <li>მისამართი</li>
-            <li>კომენტარი შეკვეთაზე</li>
-            <li>გადახდის მეთოდი</li>
-          </ul>
-        </div>
-        <div class="card dark">
-          <h3>რა უნდა გააკეთო შენ</h3>
-          <p>როცა შეკვეთა გამოჩნდება, დაუკავშირდი მომხმარებელს, დაადასტურე მისამართი და გადახდის მეთოდი, შემდეგ მოამზადე მიწოდება.</p>
-          <div class="script" style="margin-top:16px;">მაგალითი:
+      <div class="card dark">
+        <h3>რა უნდა გააკეთო შენ</h3>
+        <p>როცა შეკვეთა გამოჩნდება, დაუკავშირდი მომხმარებელს, დაადასტურე მისამართი და გადახდის მეთოდი, შემდეგ მოამზადე მიწოდება.</p>
+        <div class="script" style="margin-top:16px;">მაგალითი:
 გამარჯობა, თქვენი FARMASI შეკვეთა მიღებულია.
 გიდასტურებთ პროდუქტებს და მიწოდების დეტალებს.</div>
-        </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="analytics">
-    <div class="container">
-      <div class="section-head">
-        <p class="kicker">სტატისტიკა</p>
-        <h2 class="display">ნახე მუშაობს თუ არა შენი გაზიარება</h2>
-        <p>Dashboard-ში ჩანს რამდენმა ადამიანმა გახსნა შენი პირადი ლინკი. ეს გეხმარება გაიგო რომელი გაზიარება მუშაობს უკეთ.</p>
+<section id="leads" style="background:var(--ivory);">
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">საკონტაქტო ფორმა</p>
+      <h2 class="display">მომხმარებლის შეტყობინებები</h2>
+      <p>გვერდზე არსებობს საკონტაქტო ფორმა — მომხმარებელი, რომელსაც კითხვა აქვს, შეუძლია მოგწეროს პირდაპირ. შენ ნახავ შეტყობინებებს Dashboard-ში.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>📩 რას წერს მომხმარებელი</h3>
+        <ul class="mini-list">
+          <li>სახელი</li>
+          <li>ტელეფონის ნომერი</li>
+          <li>კონკრეტული შეკითხვა ან კომენტარი</li>
+          <li>დაინტერესებული პროდუქტი (თუ კონკრეტული აარჩია)</li>
+        </ul>
       </div>
-      <div class="grid-3">
-        <div class="card"><h3>დღეს</h3><p>რამდენმა მომხმარებელმა გახსნა ლინკი დღეს.</p></div>
-        <div class="card"><h3>ბოლო 7 დღე</h3><p>კვირის აქტივობა და პატარა გრაფიკი.</p></div>
-        <div class="card"><h3>სულ</h3><p>ყველა ვიზიტი, რაც შენს გვერდზე დაგროვდა.</p></div>
+      <div class="card">
+        <h3>📋 სტატუსების მართვა</h3>
+        <p>Dashboard-ში თითო შეტყობინებას აქვს 3 სტატუსი — გადააჯვი თვალყური ვისთან გელოდება პასუხი.</p>
+        <ul class="mini-list">
+          <li>🟢 ახალი — ჯერ არ ხართ კონტაქტში</li>
+          <li>🟡 დაკავშირებული — დაგიკავშირდი</li>
+          <li>⚫ დახურული — საქმე დასრულდა</li>
+        </ul>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section style="background:var(--ivory);">
-    <div class="container">
-      <div class="section-head">
-        <p class="kicker">გაზიარება</p>
-        <h2 class="display">როგორ გააზიარო ლინკი</h2>
-        <p>ერთი და იგივე ლინკი შეგიძლია გამოიყენო WhatsApp-ში, Facebook-ზე, Instagram bio-ში და პირად მიმოწერაში.</p>
-      </div>
-      <div class="grid-2">
-        <div class="card">
-          <h3>მოკლე ტექსტი მომხმარებლისთვის</h3>
-          <div class="script">გამარჯობა, ეს არის ჩემი FARMASI გვერდი.
+<section id="analytics">
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">სტატისტიკა</p>
+      <h2 class="display">ნახე მუშაობს თუ არა შენი გაზიარება</h2>
+      <p>Dashboard-ში ჩანს რამდენმა ადამიანმა გახსნა შენი პირადი ლინკი. ეს გეხმარება გაიგო რომელი გაზიარება მუშაობს უკეთ.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card"><h3>დღეს</h3><p>რამდენმა მომხმარებელმა გახსნა ლინკი დღეს.</p></div>
+      <div class="card"><h3>ბოლო 7 დღე</h3><p>კვირის აქტივობა და პატარა გრაფიკი.</p></div>
+      <div class="card"><h3>სულ</h3><p>ყველა ვიზიტი, რაც შენს გვერდზე დაგროვდა.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="background:var(--ivory);">
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">გაზიარება</p>
+      <h2 class="display">როგორ გააზიარო ბმული</h2>
+      <p>ერთი და იგივე ბმული შეგიძლია გამოიყენო WhatsApp-ში, Facebook-ზე, Instagram bio-ში და პირად მიმოწერაში.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>მოკლე ტექსტი მომხმარებლისთვის</h3>
+        <div class="script">გამარჯობა, ეს არის ჩემი FARMASI გვერდი.
 აქ შეგიძლია ნახო პროდუქტები, დაამატო კალათაში და დატოვო შეკვეთა:
-my.farmasi.ge/შენი-ლინკი</div>
-        </div>
-        <div class="card">
-          <h3>სად დადო ლინკი</h3>
-          <ul class="mini-list">
-            <li>WhatsApp Status</li>
-            <li>Instagram bio</li>
-            <li>Facebook პოსტი</li>
-            <li>პირადი შეტყობინება მომხმარებლებთან</li>
-          </ul>
-        </div>
+my.farmasi.ge/შენი-ბმული</div>
+      </div>
+      <div class="card">
+        <h3>სად დადო ბმული</h3>
+        <ul class="mini-list">
+          <li>WhatsApp Status</li>
+          <li>Instagram bio</li>
+          <li>Facebook პოსტი</li>
+          <li>პირადი შეტყობინება მომხმარებლებთან</li>
+        </ul>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section id="checklist">
-    <div class="container">
-      <div class="section-head">
-        <p class="kicker">საბოლოო შემოწმება</p>
-        <h2 class="display">Checklist წარმომადგენლისთვის</h2>
-        <p>სანამ ლინკს აქტიურად გააზიარებ, გადაამოწმე ეს სია.</p>
-      </div>
-      <div class="checklist">
-        <div class="check-row"><span class="box"></span><span>ფოტო დამატებულია და სახე მკაფიოდ ჩანს</span></div>
-        <div class="check-row"><span class="box"></span><span>სახელი, გვარი და ქალაქი სწორად წერია</span></div>
-        <div class="check-row"><span class="box"></span><span>ბიო მოკლე და სანდოა</span></div>
-        <div class="check-row"><span class="box"></span><span>WhatsApp და ტელეფონი მითითებულია</span></div>
-        <div class="check-row"><span class="box"></span><span>რეფერალური ლინკი ჩასმულია</span></div>
-        <div class="check-row"><span class="box"></span><span>დღის რჩეული პროდუქტი მონიშნულია Products-ში featured = TRUE</span></div>
-        <div class="check-row"><span class="box"></span><span>კატალოგში პროდუქტს ემატება კალათაში</span></div>
-        <div class="check-row"><span class="box"></span><span>შეკვეთის ფორმა ტესტით გაიგზავნა</span></div>
-        <div class="check-row"><span class="box"></span><span>ვიზიტები dashboard-ში ჩანს</span></div>
-      </div>
+<section id="checklist">
+  <div class="container">
+    <div class="section-head">
+      <p class="kicker">საბოლოო შემოწმება</p>
+      <h2 class="display">Checklist წარმომადგენლისთვის</h2>
+      <p>სანამ ბმულს აქტიურად გააზიარებ, გადაამოწმე ეს სია.</p>
     </div>
-  </section>
+    <div class="checklist">
+      <div class="check-row"><span class="box"></span><span>ფოტო დამატებულია და სახე მკაფიოდ ჩანს</span></div>
+      <div class="check-row"><span class="box"></span><span>სახელი, გვარი და ქალაქი სწორად წერია</span></div>
+      <div class="check-row"><span class="box"></span><span>ბიო მოკლე და სანდოა</span></div>
+      <div class="check-row"><span class="box"></span><span>WhatsApp და ტელეფონი მითითებულია</span></div>
+      <div class="check-row"><span class="box"></span><span>სოციალური ქსელების ბმულები (Instagram, Facebook, TikTok ან Telegram) ჩასმულია</span></div>
+      <div class="check-row"><span class="box"></span><span>პერსონალური URL (slug) დაყენებულია — მაგ. my.farmasi.ge/nino</span></div>
+      <div class="check-row"><span class="box"></span><span>რეფერალური ბმული ჩასმულია</span></div>
+      <div class="check-row"><span class="box"></span><span>5-10 რჩეული პროდუქტი არჩეული Dashboard-ში</span></div>
+      <div class="check-row"><span class="box"></span><span>დღის რჩეული პროდუქტი მონიშნულია Products-ში featured = TRUE</span></div>
+      <div class="check-row"><span class="box"></span><span>კატალოგში პროდუქტს ემატება კალათაში</span></div>
+      <div class="check-row"><span class="box"></span><span>შეკვეთის ფორმა ტესტით გაიგზავნა</span></div>
+      <div class="check-row"><span class="box"></span><span>საკონტაქტო ფორმა Dashboard-ში ჩანს</span></div>
+      <div class="check-row"><span class="box"></span><span>ვიზიტები dashboard-ში ჩანს</span></div>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer>
@@ -583,5 +666,6 @@ my.farmasi.ge/შენი-ლინკი</div>
     <span>წარმომადგენლის სამუშაო გზამკვლევი</span>
   </div>
 </footer>
+
 </body>
 </html>
