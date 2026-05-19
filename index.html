@@ -4471,6 +4471,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [leadSending, setLeadSending] = useState(false);
   const [leadSent, setLeadSent] = useState(false);
   const [leadError, setLeadError] = useState('');
+  const [catalogQuery, setCatalogQuery] = useState('');
+  const [catalogCategory, setCatalogCategory] = useState('all');
   // Rep's curated products (Sheet: RepProducts) — shown as "rep's pick" section
   const [repPicks, setRepPicks] = useState([]);
   // Selected pick product → opens elegant ProductDetailModal (same as problem flow)
@@ -4569,6 +4571,15 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const activeProblems = problems.filter(p => p.productId);
   const quickTestProblems = activeProblems.slice(0, 3);
   const featuredProduct = repPicks[0] || dynamicProducts.find(p => p && p.active) || dynamicProducts[0] || null;
+  const catalogProducts = dynamicProducts.filter(p => p && p.active !== false && p.price);
+  const catalogCategories = ['all', ...Array.from(new Set(catalogProducts.map(p => p.cat || p.category || '').filter(Boolean)))];
+  const visibleCatalogProducts = catalogProducts.filter(p => {
+    const query = catalogQuery.trim().toLowerCase();
+    const category = p.cat || p.category || '';
+    const matchesCategory = catalogCategory === 'all' || category === catalogCategory;
+    const matchesQuery = !query || [p.name, p.desc, p.cat, p.category, p.id, p.sku].filter(Boolean).join(' ').toLowerCase().includes(query);
+    return matchesCategory && matchesQuery;
+  }).slice(0, 24);
 
   return (
     <div className="min-h-screen relative grain" style={{ background: theme.cream }}>
@@ -4682,7 +4693,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
               <div className="flex flex-wrap gap-x-5 gap-y-3 mt-7 text-[11px] tracking-[0.16em] uppercase">
                 <button onClick={goCatalog} className="flex items-center gap-2 transition hover:opacity-70" style={{ color: theme.cocoa }}>
-                  <Ic name="book-open" className="w-3.5 h-3.5" /> {t('hero_catalog_link', 'კატალოგი')}
+                  <Ic name="book-open" className="w-3.5 h-3.5" /> {t('hero_catalog_link', 'PDF კატალოგი')}
+                </button>
+                <button onClick={() => document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })} className="flex items-center gap-2 transition hover:opacity-70" style={{ color: theme.cocoa }}>
+                  <Ic name="shopping-bag" className="w-3.5 h-3.5" /> {t('hero_shop_catalog_link', 'პროდუქტები')}
                 </button>
                 <button onClick={goShop} className="flex items-center gap-2 transition hover:opacity-70" style={{ color: theme.cocoa }}>
                   <Ic name="user-plus" className="w-3.5 h-3.5" /> {t('hero_join_link', 'რეგისტრაცია')}
@@ -5504,6 +5518,118 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══ CATALOG — all products with cart buttons ═══ */}
+      {catalogProducts.length > 0 && (
+        <section id="catalog-section" className="px-5 py-16 sm:py-20" style={{ background: '#ECE7DE' }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8">
+              <div>
+                <p className="premium-kicker mb-3" style={{ color: theme.gold }}>
+                  {t('catalog_eyebrow', 'პროდუქტების კატალოგი')}
+                </p>
+                <h2 className="font-display text-3xl sm:text-5xl leading-tight mb-3" style={{ color: theme.ink }}>
+                  {t('catalog_title', 'აირჩიე და დაამატე კალათაში')}
+                </h2>
+                <p className="text-sm leading-relaxed max-w-xl" style={{ color: theme.ink + 'AA' }}>
+                  {t('catalog_subtitle', 'დაათვალიერე პროდუქტები ამავე გვერდზე — შეკვეთის გასაფორმებლად აღარ გჭირდება სხვა კატალოგში გადასვლა.')}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                <div className="relative flex-1 lg:w-72">
+                  <Ic name="search" className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: theme.ink + '66' }} />
+                  <input value={catalogQuery} onChange={(e) => setCatalogQuery(e.target.value)}
+                    placeholder={t('catalog_search_placeholder', 'ძებნა პროდუქტში...')}
+                    className="w-full pl-11 pr-4 py-3 rounded-full outline-none text-sm"
+                    style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }} />
+                </div>
+                {catalogCategories.length > 2 && (
+                  <select value={catalogCategory} onChange={(e) => setCatalogCategory(e.target.value)}
+                    className="px-4 py-3 rounded-full outline-none text-sm"
+                    style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }}>
+                    {catalogCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat === 'all' ? t('catalog_all_categories', 'ყველა კატეგორია') : cat}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              {visibleCatalogProducts.map(p => (
+                <article key={p.id || p.product_id || p.name}
+                  className="relative overflow-hidden flex min-h-[220px]"
+                  style={{
+                    background: 'linear-gradient(135deg, #f8f5ef 0%, #ffffff 58%, #eee7dd 100%)',
+                    border: '1px solid rgba(16,19,18,.10)',
+                    borderRadius: 4,
+                    boxShadow: '0 18px 45px -28px rgba(16,19,18,.55)'
+                  }}>
+                  <div className="absolute inset-y-0 left-0 w-1" style={{ background: p.accent || theme.wine }} />
+                  <button onClick={() => onProduct(p)}
+                    className="w-[44%] min-w-[135px] p-4 flex items-center justify-center"
+                    style={{ background: 'rgba(255,255,255,.64)' }}>
+                    {p.image
+                      ? <img src={p.image} alt={p.name} className="max-w-full max-h-44 object-contain transition hover:scale-105"
+                          style={{ filter: 'drop-shadow(0 18px 28px rgba(0,0,0,.16))' }} />
+                      : <Ic name="package" className="w-12 h-12" style={{ color: theme.gold }} />}
+                  </button>
+                  <div className="p-4 sm:p-5 flex flex-col flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="min-w-0">
+                        {(p.cat || p.category) && (
+                          <p className="text-[9px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.gold }}>
+                            {p.cat || p.category}
+                          </p>
+                        )}
+                        <button onClick={() => onProduct(p)} className="text-left font-display text-lg sm:text-xl leading-tight"
+                          style={{ color: theme.ink }}>
+                          {p.name}
+                        </button>
+                      </div>
+                      {cart && (
+                        <button onClick={() => { cart.addItem({ product_id: p.id, name: p.name, price: p.price, image: p.image, quantity: 1 }); cart.setOpen(true); }}
+                          className="w-11 h-11 rounded-full flex items-center justify-center transition hover:scale-110 active:scale-95 flex-shrink-0"
+                          style={{ background: theme.ink, color: theme.cream, boxShadow: '0 10px 24px -12px rgba(16,19,18,.8)' }}
+                          aria-label={t('catalog_add_to_cart', 'კალათში დამატება')}>
+                          <Ic name="shopping-cart" className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="mt-auto">
+                      <div className="flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] tracking-[0.18em] uppercase mb-1" style={{ color: theme.ink + '66' }}>
+                            ID #{p.sku || p.id}
+                          </p>
+                          <p className="font-display text-3xl leading-none" style={{ color: theme.ink }}>
+                            {Number(p.price).toFixed(2)}
+                            <span className="text-base ml-1">₾</span>
+                          </p>
+                        </div>
+                        <button onClick={() => { if (cart) { cart.addItem({ product_id: p.id, name: p.name, price: p.price, image: p.image, quantity: 1 }); cart.setOpen(true); } }}
+                          className="px-4 py-2 rounded-full text-[10px] tracking-[0.14em] uppercase font-semibold transition hover:scale-[1.02]"
+                          style={{ background: theme.wine, color: theme.cream }}>
+                          {t('catalog_add_short', 'დამატება')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {visibleCatalogProducts.length === 0 && (
+              <div className="text-center py-12">
+                <Ic name="search-x" className="w-10 h-10 mx-auto mb-3" style={{ color: theme.gold }} />
+                <p className="text-sm" style={{ color: theme.ink + '88' }}>
+                  {t('catalog_empty', 'ამ ძებნით პროდუქტი ვერ მოიძებნა')}
+                </p>
+              </div>
+            )}
           </div>
         </section>
       )}
