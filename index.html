@@ -4571,7 +4571,12 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   ].filter(Boolean);
   const activeProblems = problems.filter(p => p.productId);
   const quickTestProblems = activeProblems.slice(0, 3);
-  const featuredProduct = repPicks[0] || dynamicProducts.find(p => p && p.active) || dynamicProducts[0] || null;
+  const featuredProduct =
+    dynamicProducts.find(p => p && (p.featured === true || String(p.featured || '').toLowerCase() === 'true' || String(p.featured || '') === '1')) ||
+    repPicks[0] ||
+    dynamicProducts.find(p => p && p.active) ||
+    dynamicProducts[0] ||
+    null;
   const catalogProducts = dynamicProducts.filter(p => p && p.active !== false && p.price);
   const catalogCategories = ['all', ...Array.from(new Set(catalogProducts.map(p => p.cat || p.category || '').filter(Boolean)))];
   const filteredCatalogProducts = catalogProducts.filter(p => {
