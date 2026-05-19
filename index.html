@@ -2095,6 +2095,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [myProducts, setMyProducts] = useState(null); // rep's curated products
   const [allProducts, setAllProducts] = useState([]); // full catalog for picker
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerCategoryFilter, setPickerCategoryFilter] = useState('all'); // 'all' or category name
+  const [pickerSearchQuery, setPickerSearchQuery] = useState(''); // text search in picker
   const [editingNote, setEditingNote] = useState(null); // {row, currentNote}
   const [cardGenerating, setCardGenerating] = useState(false);
   const [cardError, setCardError] = useState('');
@@ -2238,6 +2240,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         console.error('Failed to load products', err);
       }
     }
+    setPickerCategoryFilter('all');
+    setPickerSearchQuery('');
     setPickerOpen(true);
   };
 
@@ -3097,41 +3101,103 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                   <Ic name="x" className="w-4 h-4" />
                 </button>
               </div>
+              {/* Filter bar: search + category pills */}
+              {allProducts.length > 0 && (() => {
+                const availableProducts = allProducts.filter(p => !myProducts.some(mp => String(mp.id) === String(p.id)));
+                const categories = Array.from(new Set(availableProducts.map(p => p.cat).filter(Boolean))).sort();
+                return (
+                  <div className="px-4 sm:px-6 py-3 border-b space-y-3" style={{ borderColor: theme.gold + '22', background: theme.cream }}>
+                    {/* Search input */}
+                    <div className="relative">
+                      <Ic name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: theme.ink + '66' }} />
+                      <input
+                        type="text"
+                        value={pickerSearchQuery}
+                        onChange={(e) => setPickerSearchQuery(e.target.value)}
+                        placeholder={L('myprods_picker_search', 'მოძებნე პროდუქტი...')}
+                        className="w-full pl-9 pr-3 py-2 text-sm rounded-lg outline-none"
+                        style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, color: theme.ink }}
+                      />
+                    </div>
+                    {/* Category pills */}
+                    {categories.length > 0 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'thin' }}>
+                        <button
+                          onClick={() => setPickerCategoryFilter('all')}
+                          className="px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 transition hover:scale-[1.03]"
+                          style={pickerCategoryFilter === 'all'
+                            ? { background: theme.wine, color: theme.cream }
+                            : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                          {L('myprods_picker_cat_all', 'ყველა')}
+                        </button>
+                        {categories.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => setPickerCategoryFilter(cat)}
+                            className="px-3 py-1.5 rounded-full text-xs whitespace-nowrap flex-shrink-0 transition hover:scale-[1.03]"
+                            style={pickerCategoryFilter === cat
+                              ? { background: theme.wine, color: theme.cream }
+                              : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="overflow-y-auto p-4 space-y-2">
                 {allProducts.length === 0 ? (
                   <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
                     {L('myprods_picker_loading', 'იტვირთება...')}
                   </p>
-                ) : (
-                  allProducts
+                ) : (() => {
+                  const q = pickerSearchQuery.trim().toLowerCase();
+                  const filtered = allProducts
                     .filter(p => !myProducts.some(mp => String(mp.id) === String(p.id)))
-                    .map(p => (
-                      <button key={p.id}
-                        onClick={() => { addProductToSelection(p.id); setPickerOpen(false); }}
-                        className="w-full rounded-xl p-3 flex gap-3 items-center transition hover:scale-[1.01] text-left"
-                        style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
-                        {p.image && (
-                          <img src={p.image} alt={p.name}
-                            className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                            style={{ background: theme.cream }} />
+                    .filter(p => pickerCategoryFilter === 'all' || p.cat === pickerCategoryFilter)
+                    .filter(p => {
+                      if (!q) return true;
+                      return String(p.name || '').toLowerCase().includes(q)
+                          || String(p.cat || '').toLowerCase().includes(q);
+                    });
+                  if (filtered.length === 0) {
+                    const isFiltering = pickerSearchQuery.trim() || pickerCategoryFilter !== 'all';
+                    return (
+                      <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
+                        {isFiltering
+                          ? L('myprods_picker_no_results', 'შედეგი ვერ მოიძებნა — სცადე სხვა საძიებო')
+                          : L('myprods_picker_all_added', 'ყველა პროდუქტი უკვე დამატებულია')}
+                      </p>
+                    );
+                  }
+                  return filtered.map(p => (
+                    <button key={p.id}
+                      onClick={() => { addProductToSelection(p.id); setPickerOpen(false); }}
+                      className="w-full rounded-xl p-3 flex gap-3 items-center transition hover:scale-[1.01] text-left"
+                      style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+                      {p.image && (
+                        <img src={p.image} alt={p.name}
+                          className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                          style={{ background: theme.cream }} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        {p.cat && (
+                          <p className="text-[9px] tracking-widest uppercase mb-0.5" style={{ color: theme.gold }}>
+                            {p.cat}
+                          </p>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-display text-sm truncate" style={{ color: theme.ink }}>
-                            {p.name}
-                          </p>
-                          <p className="text-xs" style={{ color: theme.wine }}>
-                            {p.price} ₾
-                          </p>
-                        </div>
-                        <Ic name="plus" className="w-4 h-4" style={{ color: theme.wine }} />
-                      </button>
-                    ))
-                )}
-                {allProducts.length > 0 && allProducts.filter(p => !myProducts.some(mp => String(mp.id) === String(p.id))).length === 0 && (
-                  <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
-                    {L('myprods_picker_all_added', 'ყველა პროდუქტი უკვე დამატებულია')}
-                  </p>
-                )}
+                        <p className="font-display text-sm truncate" style={{ color: theme.ink }}>
+                          {p.name}
+                        </p>
+                        <p className="text-xs" style={{ color: theme.wine }}>
+                          {p.price} ₾
+                        </p>
+                      </div>
+                      <Ic name="plus" className="w-4 h-4" style={{ color: theme.wine }} />
+                    </button>
+                  ));
+                })()}
               </div>
             </div>
           </div>
