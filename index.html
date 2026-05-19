@@ -4031,16 +4031,126 @@ function OrderInvoicePage({ orderId, labels = {} }) {
             </div>
           </div>
 
-          {/* Total */}
-          <div className="px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between"
-            style={{ background: theme.cream }}>
-            <span className="text-sm tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>
-              {L('order_total', 'ჯამი:')}
-            </span>
-            <span className="font-display text-3xl font-bold" style={{ color: theme.wine }}>
-              {Number(order.total).toFixed(2)} ₾
-            </span>
+          {/* Total breakdown — subtotal, delivery, grand total */}
+          <div className="px-6 py-5 sm:px-8 sm:py-6 space-y-2"
+            style={{ background: theme.cream, borderBottom: order.payment_method ? `1px solid ${theme.gold}22` : 'none' }}>
+            {/* Subtotal — only show if explicitly present (backward compat) */}
+            {order.subtotal !== undefined && order.subtotal !== '' && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: theme.ink + '99' }}>{L('order_subtotal', 'ქვეჯამი:')}</span>
+                <span style={{ color: theme.ink }}>{Number(order.subtotal).toFixed(2)} ₾</span>
+              </div>
+            )}
+            {/* Delivery fee — only show if explicitly present */}
+            {order.delivery_fee !== undefined && order.delivery_fee !== '' && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: theme.ink + '99' }}>{L('order_delivery', 'მიწოდება:')}</span>
+                {Number(order.delivery_fee) === 0 ? (
+                  <span className="font-medium" style={{ color: '#10b981' }}>{L('order_delivery_free', 'უფასო ✓')}</span>
+                ) : (
+                  <span style={{ color: theme.ink }}>{Number(order.delivery_fee).toFixed(2)} ₾</span>
+                )}
+              </div>
+            )}
+            {/* Grand total */}
+            <div className="flex items-center justify-between pt-2 mt-1"
+              style={{ borderTop: order.subtotal !== undefined ? `1px solid ${theme.gold}22` : 'none' }}>
+              <span className="text-sm tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>
+                {L('order_total', 'ჯამი:')}
+              </span>
+              <span className="font-display text-3xl font-bold" style={{ color: theme.wine }}>
+                {Number(order.total).toFixed(2)} ₾
+              </span>
+            </div>
           </div>
+
+          {/* Payment method + bank info (if applicable) */}
+          {order.payment_method && (
+            <div className="px-6 py-6 sm:px-8 sm:py-8" style={{ background: theme.ivory, borderBottom: `1px solid ${theme.gold}22` }}>
+              <p className="text-[10px] tracking-[0.3em] uppercase mb-4" style={{ color: theme.gold }}>
+                💳 {L('order_payment_section', 'გადახდის მეთოდი')}
+              </p>
+              {order.payment_method === 'cash' && (
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl flex-shrink-0">💵</div>
+                  <div>
+                    <p className="font-display text-lg mb-1" style={{ color: theme.ink }}>
+                      {L('order_payment_cash_title', 'კურიერთან ნაღდი გადახდა')}
+                    </p>
+                    <p className="text-sm" style={{ color: theme.ink + '99' }}>
+                      {L('order_payment_cash_desc', 'გადაიხდი როდესაც კურიერი მოგიტანს შეკვეთას.')}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {order.payment_method === 'bank' && (
+                <div>
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="text-2xl flex-shrink-0">🏦</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-lg mb-1" style={{ color: theme.ink }}>
+                        {L('order_payment_bank_title', 'საბანკო გადარიცხვა')}
+                      </p>
+                      <p className="text-sm" style={{ color: theme.ink + '99' }}>
+                        {L('order_payment_bank_desc', 'გადარიცხე ანგარიშზე და დაუკავშირდი წარმომადგენელს.')}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Bank account details — comes from rep's profile (Reps sheet) */}
+                  {(order.bank_account || order.bank_recipient) ? (
+                    <div className="rounded-2xl p-4 space-y-3"
+                      style={{ background: theme.cream, border: `1.5px dashed ${theme.gold}66` }}>
+                      {order.bank_recipient && (
+                        <div>
+                          <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
+                            {L('order_bank_recipient', 'მიმღები')}
+                          </p>
+                          <p className="font-medium text-sm" style={{ color: theme.ink }}>{order.bank_recipient}</p>
+                        </div>
+                      )}
+                      {order.bank_account && (
+                        <div>
+                          <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
+                            {L('order_bank_account', 'ანგარიში')}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-mono text-sm flex-1 break-all" style={{ color: theme.ink }}>{order.bank_account}</p>
+                            <button
+                              onClick={() => {
+                                if (navigator.clipboard) {
+                                  navigator.clipboard.writeText(order.bank_account);
+                                  const btn = event.currentTarget;
+                                  const orig = btn.textContent;
+                                  btn.textContent = '✓';
+                                  setTimeout(() => { btn.textContent = orig; }, 1500);
+                                }
+                              }}
+                              className="flex-shrink-0 text-xs px-2 py-1 rounded-md transition hover:scale-105"
+                              style={{ background: theme.wine, color: theme.cream }}>
+                              📋
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-[10px] tracking-[0.2em] uppercase mb-1" style={{ color: theme.ink + '88' }}>
+                          {L('order_bank_amount', 'თანხა')}
+                        </p>
+                        <p className="font-display text-xl" style={{ color: theme.wine }}>{Number(order.total).toFixed(2)} ₾</p>
+                      </div>
+                      <p className="text-[11px] italic pt-2" style={{ color: theme.ink + 'AA', borderTop: `1px dashed ${theme.gold}33` }}>
+                        💡 {L('order_bank_note', 'გადარიცხვისას მიუთითე შეკვეთის ID:')} <span className="font-mono">{order.order_id}</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs italic" style={{ color: theme.ink + '88' }}>
+                      {L('order_bank_contact_rep', 'ანგარიშის რეკვიზიტებისთვის დაუკავშირდი წარმომადგენელს.')}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Rep info footer */}
           {order.rep_name && (
@@ -4074,9 +4184,21 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState(null); // 'cash' | 'bank' | null
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [orderId, setOrderId] = useState('');
+
+  // ─── Delivery fee logic (configurable via Labels sheet) ───
+  // delivery_fee → flat fee (default 5 GEL)
+  // delivery_free_threshold → subtotal above which delivery becomes free (default 100 GEL)
+  const deliveryFeeBase = Number(labels.delivery_fee) || 5;
+  const deliveryFreeThreshold = Number(labels.delivery_free_threshold) || 100;
+  const subtotal = Number(total) || 0;
+  const isFreeDelivery = subtotal >= deliveryFreeThreshold;
+  const deliveryFee = isFreeDelivery ? 0 : deliveryFeeBase;
+  const grandTotal = Math.round((subtotal + deliveryFee) * 100) / 100;
+  const remainingForFree = Math.max(0, deliveryFreeThreshold - subtotal);
 
   // Reset state when drawer is closed and re-opens fresh from success
   const close = () => {
@@ -4087,6 +4209,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
         setCustomerName('');
         setCustomerPhone('');
         setCustomerAddress('');
+        setPaymentMethod(null);
         setOrderId('');
         setError('');
       }
@@ -4100,6 +4223,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     if (normalizedPhone.startsWith('995') && normalizedPhone.length > 9) normalizedPhone = normalizedPhone.substring(3);
     if (!/^5\d{8}$/.test(normalizedPhone)) return setError(L('cart_err_phone', 'ნომერი არასწორი ფორმატია (599XXXXXX)'));
     if (!customerAddress.trim()) return setError(L('cart_err_addr', 'მისამართი სავალდებულოა'));
+    if (!paymentMethod) return setError(L('cart_err_payment', 'აირჩიე გადახდის მეთოდი'));
     
     setSubmitting(true);
     try {
@@ -4109,6 +4233,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
         customer_name: customerName.trim(),
         customer_phone: normalizedPhone,
         customer_address: customerAddress.trim(),
+        payment_method: paymentMethod, // 'cash' | 'bank' — server re-validates
         items: JSON.stringify(items.map(it => ({
           product_id: it.product_id,
           name: it.name,
@@ -4212,10 +4337,35 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                       ))}
                     </div>
                     
-                    <div className="mt-5 pt-4 flex items-center justify-between"
+                    <div className="mt-5 pt-4 space-y-2"
                       style={{ borderTop: `1px solid ${theme.gold}33` }}>
-                      <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
-                      <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{total.toFixed(2)} GEL</span>
+                      {/* Subtotal */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'ქვეჯამი:')}</span>
+                        <span style={{ color: theme.ink }}>{subtotal.toFixed(2)} ₾</span>
+                      </div>
+                      {/* Delivery fee */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span style={{ color: theme.ink + '99' }}>{L('cart_delivery_label', 'მიწოდება:')}</span>
+                        {isFreeDelivery ? (
+                          <span className="font-medium" style={{ color: '#10b981' }}>
+                            {L('cart_delivery_free', 'უფასო ✓')}
+                          </span>
+                        ) : (
+                          <span style={{ color: theme.ink }}>{deliveryFee.toFixed(2)} ₾</span>
+                        )}
+                      </div>
+                      {/* "Spend X more for free delivery" hint */}
+                      {!isFreeDelivery && remainingForFree > 0 && (
+                        <p className="text-[11px] italic" style={{ color: theme.wine }}>
+                          {L('cart_free_delivery_hint_prefix', 'დაამატე კიდევ')} {remainingForFree.toFixed(2)} ₾ {L('cart_free_delivery_hint_suffix', '— მიწოდება გახდება უფასო 🎁')}
+                        </p>
+                      )}
+                      {/* Grand total */}
+                      <div className="flex items-center justify-between pt-2 mt-2" style={{ borderTop: `1px solid ${theme.gold}22` }}>
+                        <span className="text-sm tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                        <span className="font-display text-2xl font-bold" style={{ color: theme.wine }}>{grandTotal.toFixed(2)} ₾</span>
+                      </div>
                     </div>
                     
                     <button onClick={() => setStep('checkout')}
@@ -4260,10 +4410,79 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
                   className="w-full px-4 py-3 rounded-xl outline-none text-sm mb-3 resize-none"
                   style={{ background: theme.ivory, border: `1.5px solid ${theme.gold}44`, color: theme.ink }} />
 
-                <div className="mt-4 pt-4 flex items-center justify-between"
+                {/* ─── PAYMENT METHOD ─── */}
+                <label className="block text-xs uppercase tracking-widest mb-2 mt-4" style={{ color: theme.ink + 'AA' }}>
+                  {L('cart_field_payment', 'გადახდის მეთოდი')} <span style={{ color: theme.rose }}>*</span>
+                </label>
+                <div className="space-y-2 mb-3">
+                  {/* Cash on delivery */}
+                  <button type="button" onClick={() => { setPaymentMethod('cash'); setError(''); }}
+                    className="w-full text-left p-3 rounded-xl flex items-center gap-3 transition hover:scale-[1.01]"
+                    style={{
+                      background: paymentMethod === 'cash' ? theme.wine + '11' : theme.ivory,
+                      border: `1.5px solid ${paymentMethod === 'cash' ? theme.wine : theme.gold + '44'}`,
+                    }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ border: `2px solid ${paymentMethod === 'cash' ? theme.wine : theme.ink + '44'}` }}>
+                      {paymentMethod === 'cash' && (
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: theme.wine }} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium" style={{ color: theme.ink }}>
+                        💵 {L('cart_payment_cash', 'კურიერთან ნაღდი გადახდა')}
+                      </div>
+                      <div className="text-[11px] mt-0.5" style={{ color: theme.ink + '88' }}>
+                        {L('cart_payment_cash_hint', 'გადაიხდი როდესაც კურიერი მიგიტანს')}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Bank transfer */}
+                  <button type="button" onClick={() => { setPaymentMethod('bank'); setError(''); }}
+                    className="w-full text-left p-3 rounded-xl flex items-center gap-3 transition hover:scale-[1.01]"
+                    style={{
+                      background: paymentMethod === 'bank' ? theme.wine + '11' : theme.ivory,
+                      border: `1.5px solid ${paymentMethod === 'bank' ? theme.wine : theme.gold + '44'}`,
+                    }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ border: `2px solid ${paymentMethod === 'bank' ? theme.wine : theme.ink + '44'}` }}>
+                      {paymentMethod === 'bank' && (
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: theme.wine }} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium" style={{ color: theme.ink }}>
+                        🏦 {L('cart_payment_bank', 'საბანკო გადარიცხვა')}
+                      </div>
+                      <div className="text-[11px] mt-0.5" style={{ color: theme.ink + '88' }}>
+                        {L('cart_payment_bank_hint', 'ანგარიშის რეკვიზიტებს მიიღებ ინვოისში')}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Order summary breakdown */}
+                <div className="mt-4 pt-4 space-y-2"
                   style={{ borderTop: `1px solid ${theme.gold}33` }}>
-                  <span className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_total_label', 'ჯამი:')}</span>
-                  <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{total.toFixed(2)} GEL</span>
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: theme.ink + '99' }}>{L('cart_subtotal_label', 'ქვეჯამი:')}</span>
+                    <span style={{ color: theme.ink }}>{subtotal.toFixed(2)} ₾</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: theme.ink + '99' }}>{L('cart_delivery_label', 'მიწოდება:')}</span>
+                    {isFreeDelivery ? (
+                      <span className="font-medium" style={{ color: '#10b981' }}>
+                        {L('cart_delivery_free', 'უფასო ✓')}
+                      </span>
+                    ) : (
+                      <span style={{ color: theme.ink }}>{deliveryFee.toFixed(2)} ₾</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between pt-2 mt-2" style={{ borderTop: `1px solid ${theme.gold}22` }}>
+                    <span className="text-sm tracking-widest uppercase" style={{ color: theme.ink + 'AA' }}>{L('cart_total_label', 'ჯამი:')}</span>
+                    <span className="font-display text-xl font-bold" style={{ color: theme.wine }}>{grandTotal.toFixed(2)} ₾</span>
+                  </div>
                 </div>
 
                 {error && <p className="text-xs mt-3" style={{ color: theme.rose }}>{error}</p>}
