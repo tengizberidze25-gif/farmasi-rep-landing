@@ -3733,7 +3733,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             </p>
 
             {/* Show current title as read-only badge if found in Titles sheet */}
-            {rep.title && (
+            {rep.title && (typeof rep.title === 'object' ? rep.title.title : rep.title) && (
               <div className="mt-3 flex items-center gap-3 flex-wrap">
                 <span className="text-[10px] tracking-[0.2em] uppercase" style={{ color: theme.ink + '88' }}>
                   {L('profile_current_title', 'შენი ტიტული აპრილში:')}
@@ -4119,8 +4119,22 @@ function Card({ children }) {
 // `size`: 'lg' for public page (prominent), 'sm' for Dashboard (compact).
 // ════════════════════════════════════════════════════════════════════════════
 function TitleBadge({ title, size = 'lg' }) {
+  // Handle both old (string) and new (object) formats for backward compatibility
+  let titleStr = '';
+  let percentage = 0;
+  
   if (!title) return null;
-  const meta = TITLE_META[title] || TITLE_DEFAULT;
+  
+  if (typeof title === 'object') {
+    titleStr = title.title || '';
+    percentage = title.percentage || 0;
+  } else {
+    titleStr = title; // legacy string format
+  }
+  
+  if (!titleStr) return null;
+  
+  const meta = TITLE_META[titleStr] || TITLE_DEFAULT;
   const isLarge = size === 'lg';
   const isTopTier = meta.level >= 5;
 
@@ -4140,7 +4154,13 @@ function TitleBadge({ title, size = 'lg' }) {
           : 'none',
       }}>
       <span className={isLarge ? 'text-base' : 'text-xs'}>{meta.emoji}</span>
-      <span>{title}</span>
+      <span>{titleStr}</span>
+      {percentage > 0 && (
+        <>
+          <span className="mx-0.5">•</span>
+          <span>{percentage}%</span>
+        </>
+      )}
     </div>
   );
 }
@@ -5636,7 +5656,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               </h1>
 
               {/* MLM title badge — shown when rep's personal_id matches Titles sheet */}
-              {rep.title && (
+              {rep.title && (typeof rep.title === 'object' ? rep.title.title : rep.title) && (
                 <div className="pt-2 anim-fadeup">
                   <TitleBadge title={rep.title} size="lg" />
                 </div>
@@ -6654,7 +6674,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               }}>
               {rep.name || t('hero_name_placeholder', 'შენი სახელი')}
             </h2>
-            {rep.title && (
+            {rep.title && (typeof rep.title === 'object' ? rep.title.title : rep.title) && (
               <div className="mb-3 flex justify-center">
                 <TitleBadge title={rep.title} size="lg" />
               </div>
