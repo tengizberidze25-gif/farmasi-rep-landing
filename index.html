@@ -1587,18 +1587,32 @@ function App() {
       {urlParams.edit && !otpToken && !validatingSession && <LoginScreen onLoginSuccess={handleOtpLoginSuccess} labels={labels} />}
       
       {/* Normal views — only visible if not in OTP login flow */}
-      {!(urlParams.edit && !otpToken) && !validatingSession && (
-        <>
-          {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
-          {view === 'loading' && <LoadingScreen labels={labels} />}
-          {view === 'notfound' && <NotFoundScreen labels={labels} />}
-          {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
-          {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
-          {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
-          {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
-          {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
-        </>
-      )}
+      {!(urlParams.edit && !otpToken) && !validatingSession && (() => {
+        // GATE: Existing reps in edit mode without a valid 11-digit personal_id
+        // are blocked at a dedicated screen until they enter+save it.
+        // This forces existing reps to add the new field after Title system deploy.
+        const inEditMode = !!urlParams.edit && !!otpToken;
+        const isContentView = view === 'dashboard' || view === 'public' || view === 'product';
+        const pidMissing = !rep.personalId || rep.personalId.length !== 11;
+        const needsPid = inEditMode && isContentView && pidMissing;
+
+        if (needsPid) {
+          return <ForcePersonalIdScreen rep={rep} setRep={setRep} repCode={repCode} onLogout={handleLogout} labels={labels} />;
+        }
+
+        return (
+          <>
+            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
+            {view === 'loading' && <LoadingScreen labels={labels} />}
+            {view === 'notfound' && <NotFoundScreen labels={labels} />}
+            {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
+            {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
+            {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+            {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+            {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
+          </>
+        );
+      })()}
     </div>
   );
 }
@@ -1661,6 +1675,156 @@ function LoadingScreen({ labels = {} }) {
       }}>{L('loading_text', 'ვტვირთავ...')}</p>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FORCE PERSONAL ID SCREEN — blocking gate for existing reps without PID.
+// Shown when rep is in edit mode (logged in via OTP) but personal_id is empty
+// or != 11 digits. Blocks all other views (Dashboard, Public, etc.) until saved.
+// New reps see this on first login; existing reps see it after Title deploy.
+// ════════════════════════════════════════════════════════════════════════════
+function ForcePersonalIdScreen({ rep, setRep, repCode, onLogout, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [pid, setPid] = useState(rep.personalId || '');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  const handleSave = async () => {
+    setErr('');
+    if (pid.length !== 11) {
+      setErr(L('force_pid_err_length', '11 ციფრი უნდა იყოს'));
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await api({
+        action: 'save_rep',
+        pid: repCode,
+        personal_id: pid,
+      });
+      if (res && res.ok) {
+        // Update rep state — gate evaluates false → Dashboard renders
+        setRep(r => ({
+          ...r,
+          personalId: pid,
+          title: (res.rep && res.rep.title) || '',
+        }));
+      } else {
+        setErr((res && res.error) || L('force_pid_err_save', 'შენახვა ვერ მოხერხდა'));
+      }
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4 py-8"
+      style={{ background: `linear-gradient(135deg, ${theme.cream} 0%, ${theme.ivory} 100%)` }}>
+      <div className="max-w-md w-full">
+        <div className="rounded-3xl p-6 sm:p-8 anim-fadeup"
+          style={{
+            background: theme.ivory,
+            border: `1px solid ${theme.gold}33`,
+            boxShadow: `0 30px 80px -20px ${theme.wine}33`
+          }}>
+
+          {/* Decorative gradient icon */}
+          <div className="flex justify-center mb-5">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{
+                background: `linear-gradient(135deg, ${theme.wine}, ${theme.gold})`,
+                boxShadow: `0 12px 30px -8px ${theme.wine}55`
+              }}>
+              <Ic name="id-card" className="w-8 h-8" style={{ color: theme.cream }} />
+            </div>
+          </div>
+
+          {/* Heading */}
+          <h2 className="font-display text-2xl text-center mb-2" style={{ color: theme.ink }}>
+            {L('force_pid_title', 'ერთი ნაბიჯი დარჩა')}
+          </h2>
+          <p className="text-sm text-center mb-6 leading-relaxed" style={{ color: theme.ink + '99' }}>
+            {L('force_pid_desc', 'შენი FARMASI-ის ყოველთვიური ტიტული საჯარო პეიჯზე გამოვაჩინე, ამისთვის გვჭირდება შენი 11-ნიშნა პირადი ნომერი.')}
+          </p>
+
+          {/* PID input */}
+          <div className="mb-4">
+            <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>
+              {L('force_pid_label', 'პირადი ნომერი')}
+              <span style={{ color: '#DC2626', marginLeft: '4px', fontWeight: 700 }}>*</span>
+            </label>
+            <div className="relative">
+              <Ic name="id-card" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
+                style={{ color: theme.gold }} />
+              <input type="tel" inputMode="numeric" pattern="[0-9]*"
+                value={pid}
+                onChange={(e) => {
+                  // Auto-strip non-digits, cap at 11
+                  const cleaned = String(e.target.value || '').replace(/\D/g, '').slice(0, 11);
+                  setPid(cleaned);
+                  if (err) setErr('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && pid.length === 11 && !saving) handleSave();
+                }}
+                placeholder="01001234567"
+                autoFocus
+                className="w-full pl-9 pr-3 py-3 rounded-xl outline-none text-base font-mono tracking-wide transition-colors"
+                style={{
+                  background: theme.cream,
+                  border: `1.5px solid ${err ? '#DC2626' : (pid.length === 11 ? '#16A34A' : theme.gold + '44')}`,
+                  color: theme.ink
+                }} />
+            </div>
+            <div className="flex items-center justify-between mt-1.5 min-h-[16px]">
+              <p className="text-[10px]" style={{ color: pid.length === 11 ? '#16A34A' : theme.ink + '66' }}>
+                {pid.length === 11 ? '✓ ' : ''}{pid.length}/11
+              </p>
+              {err && <p className="text-[10px]" style={{ color: '#DC2626' }}>⚠ {err}</p>}
+            </div>
+          </div>
+
+          {/* Save button */}
+          <button onClick={handleSave} disabled={pid.length !== 11 || saving}
+            className="w-full py-3.5 rounded-full font-medium text-sm tracking-widest uppercase transition disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+            style={{
+              background: theme.wine,
+              color: theme.cream,
+              boxShadow: pid.length === 11 && !saving ? `0 12px 30px -10px ${theme.wine}AA` : 'none'
+            }}>
+            {saving ? (
+              <>
+                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent"
+                  style={{ animation: 'spin 0.8s linear infinite' }} />
+                <span>{L('force_pid_saving', 'ვინახავ...')}</span>
+              </>
+            ) : (
+              <>
+                <span>{L('force_pid_save_btn', 'შენახვა და გაგრძელება')}</span>
+                <Ic name="arrow-right" className="w-4 h-4" />
+              </>
+            )}
+          </button>
+
+          {/* Security footnote */}
+          <p className="text-[10px] text-center mt-4 leading-relaxed italic" style={{ color: theme.ink + '77' }}>
+            🔒 {L('force_pid_security_note', 'პირადი ნომერი მხოლოდ FARMASI-ის შიდა ცხრილში ტიტულის დასამთხვევად. საჯაროდ არასდროს ჩანს.')}
+          </p>
+
+          {/* Logout escape hatch — small, discreet */}
+          <div className="text-center mt-6 pt-5" style={{ borderTop: `1px dashed ${theme.gold}33` }}>
+            <button onClick={onLogout}
+              className="text-xs transition hover:underline"
+              style={{ color: theme.ink + '66' }}>
+              {L('force_pid_logout', 'გასვლა — შემდეგ შევავსებ')}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
