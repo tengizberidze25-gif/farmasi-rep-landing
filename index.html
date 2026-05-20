@@ -5402,10 +5402,9 @@ async function fetchTestProducts() {
 }
 
 // Test Products Gallery (PDF-style catalog)
-function TestProductsGallery({ labels = {} }) {
+function TestProductsGallery({ labels = {}, onAddToCart } = {}) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const cart = useContext(CartContext);
   
   useEffect(() => {
     (async () => {
@@ -5422,7 +5421,7 @@ function TestProductsGallery({ labels = {} }) {
   return (
     <div className="space-y-6 p-6">
       {products.map((product, idx) => (
-        <PDFProductCard key={idx} product={product} onAddToCart={(item) => { if (cart?.addItem) cart.addItem(item); }} labels={labels} />
+        <PDFProductCard key={idx} product={product} onAddToCart={onAddToCart || (() => {})} labels={labels} />
       ))}
     </div>
   );
