@@ -908,7 +908,7 @@ async function downloadPersonalCard({ name, city, slug, labels = {} }) {
 // ════════════════════════════════════════════════════════════════════════════
 // API CONFIG + JSONP UTILITY
 // ════════════════════════════════════════════════════════════════════════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbyj-YfGg32VC38hQlpqGATjnv74pxIi2wSYtdiZQLYpJ4lj9QyKcuOctyLteN4XANAa/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbytRrFPbb1lOQ-_M8o1HmXtpZLUJ_4S6kn7HTOW4lVfRrum8ZQI4xjAO27azelbEpQ6/exec';
 
 function api(params) {
   return new Promise((resolve, reject) => {
@@ -5586,6 +5586,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false); // Shoppable Catalog drawer
+  const [showPdfCatalog, setShowPdfCatalog] = useState(false); // PDF Catalog (Test Products) modal
   const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -6741,6 +6742,14 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             <Ic name="arrow-right" className="w-4 h-4 opacity-70" />
           </button>
 
+          <button onClick={() => setShowPdfCatalog(true)}
+            className="inline-flex items-center gap-3 py-4 px-8 sm:px-10 rounded-full font-medium text-sm sm:text-base tracking-wider uppercase transition hover:scale-[1.03] ml-3"
+            style={{ background: theme.wine, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.wine}AA` }}>
+            <Ic name="palette" className="w-5 h-5" />
+            {t('pdf_catalog_cta', '🎨 PDF კატალოგი')}
+            <Ic name="arrow-right" className="w-4 h-4 opacity-70" />
+          </button>
+
           <p className="text-xs mt-5 opacity-60" style={{ color: theme.ink }}>
             {t('catalog_hint', '620+ პროდუქტი · ფასები · აღწერა · ფოტოები')}
           </p>
@@ -6957,6 +6966,22 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         cart={cart}
         labels={labels}
       />
+
+      {/* PDF Catalog Modal — Test Products Gallery */}
+      {showPdfCatalog && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 flex items-center justify-between p-6 bg-gradient-to-r border-b" style={{ borderColor: theme.gold + '30' }}>
+              <h2 className="text-2xl font-bold" style={{ color: theme.ink }}>🎨 PDF კატალოგი</h2>
+              <button onClick={() => setShowPdfCatalog(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold">✕</button>
+            </div>
+            <div className="p-6">
+              <TestProductsGallery labels={labels} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pick product modal — opens elegant detail view when clicking on rep's curated picks */}
       {pickModalProduct && (
