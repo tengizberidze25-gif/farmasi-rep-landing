@@ -4731,7 +4731,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     <>
       {/* Floating cart button — fixed top-right, visible always */}
       <button id="cart-icon" onClick={() => setOpen(true)} aria-label={L('cart_button_aria', 'კალათა')}
-        className="fixed top-4 right-4 z-40 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+        className="fixed top-4 right-4 z-[999] rounded-full shadow-2xl..."
         style={{ background: theme.ink, color: theme.cream, width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Ic name="shopping-bag" className="w-6 h-6" />
         {count > 0 && (
