@@ -5111,9 +5111,12 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
     setQuickview(null);
     // 🚀 Auto-navigate to cart: wait briefly for fly-to-cart animation, then close catalog + open cart
     setTimeout(() => {
-  // კატალოგი STAYS OPEN
-  if (cart.setOpen) cart.setOpen(true);  // ← მხოლოდ კალათა ხსნება
-}, 350);
+      setOpen(false); // close catalog drawer (instant since we removed exit animation)
+      // Tiny delay to let unmount complete before opening cart — prevents visual stutter
+      setTimeout(() => { if (cart.setOpen) cart.setOpen(true); }, 50);
+    }, 350);
+  };
+
   const reset = () => {
     setSearchQuery('');
     setCategoryFilter('all');
