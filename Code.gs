@@ -15,6 +15,7 @@ const SHEETS = {
   REP_PRODUCTS: 'RepProducts',
   VISITS:       'Visits',
   LEADS:        'Leads',
+  ORDERS:       'Orders',
 };
 
 // ─── ENTRY POINTS ──────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ function handleRequest(e) {
     switch (action) {
       case 'ping':              result = { ok: true, msg: 'FARMASI Landing API is alive', time: new Date().toISOString() }; break;
       case 'request_otp':       result = requestOtp(params); break;
+      case 'register_phone':    result = registerPhone(params); break;
       case 'verify_otp':        result = verifyOtp(params); break;
       case 'sso_login':         result = ssoLogin(params); break;
       case 'get_rep':           result = getRep(params.pid); break;
@@ -56,6 +58,9 @@ function handleRequest(e) {
       case 'get_visits':        result = getVisits(params.pid); break;
       case 'get_leads':         result = getLeads(params.pid); break;
       case 'get_rep_products':  result = getRepProducts(params.pid); break;
+      case 'submit_order':      return jsonResponse(submitOrder(params), callback);
+      case 'get_order':         return jsonResponse(getOrder(params.order_id), callback);
+      case 'get_rep_orders':    return jsonResponse(getRepOrders(params.pid), callback);
       default:                  result = { ok: false, error: 'Unknown action: ' + action };
     }
   } catch (err) {
@@ -89,7 +94,7 @@ function slugify(name) {
   const map = {
     'ა':'a','ბ':'b','გ':'g','დ':'d','ე':'e','ვ':'v','ზ':'z','თ':'t',
     'ი':'i','კ':'k','ლ':'l','მ':'m','ნ':'n','ო':'o','პ':'p','ჟ':'zh',
-    'რ':'r','ს':'s','ტ':'t','უ':'u','ფ':'f','ქ':'q','ღ':'gh','ყ':'q',
+    'რ':'r','ს':'s','ტ':'t','უ':'u','ფ':'p','ქ':'q','ღ':'gh','ყ':'q',
     'შ':'sh','ჩ':'ch','ც':'ts','ძ':'dz','წ':'ts','ჭ':'ch','ხ':'kh',
     'ჯ':'j','ჰ':'h'
   };
@@ -103,6 +108,32 @@ function slugify(name) {
     .replace(/--+/g, '-')
     .replace(/^-+|-+$/g, '');
   return slug.length >= 3 ? slug : '';
+}
+
+/**
+ * Full-name slug for fallback lookup.
+ * Transliterates the WHOLE name (first + last + ...) → hyphenated slug.
+ * E.g. "იზოლდა კეზევაძე" → "izolda-kezevadze"
+ *      "თამარ გელაშვილი" → "tamar-gelashvili"
+ * Used by getRepBySlug() as a Pass-2 fallback when exact slug not found.
+ */
+function fullNameSlug(name) {
+  if (!name) return '';
+  const map = {
+    'ა':'a','ბ':'b','გ':'g','დ':'d','ე':'e','ვ':'v','ზ':'z','თ':'t',
+    'ი':'i','კ':'k','ლ':'l','მ':'m','ნ':'n','ო':'o','პ':'p','ჟ':'zh',
+    'რ':'r','ს':'s','ტ':'t','უ':'u','ფ':'p','ქ':'q','ღ':'gh','ყ':'q',
+    'შ':'sh','ჩ':'ch','ც':'ts','ძ':'dz','წ':'ts','ჭ':'ch','ხ':'kh',
+    'ჯ':'j','ჰ':'h'
+  };
+  return String(name).trim().toLowerCase()
+    .split('')
+    .map(c => map[c] || c)
+    .join('')
+    .replace(/[^a-z0-9\s-]/g, '')   // remove punctuation, keep spaces+hyphens
+    .replace(/\s+/g, '-')            // spaces → hyphens
+    .replace(/--+/g, '-')            // collapse multiple hyphens
+    .replace(/^-+|-+$/g, '');        // trim leading/trailing hyphens
 }
 
 /**
@@ -196,14 +227,92 @@ function getRep(pid) {
   const createdAtCol = headers.indexOf('created_at');
   const updatedAtCol = headers.indexOf('updated_at');
   const slugCol = headers.indexOf('slug');
+  const urlCol = headers.indexOf('URL');
   
   if (createdAtCol >= 0) newRow[createdAtCol] = now;
   if (updatedAtCol >= 0) newRow[updatedAtCol] = now;
   if (slugCol >= 0)      newRow[slugCol] = autoSlug;
+  if (urlCol >= 0 && autoSlug) newRow[urlCol] = 'https://my.farmasi.ge/' + autoSlug;
   
   sheet.appendRow(newRow);
 
   return { ok: true, rep: rowToObject(headers, newRow), created: true };
+}
+
+/**
+ * BACKFILL REP URLS — One-time admin utility.
+ * Run from Apps Script editor: select "backfillRepUrls" → Run.
+ * 
+ * Fills missing URL column values for all reps that have a slug.
+ * Safe to run multiple times — only fills empty URL cells.
+ */
+function backfillRepUrls() {
+  // ცარდენ FARMASI Landing Data ცარდენ ცარდენ ID-ცი
+  const SPREADSHEET_ID = '1mBKr_qkBlE0d1kXuAzdbcBX-a6oDn73Ly1Ii1xJexMM';
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  
+  // ცარდენ ცარდენ ცარდენ ცარდენ ცარდენ
+  const allSheets = ss.getSheets().map(s => s.getName());
+  Logger.log('📋 ცარდენ ცარდენ: ' + allSheets.join(', '));
+  
+  // ცარდენ Reps ცარდენ (case-insensitive)
+  let sheet = null;
+  for (const s of ss.getSheets()) {
+    const name = s.getName().toLowerCase().trim();
+    if (name === 'reps' || name === 'წარმომადგენლები' || name === 'rep') {
+      sheet = s;
+      Logger.log('✅ ვიპოვე: ' + s.getName());
+      break;
+    }
+  }
+  
+  if (!sheet) {
+    Logger.log('❌ Reps ცარდენ ცარდენ ცარდენ ცარდენ ცარდენ');
+    return;
+  }
+  
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  
+  Logger.log('📋 Headers: ' + headers.join(' | '));
+  
+  // Case-insensitive search for slug and URL
+  let slugCol = -1, urlCol = -1;
+  for (let i = 0; i < headers.length; i++) {
+    const h = String(headers[i]).trim().toLowerCase();
+    if (h === 'slug') slugCol = i;
+    if (h === 'url') urlCol = i;
+  }
+  
+  Logger.log('🔍 slug column: ' + slugCol);
+  Logger.log('🔍 URL column: ' + urlCol);
+  
+  if (slugCol < 0 || urlCol < 0) {
+    Logger.log('❌ ვერ ვიპოვე slug ან URL სვეტი');
+    return;
+  }
+  
+  let filled = 0;
+  let skipped = 0;
+  
+  for (let i = 1; i < data.length; i++) {
+    const slug = String(data[i][slugCol] || '').trim();
+    const url = String(data[i][urlCol] || '').trim();
+    
+    if (slug && !url) {
+      const newUrl = 'https://my.farmasi.ge/' + slug;
+      sheet.getRange(i + 1, urlCol + 1).setValue(newUrl);
+      Logger.log('✅ მცკრივი ' + (i + 1) + ': ' + newUrl);
+      filled++;
+    } else {
+      skipped++;
+    }
+  }
+  
+  Logger.log('');
+  Logger.log('📊 შედეგი:');
+  Logger.log('   შევსებული: ' + filled);
+  Logger.log('   გამოტოვებული: ' + skipped);
 }
 
 /**
@@ -249,13 +358,19 @@ function saveRep(params) {
       
       // Save
       sheet.getRange(rowIndex, slugCol + 1).setValue(requestedSlug);
+      
+      // Auto-update URL column to match new slug
+      const urlCol = headers.indexOf('URL');
+      if (urlCol >= 0) {
+        sheet.getRange(rowIndex, urlCol + 1).setValue('https://my.farmasi.ge/' + requestedSlug);
+      }
     }
   }
 
   // Other editable fields
   const editable = ['name', 'bio', 'photo_url', 'city', 'phone', 'whatsapp',
                   'instagram', 'facebook', 'tiktok', 'youtube', 'telegram', 'video_url',
-                  'customer_videos'];
+                  'customer_videos', 'referral_link'];
   editable.forEach(field => {
   if (params[field] === undefined) return;
   
@@ -293,16 +408,36 @@ function getRepBySlug(params) {
     const headers = data[0].map(h => String(h || '').trim().toLowerCase());
     const slugCol = headers.indexOf('slug');
     const pidCol = headers.indexOf('pid');
+    const nameCol = headers.indexOf('name');
 
     if (slugCol === -1) return { ok: false, error: 'Slug column not found in Reps sheet' };
     if (pidCol === -1) return { ok: false, error: 'PID column not found in Reps sheet' };
 
+    // ── PASS 1: Exact slug match (existing behavior, highest priority) ──
     for (let i = 1; i < data.length; i++) {
       const rowSlug = String(data[i][slugCol] || '').trim().toLowerCase();
       if (rowSlug && rowSlug === cleanSlug) {
         const pid = String(data[i][pidCol] || '').trim();
         if (!pid) continue;
         return getRep(pid);
+      }
+    }
+
+    // ── PASS 2: Full-name fallback ──
+    // If exact slug fails, try matching against transliterated full name.
+    // E.g. request "izolda-kezevadze" matches rep "იზოლდა კეზევაძე"
+    // even though their actual slug is just "izolda".
+    if (nameCol !== -1) {
+      for (let i = 1; i < data.length; i++) {
+        const fullName = String(data[i][nameCol] || '').trim();
+        if (!fullName) continue;
+
+        const candidateSlug = fullNameSlug(fullName);
+        if (candidateSlug && candidateSlug === cleanSlug) {
+          const pid = String(data[i][pidCol] || '').trim();
+          if (!pid) continue;
+          return getRep(pid);
+        }
       }
     }
 
@@ -1085,52 +1220,44 @@ function debugSpreadsheet() {
 // Flow: rep enters PID → request_otp → SMS sent → rep enters code → verify_otp → session
 // ────────────────────────────────────────────────────────────────────────────
 
+// Flow: user enters phone → request_otp → SMS sent → user enters OTP → verify_otp → session
+// New user? verifyOtp auto-creates row in REPS sheet.
+// ────────────────────────────────────────────────────────────────────────────
+
 function requestOtp(params) {
-  const pid = String(params.pid || '').trim();
-  if (!pid) return { ok: false, error: 'PID required' };
-  if (!/^\d{6}$/.test(pid)) return { ok: false, error: 'Invalid PID format' };
+  const phoneInput = String(params.phone || '').trim();
   
+  // Phone format check (9 digits starting with 5 — Georgian mobile)
+  if (!/^5\d{8}$/.test(phoneInput)) {
+    return { ok: false, error: 'ნომერი არასწორი ფორმატია (599XXXXXX)' };
+  }
+  
+  // Generate OTP, cache keyed by phone (not PID)
   const otp = String(Math.floor(Math.random() * 1000000)).padStart(6, '0');
   const cache = CacheService.getDocumentCache();
-  cache.put('otp_' + pid, otp, 600);
-  
-  const sheet = getSheet(SHEETS.REPS);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  
-  let phone = null;
-  let repName = null;
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === pid) {
-      const phoneCol = headers.indexOf('phone');
-      const nameCol = headers.indexOf('name');
-      if (phoneCol >= 0) phone = String(data[i][phoneCol]).trim();
-      if (nameCol >= 0) repName = String(data[i][nameCol]).trim();
-      break;
-    }
-  }
-  
-  if (!phone || phone.length < 9) {
-    return { ok: false, error: 'Phone not found in profile' };
-  }
+  cache.put('otp_phone_' + phoneInput, otp, 600); // 10-minute expiry
   
   try {
-    const message = `FARMASI კოდი: ${otp}`;
-    sendSms(phone, message);
-    return { ok: true, message: 'OTP sent to ' + phone.slice(-4), repName: repName };
+    // SMS format optimized for auto-fill on iOS Safari (autocomplete="one-time-code")
+    // and Android Chrome (Web OTP API requires "@hostname #code" suffix on last line)
+    const smsBody = 'FARMASI კოდი: ' + otp + '\n\nVerification code: ' + otp + '\n\n@my.farmasi.ge #' + otp;
+    sendSms(phoneInput, smsBody);
+    const phoneMask = '****' + phoneInput.slice(-4);
+    return { ok: true, phoneMask: phoneMask, message: 'OTP sent to ' + phoneInput.slice(-4) };
   } catch (err) {
     return { ok: false, error: 'SMS failed: ' + err.message };
   }
 }
 
 function verifyOtp(params) {
-  const pid = String(params.pid || '').trim();
+  const phoneInput = String(params.phone || '').trim();
   const otp = String(params.otp || '').trim();
   
-  if (!pid || !otp) return { ok: false, error: 'PID and OTP required' };
+  if (!phoneInput || !otp) return { ok: false, error: 'Phone and OTP required' };
+  if (!/^5\d{8}$/.test(phoneInput)) return { ok: false, error: 'Invalid phone format' };
   
   const cache = CacheService.getDocumentCache();
-  const storedOtp = cache.get('otp_' + pid);
+  const storedOtp = cache.get('otp_phone_' + phoneInput);
   
   if (!storedOtp) {
     return { ok: false, error: 'OTP expired. Request new code.' };
@@ -1140,9 +1267,55 @@ function verifyOtp(params) {
     return { ok: false, error: 'Invalid OTP' };
   }
   
+  cache.remove('otp_phone_' + phoneInput);
+  
+  // Find rep by phone in REPS sheet
+  const sheet = getSheet(SHEETS.REPS);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const phoneCol = headers.indexOf('phone');
+  
+  let pid = '';
+  if (phoneCol >= 0) {
+    for (let i = 1; i < data.length; i++) {
+      const rowPhone = String(data[i][phoneCol] || '').replace(/\D/g, '').slice(-9);
+      if (rowPhone === phoneInput) {
+        pid = String(data[i][0]).trim();
+        break;
+      }
+    }
+  }
+  
+  // ✅ Auto-create new rep row if phone not found
+  if (!pid) {
+    pid = phoneInput; // use phone as row identifier for new reps
+    const now = new Date().toISOString();
+    const newRow = new Array(headers.length).fill('');
+    newRow[0] = pid;
+    if (phoneCol >= 0) newRow[phoneCol] = phoneInput;
+    
+    const createdAtCol = headers.indexOf('created_at');
+    const updatedAtCol = headers.indexOf('updated_at');
+    const slugCol = headers.indexOf('slug');
+    const urlCol = headers.indexOf('URL');
+    
+    if (createdAtCol >= 0) newRow[createdAtCol] = now;
+    if (updatedAtCol >= 0) newRow[updatedAtCol] = now;
+    if (slugCol >= 0) {
+      try {
+        const newSlug = generateUniqueSlug('', sheet, headers, pid);
+        newRow[slugCol] = newSlug;
+        if (urlCol >= 0 && newSlug) newRow[urlCol] = 'https://my.farmasi.ge/' + newSlug;
+      } catch (e) {
+        // slug generation failed — leave empty, user can set later
+      }
+    }
+    
+    sheet.appendRow(newRow);
+  }
+  
   const sessionToken = Utilities.getUuid();
   cache.put('otp_session_' + pid, sessionToken, 21600);
-  cache.remove('otp_' + pid);
   
   const repData = getRep(pid);
   
@@ -1208,4 +1381,378 @@ function ssoLogin(params) {
     pid: pid,
     rep: repData.rep
   };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// FIRST-TIME PHONE REGISTRATION (no SMS verification on first login)
+// ⚠️ SECURITY: PIDs are public, so this allows anyone with an unclaimed PID
+//    to register their own phone. Monitor REPS sheet for unexpected entries.
+// ────────────────────────────────────────────────────────────────────────────
+function registerPhone(params) {
+  const pid = String(params.pid || '').trim();
+  const phone = String(params.phone || '').trim();
+  const name = String(params.name || '').trim(); // ✅ NEW: optional name for first-time registration
+  
+  if (!pid || !/^\d{6}$/.test(pid)) return { ok: false, error: 'PID არასწორი ფორმატია' };
+  if (!/^5\d{8}$/.test(phone)) return { ok: false, error: 'ნომერი არასწორი ფორმატია' };
+  
+  const sheet = getSheet(SHEETS.REPS);
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const phoneCol = headers.indexOf('phone');
+  const nameCol = headers.indexOf('name');
+  if (phoneCol < 0) return { ok: false, error: 'REPS sheet-ში phone სვეტი არ მოიძებნა' };
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === pid) {
+      const existingPhone = String(data[i][phoneCol] || '').trim();
+      
+      // SECURITY: prevent overwriting an existing phone (which would hijack the account)
+      if (existingPhone && existingPhone.length >= 9) {
+        return { ok: false, error: 'ამ PID-ისთვის ნომერი უკვე რეგისტრირებულია. დაუკავშირდი ადმინს.' };
+      }
+      
+      // Save phone to REPS sheet
+      sheet.getRange(i + 1, phoneCol + 1).setValue(phone);
+      
+      // ✅ NEW: Also save name if provided AND existing name is empty (don't overwrite existing)
+      if (name && nameCol >= 0) {
+        const existingName = String(data[i][nameCol] || '').trim();
+        if (!existingName) {
+          sheet.getRange(i + 1, nameCol + 1).setValue(name);
+        }
+      }
+      
+      // Create session token (mimics verifyOtp)
+      const sessionToken = Utilities.getUuid();
+      const cache = CacheService.getDocumentCache();
+      cache.put('otp_session_' + pid, sessionToken, 21600);
+      
+      // Get rep data for return (refreshed from sheet, includes any just-saved fields)
+      const repData = getRep(pid);
+      
+      return {
+        ok: true,
+        token: sessionToken,
+        pid: pid,
+        rep: repData.ok ? repData.rep : null
+      };
+    }
+  }
+  
+  return { ok: false, error: 'PID მონაცემთა ბაზაში ვერ მოიძებნა' };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SMS GATEWAY — bulksms.ge / POSTA GÜVERCINI integration
+// 
+// Credentials are stored in Script Properties (Project Settings → Script Properties).
+// Required keys:
+//   - PUBLIC_KEY   (your bulksms.ge public key)
+//   - PRIVATE_KEY  (your bulksms.ge private key)
+// ════════════════════════════════════════════════════════════════════════════
+
+function sendSms(phone, message) {
+  const SMS_API_URL = 'https://api.bulksms.ge/gateway/api/sms/v1/message/send';
+  const SMS_DEFAULT_SENDER = 'FARMASI';
+  
+  const props = PropertiesService.getScriptProperties();
+  const publicKey = props.getProperty('PUBLIC_KEY');
+  const privateKey = props.getProperty('PRIVATE_KEY');
+  
+  if (!publicKey || !privateKey) {
+    throw new Error('PUBLIC_KEY / PRIVATE_KEY missing in Script Properties');
+  }
+  
+  // Normalize phone — strip non-digits, ensure 995 country prefix
+  let digits = String(phone).replace(/\D/g, '');
+  if (digits.startsWith('995')) digits = digits.substring(3);
+  if (digits.length !== 9) {
+    throw new Error('Invalid phone format (expected 9 digits): ' + phone);
+  }
+  const intlPhone = '995' + digits;
+  
+  const payload = {
+    Text: message,
+    Purpose: 'INF',
+    Options: {
+      Originator: SMS_DEFAULT_SENDER,
+      Encoding: 'UNICODE',
+      SmsType: 'SMS',
+      ReportLabel: 'FARMASI Auth OTP'
+    },
+    Receivers: [{ Receiver: intlPhone }]
+  };
+  
+  const url = SMS_API_URL + '?publicKey=' + encodeURIComponent(publicKey);
+  const response = UrlFetchApp.fetch(url, {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + privateKey },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  
+  const code = response.getResponseCode();
+  const body = response.getContentText();
+  Logger.log('sendSms[' + intlPhone + ']: HTTP ' + code + ' — ' + body);
+  
+  if (code < 200 || code >= 300) {
+    throw new Error('SMS gateway HTTP ' + code + ': ' + body);
+  }
+  
+  return { ok: true, response: body };
+}
+
+// Quick test helper — update phone to your own number, then click Run.
+function testSms() {
+  return sendSms('599XXXXXX', 'ტესტი FARMASI-სგან');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ORDERS — Shopping cart submissions from public rep pages
+// 
+// Flow: customer adds products to cart on /slug page → fills name/phone/address
+// → submits → order saved to ORDERS sheet → SMS notification sent to rep
+// ════════════════════════════════════════════════════════════════════════════
+
+function submitOrder(params) {
+  try {
+    // Parse and validate input
+    const repPid = String(params.rep_pid || '').trim();
+    const customerName = String(params.customer_name || '').trim();
+    const customerPhone = String(params.customer_phone || '').replace(/\D/g, '').slice(-9);
+    const customerAddress = String(params.customer_address || '').trim();
+    let items;
+    try {
+      items = typeof params.items === 'string' ? JSON.parse(params.items) : (params.items || []);
+    } catch (e) {
+      return { ok: false, error: 'items field is not valid JSON' };
+    }
+    
+    if (!repPid) return { ok: false, error: 'rep_pid required' };
+    if (!customerName) return { ok: false, error: 'სახელი გვარი სავალდებულოა' };
+    if (!/^5\d{8}$/.test(customerPhone)) return { ok: false, error: 'ტელეფონის ნომერი არასწორი ფორმატია' };
+    if (!customerAddress) return { ok: false, error: 'მისამართი სავალდებულოა' };
+    if (!Array.isArray(items) || items.length === 0) return { ok: false, error: 'კალათა ცარიელია' };
+    
+    // Validate items structure: [{product_id, name, quantity, price}]
+    let total = 0;
+    items = items.map(it => {
+      const qty = parseInt(it.quantity, 10) || 1;
+      const price = parseFloat(it.price) || 0;
+      const subtotal = qty * price;
+      total += subtotal;
+      return {
+        product_id: String(it.product_id || ''),
+        name: String(it.name || ''),
+        quantity: qty,
+        price: price,
+        subtotal: subtotal
+      };
+    });
+    // Round grand total to 2 decimal places (e.g. 106.92, not 106.9199999)
+    total = Math.round(total * 100) / 100;
+    
+    // Find rep info (name + phone for SMS recipient)
+    const repData = getRep(repPid);
+    if (!repData.ok) return { ok: false, error: 'წარმომადგენელი ვერ მოიძებნა' };
+    const rep = repData.rep;
+    const repName = String(rep.name || '').trim() || repPid;
+    const repPhone = String(rep.phone || '').replace(/\D/g, '').slice(-9);
+    
+    // Generate order ID and save to ORDERS sheet
+    const orderId = 'ORD-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    const now = new Date().toISOString();
+    
+    saveOrderToSheet({
+      order_id: orderId,
+      timestamp: now,
+      rep_pid: repPid,
+      rep_name: repName,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      customer_address: customerAddress,
+      items: JSON.stringify(items),
+      total: total,
+      status: 'new'
+    });
+    
+    // Send SMS to rep (if rep has phone)
+    let smsResult = { sent: false, reason: '' };
+    if (repPhone && /^5\d{8}$/.test(repPhone)) {
+      try {
+        const smsText = formatOrderSms({
+          orderId: orderId,
+          customerName: customerName,
+          customerPhone: customerPhone,
+          customerAddress: customerAddress,
+          items: items,
+          total: total
+        });
+        sendSms(repPhone, smsText);
+        smsResult.sent = true;
+      } catch (e) {
+        Logger.log('Order SMS to rep failed: ' + e.message);
+        smsResult.reason = e.message;
+      }
+    } else {
+      smsResult.reason = 'rep has no valid phone';
+    }
+    
+    // Send confirmation SMS to the customer with invoice link
+    let customerSmsResult = { sent: false, reason: '' };
+    if (/^5\d{8}$/.test(customerPhone)) {
+      try {
+        const customerSmsText = formatCustomerOrderSms({
+          orderId: orderId,
+          customerName: customerName,
+          repName: repName,
+          total: total
+        });
+        sendSms(customerPhone, customerSmsText);
+        customerSmsResult.sent = true;
+      } catch (e) {
+        Logger.log('Order SMS to customer failed: ' + e.message);
+        customerSmsResult.reason = e.message;
+      }
+    }
+    
+    return {
+      ok: true,
+      order_id: orderId,
+      total: total,
+      sms_sent: smsResult.sent,
+      customer_sms_sent: customerSmsResult.sent,
+      message: 'შეკვეთა მიღებულია! წარმომადგენელი მალე დაგიკავშირდება.'
+    };
+  } catch (err) {
+    Logger.log('submitOrder error: ' + err.message);
+    return { ok: false, error: 'შეცდომა: ' + err.message };
+  }
+}
+
+// Save order row to ORDERS sheet, creating the sheet with headers if it doesn't exist
+function saveOrderToSheet(order) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEETS.ORDERS);
+  const SITE_BASE_URL = 'https://my.farmasi.ge';
+  
+  if (!sheet) {
+    // Auto-create with proper headers
+    sheet = ss.insertSheet(SHEETS.ORDERS);
+    sheet.appendRow([
+      'order_id', 'timestamp', 'rep_pid', 'rep_name',
+      'customer_name', 'customer_phone', 'customer_address',
+      'items', 'total', 'status', 'invoice_url'
+    ]);
+    // Freeze header row
+    sheet.setFrozenRows(1);
+    // Bold header
+    sheet.getRange(1, 1, 1, 11).setFontWeight('bold');
+  }
+  
+  sheet.appendRow([
+    order.order_id,
+    order.timestamp,
+    order.rep_pid,
+    order.rep_name,
+    order.customer_name,
+    order.customer_phone,
+    order.customer_address,
+    order.items,
+    order.total,
+    order.status,
+    SITE_BASE_URL + '/?order=' + order.order_id
+  ]);
+}
+
+// Format the SMS text sent to the rep when a new order arrives
+function formatOrderSms(o) {
+  // Short SMS with link to beautiful invoice page (saves SMS segments + cost)
+  const SITE_BASE_URL = 'https://my.farmasi.ge';
+  return '🛒 ახალი შეკვეთა!\n\n' +
+         '👤 ' + o.customerName + '\n' +
+         '📱 ' + o.customerPhone + '\n' +
+         '💰 ' + o.total + ' GEL\n\n' +
+         'სრული შეკვეთა:\n' +
+         SITE_BASE_URL + '/?order=' + o.orderId;
+}
+
+// Format the SMS text sent to the customer as order confirmation with invoice link
+function formatCustomerOrderSms(o) {
+  const SITE_BASE_URL = 'https://my.farmasi.ge';
+  const repPart = o.repName ? o.repName + ' ' : '';
+  return '🌹 FARMASI: შენი შეკვეთა მიღებულია!\n\n' +
+         repPart + 'მალე დაგიკავშირდება.\n\n' +
+         '💰 ' + o.total + ' GEL\n\n' +
+         'შენი ინვოისი:\n' +
+         SITE_BASE_URL + '/?order=' + o.orderId;
+}
+
+// Fetch a single order by ID — used by the invoice page on frontend
+function getOrder(orderId) {
+  if (!orderId) return { ok: false, error: 'order_id required' };
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.ORDERS);
+  if (!sheet) return { ok: false, error: 'შეკვეთა ვერ მოიძებნა' };
+  
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const idCol = headers.indexOf('order_id');
+  if (idCol < 0) return { ok: false, error: 'ORDERS sheet missing order_id column' };
+  
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idCol]).trim() === String(orderId).trim()) {
+      const order = {};
+      headers.forEach((h, j) => order[h] = data[i][j]);
+      // Parse items JSON back to array
+      try { order.items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items; } catch (e) { order.items = []; }
+      return { ok: true, order: order };
+    }
+  }
+  
+  return { ok: false, error: 'შეკვეთა ვერ მოიძებნა: ' + orderId };
+}
+
+// Helper to fetch orders for a specific rep (for future Dashboard view)
+function getRepOrders(pid) {
+  if (!pid) return { ok: false, error: 'pid required' };
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEETS.ORDERS);
+  if (!sheet) return { ok: true, orders: [] };
+  
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const repPidCol = headers.indexOf('rep_pid');
+  
+  const orders = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][repPidCol]).trim() !== String(pid).trim()) continue;
+    const order = {};
+    headers.forEach((h, j) => order[h] = data[i][j]);
+    // Parse items JSON back to array
+    try { order.items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items; } catch (e) {}
+    orders.push(order);
+  }
+  
+  // Most recent first
+  orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  return { ok: true, orders: orders };
+}
+
+// Quick test helper
+function testSubmitOrder() {
+  return submitOrder({
+    rep_pid: '598185090', // change to a real rep pid in your sheet
+    customer_name: 'ნინო ცინცაძე',
+    customer_phone: '599772266',
+    customer_address: 'თბილისი, ვაკე, ჭავჭავაძის გამზ. 12',
+    items: JSON.stringify([
+      { product_id: '1000001', name: 'სატესტო პროდუქტი', quantity: 2, price: 25 },
+      { product_id: '1000002', name: 'მეორე პროდუქტი', quantity: 1, price: 33 }
+    ])
+  });
 }
