@@ -6955,7 +6955,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       })()}
 
       {/* Floating cart button + drawer */}
-      {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
+      {cart && <Cart repPid={repCode} repName={rep.name} open={cartOpen} setOpen={setCartOpen} {...cart} labels={labels} />}
 
       {/* Shoppable Catalog drawer — opens from "დაათვალიერე და შეუკვეთე" button in CATALOG CTA section */}
       <ShoppableCatalog
