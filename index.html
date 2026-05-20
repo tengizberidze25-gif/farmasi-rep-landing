@@ -5314,6 +5314,120 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
   );
 }
 
+// ============ PDF-STYLE PRODUCT CARD WITH VARIANTS ============
+function PDFProductCard({ product, onAddToCart, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [selectedVariant, setSelectedVariant] = useState(0);
+  
+  const variants = product.variants || [{ name: product.variant || 'Default', color: product.hexColor || '#E8A5B4', price: product.price }];
+  const currentVariant = variants[selectedVariant] || variants[0];
+  
+  const handleAddToCart = () => {
+    if (onAddToCart) {
+      onAddToCart({
+        product_id: product.id || product.name,
+        name: product.name,
+        price: currentVariant.price || product.price,
+        variant: currentVariant.name,
+        color: currentVariant.color,
+        image: product.image,
+        quantity: 1
+      });
+    }
+  };
+  
+  return (
+    <div className="bg-white rounded-lg overflow-hidden border" style={{ borderColor: theme.gold + '22' }}>
+      <div className="grid grid-cols-12 gap-4 p-6">
+        {/* LEFT: Color Swatches */}
+        <div className="col-span-3">
+          <div className="space-y-3">
+            {variants.map((v, idx) => (
+              <div key={idx} onClick={() => setSelectedVariant(idx)} className="flex items-center gap-3 cursor-pointer transition" style={{ opacity: idx === selectedVariant ? 1 : 0.7 }}>
+                <div className="w-10 h-10 rounded-md flex-shrink-0 transition border-2" style={{ background: v.color, borderColor: idx === selectedVariant ? theme.wine : 'transparent' }} title={v.name} />
+                <div className="text-xs flex-1 min-w-0">
+                  <div className="font-medium" style={{ color: theme.ink }}>{String(idx + 1).padStart(2, '0')}</div>
+                  <div className="text-[11px] truncate" style={{ color: theme.ink + '77' }}>{v.name}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* RIGHT: Product Details */}
+        <div className="col-span-9">
+          <div className="rounded-lg aspect-square mb-4 flex items-center justify-center overflow-hidden" style={{ background: `linear-gradient(135deg, ${theme.blush}44, ${theme.ivory})` }}>
+            {product.image ? <img src={product.image} alt={product.name} className="w-full h-full object-contain p-6" /> : <div className="text-5xl opacity-20">💄</div>}
+          </div>
+          <h3 className="text-lg font-semibold mb-2 tracking-wide" style={{ color: theme.ink }}>{product.name}</h3>
+          {product.description && <p className="text-sm mb-3" style={{ color: theme.ink + '99' }}>{product.description}</p>}
+          <div className="text-sm mb-4 space-y-1" style={{ color: theme.ink + '88' }}>
+            <div><span className="font-medium">{L('variant', 'ფერი')}:</span> <span className="ml-2">{currentVariant.name}</span></div>
+            {product.size && <div><span className="font-medium">{L('size', 'ზომა')}:</span> <span className="ml-2">{product.size}</span></div>}
+          </div>
+          <div className="text-2xl font-display mb-4" style={{ color: theme.wine }}>{currentVariant.price || product.price} ₾</div>
+          <button onClick={handleAddToCart} className="w-full py-3 rounded-lg font-medium transition active:scale-95 flex items-center justify-center gap-2" style={{ background: theme.wine, color: theme.cream, boxShadow: `0 4px 12px -2px ${theme.wine}66` }}>
+            <Ic name="shopping-bag" className="w-4 h-4" />
+            {L('add_to_cart', 'კალათაში')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Fetch Test Products from Google Sheets via Apps Script
+async function fetchTestProducts() {
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ action: 'getTestProducts' })
+    });
+    const data = await response.json();
+    if (data.error) { console.error('Test products error:', data.error); return []; }
+    
+    // Group by name to show variants
+    const grouped = {};
+    (data || []).forEach(item => {
+      const key = item.name || 'Unknown';
+      if (!grouped[key]) { grouped[key] = { id: item.code || key, name: key, price: item.price, image: null, variants: [] }; }
+      grouped[key].variants.push({ name: item.variant || 'Default', color: item.hexColor || '#E8A5B4', price: item.price });
+    });
+    return Object.values(grouped);
+  } catch (err) {
+    console.error('fetchTestProducts error:', err);
+    return [];
+  }
+}
+
+// Test Products Gallery (PDF-style catalog)
+function TestProductsGallery({ labels = {} }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const cart = useContext(CartContext);
+  
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      const testProducts = await fetchTestProducts();
+      setProducts(testProducts);
+      setLoading(false);
+    })();
+  }, []);
+  
+  if (loading) return <div className="p-8 text-center">ატვირთვა...</div>;
+  if (!products.length) return <div className="p-8 text-center">პროდუქტი ვერ მოიძებნა</div>;
+  
+  return (
+    <div className="space-y-6 p-6">
+      {products.map((product, idx) => (
+        <PDFProductCard key={idx} product={product} onAddToCart={(item) => { if (cart?.addItem) cart.addItem(item); }} labels={labels} />
+      ))}
+    </div>
+  );
+}
+
 // Individual product card in the catalog grid
 function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
