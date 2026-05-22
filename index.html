@@ -2391,6 +2391,33 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [tokenError, setTokenError] = useState(false);
   const [visits, setVisits] = useState(null);
 
+  // ════════════════════════════════════════════════════════════════════════
+  // SAVE GATE — Snapshot of what's actually persisted in Sheets (vs live edits).
+  // Initialized from rep at mount (rep came from API). Updated only after a
+  // successful save_rep API call. Used to decide whether share/preview UI is
+  // shown — prevents the "tender-aurora 404" bug where reps copied auto-generated
+  // URLs before saving (slug never persisted to Sheets).
+  // ════════════════════════════════════════════════════════════════════════
+  const [savedSnapshot, setSavedSnapshot] = useState(() => ({
+    name: rep.name || '',
+    photo: rep.photo || '',
+    city: rep.city || '',
+  }));
+  const isProfileSaved = !!(
+    savedSnapshot.name &&
+    savedSnapshot.name.trim().length >= 2 &&
+    savedSnapshot.photo &&
+    savedSnapshot.city &&
+    savedSnapshot.city.trim().length > 0
+  );
+  const profileMissingFields = (() => {
+    const missing = [];
+    if (!savedSnapshot.name || savedSnapshot.name.trim().length < 2) missing.push('სახელი');
+    if (!savedSnapshot.photo) missing.push('ფოტო');
+    if (!savedSnapshot.city || !savedSnapshot.city.trim()) missing.push('ქალაქი');
+    return missing;
+  })();
+
   // ─── Authenticated API wrappers ───
   // editApi / editApiUpload automatically include the rep's edit_token from
   // localStorage and detect invalid_token errors. Use these for ANY mutation
@@ -2643,6 +2670,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
       if (result.ok && result.photo_url) {
         // Replace base64 with permanent Drive URL
         setRep(r => ({ ...r, photo: result.photo_url }));
+        setSavedSnapshot(s => ({ ...s, photo: result.photo_url }));
         setSavedToast(true);
         setTimeout(() => setSavedToast(false), 3000);
       } else if (result._silent) {
@@ -2650,6 +2678,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         const refresh = await api({ action: 'get_rep', pid: repCode });
         if (refresh.ok && refresh.rep.photo_url) {
           setRep(r => ({ ...r, photo: refresh.rep.photo_url }));
+          setSavedSnapshot(s => ({ ...s, photo: refresh.rep.photo_url }));
           setSavedToast(true);
           setTimeout(() => setSavedToast(false), 3000);
         }
@@ -2917,6 +2946,12 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         // photo_url left out for now — base64 too large for JSONP, will handle separately
       });
       if (result.ok) {
+        // Update snapshot — gate now evaluates true, share/preview UI unlocks
+        setSavedSnapshot({
+          name: rep.name || '',
+          photo: rep.photo || '',
+          city: rep.city || '',
+        });
         setSavedToast(true);
         setTimeout(() => setSavedToast(false), 3000);
       } else {
@@ -3023,6 +3058,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
+        {isProfileSaved ? (
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
@@ -3102,6 +3138,45 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             </div>
           )}
         </Card>
+        ) : (
+        // ─── LOCKED state: profile not saved yet, hide share/preview UI ───
+        <Card>
+          <div className="flex items-start gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: theme.gold + '22' }}>
+              <span style={{ fontSize: '18px' }}>🔒</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{L('dash_locked_eyebrow', 'პროფილი არასრულია')}</p>
+              <p className="font-display text-lg mb-1" style={{ color: theme.ink }}>{L('dash_locked_title', 'დაასრულე პროფილი — შემდეგ მიიღებ პერსონალურ ლინკს')}</p>
+              <p className="text-xs leading-relaxed" style={{ color: theme.ink + '99' }}>
+                {L('dash_locked_subtitle', 'შენი საჯარო გვერდი და გასაზიარებელი ლინკი გამოჩნდება, როცა შეავსებ და შეინახავ ქვემოთ მითითებულ ველებს.')}
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2 mb-4 pl-1">
+            {['სახელი', 'ფოტო', 'ქალაქი'].map(field => {
+              const isMissing = profileMissingFields.includes(field);
+              return (
+                <div key={field} className="flex items-center gap-2 text-sm" style={{ color: isMissing ? theme.ink + 'BB' : theme.ink + '55' }}>
+                  <span style={{ fontSize: '14px', color: isMissing ? theme.wine : '#16A34A' }}>
+                    {isMissing ? '⊘' : '✓'}
+                  </span>
+                  <span style={{ textDecoration: isMissing ? 'none' : 'line-through' }}>{field}</span>
+                </div>
+              );
+            })}
+          </div>
+          <button onClick={() => {
+            // Scroll to first profile editing field
+            const editForm = document.querySelector('[data-profile-form], input[name="firstName"], input[type="file"]');
+            if (editForm) editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+            className="w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition hover:scale-[1.02]"
+            style={{ background: theme.wine, color: theme.cream }}>
+            {L('dash_locked_cta', 'შეავსე და შეინახე პროფილი')} →
+          </button>
+        </Card>
+        )}
 
         {/* Guide Link Card — shareable resource for new reps / customers */}
         <Card>
