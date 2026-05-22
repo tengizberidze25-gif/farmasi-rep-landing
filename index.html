@@ -2576,6 +2576,21 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
   };
 
+  // ─── Soft-delete (hide) a lead. Stays in Sheets with status='hidden',
+  // but disappears from rep's dashboard. Admin can still inspect history.
+  const hideLead = async (leadRow) => {
+    if (!confirm(L('leads_confirm_delete', 'ნამდვილად გინდა ამ შეტყობინების წაშლა?'))) return;
+    try {
+      const res = await editApi({ action: 'update_lead_status', row: leadRow, status: 'hidden' });
+      if (res.ok && leads) {
+        // Remove from local state immediately — disappears from view
+        setLeads(leads.filter(l => l.row !== leadRow));
+      }
+    } catch (err) {
+      console.error('Failed to hide lead', err);
+    }
+  };
+
   // Load rep's curated products
   useEffect(() => {
     if (!repCode) return;
@@ -3366,6 +3381,12 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                             ↻ {L('leads_button_reopen', 'ხელახლა გახსნა')}
                           </button>
                         )}
+                        <button onClick={() => hideLead(lead.row)}
+                          className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105 ml-auto"
+                          style={{ background: '#FEE2E2', color: '#DC2626', border: `1px solid #DC262633` }}
+                          title={L('leads_delete_tooltip', 'წაშლა (ამოშლა შენი ხედვიდან)')}>
+                          🗑 {L('leads_button_delete', 'წაშლა')}
+                        </button>
                       </div>
                     </div>
                   );
