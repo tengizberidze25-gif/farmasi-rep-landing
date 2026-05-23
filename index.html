@@ -1241,17 +1241,29 @@ function App() {
   // Used to:
   //   1) Hide "საჯარო ფეიჯი" tab in ViewSwitcher until profile is saved
   //   2) Show locked/unlocked share-block in Dashboard
-  // Required fields: name (≥2 chars) + photo + city.
+  // Required fields: full name + city + phone + Facebook + referral link + personal ID.
   // ════════════════════════════════════════════════════════════════════════
   const [savedSnapshot, setSavedSnapshot] = useState({
-    name: '', photo: '', city: '',
+    name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
   });
+
+  // TRUE only after the representative has saved the required profile data.
+  // Used to show/hide both:
+  //   1) the top "საჯარო ფეიჯი" tab
+  //   2) the Dashboard "შენი ლენდინგ ფეიჯი" card
   const isProfileSaved = !!(
     savedSnapshot.name &&
-    savedSnapshot.name.trim().length >= 2 &&
-    savedSnapshot.photo &&
+    savedSnapshot.name.trim().split(/\s+/).filter(Boolean).length >= 2 &&
     savedSnapshot.city &&
-    savedSnapshot.city.trim().length > 0
+    savedSnapshot.city.trim().length > 0 &&
+    savedSnapshot.phone &&
+    savedSnapshot.phone.trim().length > 0 &&
+    savedSnapshot.facebook &&
+    savedSnapshot.facebook.trim().length > 0 &&
+    savedSnapshot.referralLink &&
+    savedSnapshot.referralLink.trim().length > 0 &&
+    savedSnapshot.personalId &&
+    String(savedSnapshot.personalId).trim().length === 11
   );
 
   // ─── Shopping cart state ───
@@ -1411,11 +1423,11 @@ function App() {
       personalId: rep?.personal_id || '',
       title: rep?.title || '',
     });
-    // Initialize saved-snapshot from login response (last-saved values from backend)
+    // Keep share/public UI locked until the rep clicks Save in this dashboard session.
+    // Do NOT unlock from backend-loaded values, because the user asked to show
+    // "საჯარო ფეიჯი" and "შენი ლენდინგ ფეიჯი" only after Save.
     setSavedSnapshot({
-      name: rep?.name || '',
-      photo: rep?.photo_url || '',
-      city: rep?.city || '',
+      name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1564,12 +1576,10 @@ function App() {
             personalId: data.rep.personal_id || '',
             title: data.rep.title || '',
           });
-          // Initialize saved-snapshot from server (these are the last-saved values)
-          // Used to drive the "საჯარო ფეიჯი" tab visibility and Dashboard share block
+          // Keep share/public UI locked until the rep clicks Save in this dashboard session.
+          // Do NOT unlock from server-loaded values.
           setSavedSnapshot({
-            name: data.rep.name || '',
-            photo: data.rep.photo_url || '',
-            city: data.rep.city || '',
+            name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
@@ -1941,7 +1951,7 @@ function NotFoundScreen({ labels = {} }) {
 }
 
 function ViewSwitcher({ view, setView, hasRep, isProfileSaved }) {
-  // "საჯარო ფეიჯი" tab is hidden until the rep saves required fields (name, photo, city).
+  // "საჯარო ფეიჯი" tab is hidden until the rep saves required saved profile fields.
   // Prevents reps from sharing/previewing an incomplete page.
   const items = [
     { k: 'login', l: 'შესვლა' },
@@ -2558,9 +2568,14 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   // ════════════════════════════════════════════════════════════════════════
   const profileMissingFields = (() => {
     const missing = [];
-    if (!savedSnapshot.name || savedSnapshot.name.trim().length < 2) missing.push('სახელი');
-    if (!savedSnapshot.photo) missing.push('ფოტო');
+    const _parts = (savedSnapshot.name || '').trim().split(/\s+/).filter(Boolean);
+    if (!_parts[0]) missing.push('სახელი');
+    if (_parts.length < 2) missing.push('გვარი');
     if (!savedSnapshot.city || !savedSnapshot.city.trim()) missing.push('ქალაქი');
+    if (!savedSnapshot.phone || !savedSnapshot.phone.trim()) missing.push('ტელეფონის ნომერი');
+    if (!savedSnapshot.facebook || !savedSnapshot.facebook.trim()) missing.push('Facebook ლინკი');
+    if (!savedSnapshot.referralLink || !savedSnapshot.referralLink.trim()) missing.push('რეფერალური ლინკი');
+    if (!savedSnapshot.personalId || String(savedSnapshot.personalId).trim().length !== 11) missing.push('პირადი ნომერი');
     return missing;
   })();
 
@@ -3110,8 +3125,11 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         // Update snapshot — gate now evaluates true, share/preview UI unlocks
         setSavedSnapshot({
           name: rep.name || '',
-          photo: rep.photo || '',
           city: rep.city || '',
+          phone: rep.phone || '',
+          facebook: rep.facebook || '',
+          referralLink: rep.referralLink || '',
+          personalId: rep.personalId || '',
         });
         setSavedToast(true);
         setTimeout(() => setSavedToast(false), 3000);
@@ -3219,7 +3237,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
-        {isProfileSaved ? (
+        {isProfileSaved && (
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
@@ -3298,44 +3316,6 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
               </div>
             </div>
           )}
-        </Card>
-        ) : (
-        // ─── LOCKED state: profile not saved yet, hide share/preview UI ───
-        <Card>
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: theme.gold + '22' }}>
-              <span style={{ fontSize: '18px' }}>🔒</span>
-            </div>
-            <div className="flex-1">
-              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{L('dash_locked_eyebrow', 'პროფილი არასრულია')}</p>
-              <p className="font-display text-lg mb-1" style={{ color: theme.ink }}>{L('dash_locked_title', 'დაასრულე პროფილი — შემდეგ მიიღებ პერსონალურ ლინკს')}</p>
-              <p className="text-xs leading-relaxed" style={{ color: theme.ink + '99' }}>
-                {L('dash_locked_subtitle', 'შენი საჯარო გვერდი და გასაზიარებელი ლინკი გამოჩნდება, როცა შეავსებ და შეინახავ ქვემოთ მითითებულ ველებს.')}
-              </p>
-            </div>
-          </div>
-          <div className="space-y-2 mb-4 pl-1">
-            {['სახელი', 'ფოტო', 'ქალაქი'].map(field => {
-              const isMissing = profileMissingFields.includes(field);
-              return (
-                <div key={field} className="flex items-center gap-2 text-sm" style={{ color: isMissing ? theme.ink + 'BB' : theme.ink + '55' }}>
-                  <span style={{ fontSize: '14px', color: isMissing ? theme.wine : '#16A34A' }}>
-                    {isMissing ? '⊘' : '✓'}
-                  </span>
-                  <span style={{ textDecoration: isMissing ? 'none' : 'line-through' }}>{field}</span>
-                </div>
-              );
-            })}
-          </div>
-          <button onClick={() => {
-            // Scroll to first profile editing field
-            const editForm = document.querySelector('[data-profile-form], input[name="firstName"], input[type="file"]');
-            if (editForm) editForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-            className="w-full py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition hover:scale-[1.02]"
-            style={{ background: theme.wine, color: theme.cream }}>
-            {L('dash_locked_cta', 'შეავსე და შეინახე პროფილი')} →
-          </button>
         </Card>
         )}
 
