@@ -1929,35 +1929,36 @@ function ViewSwitcher({ view, setView, hasRep }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 // Country codes for international SMS login.
-// Georgia first (default), then synced with FARMASI's official registration
-// country list (https://farmasi.ge/ka/signup) + neighbors/diaspora destinations.
+// Sorted alphabetically by Georgian name (ქართული ანბანის მიხედვით).
+// Default is Georgia ('995') — set via useState, not list order.
+// Synced with FARMASI's official registration country list + Caucasus neighbors.
 // ════════════════════════════════════════════════════════════════════════════
 const COUNTRIES = [
-  { code: '995', flag: '🇬🇪', name: 'საქართველო' },
-  { code: '90',  flag: '🇹🇷', name: 'თურქეთი' },
-  { code: '7',   flag: '🇷🇺', name: 'რუსეთი / ყაზახეთი' },
-  { code: '380', flag: '🇺🇦', name: 'უკრაინა' },
-  { code: '994', flag: '🇦🇿', name: 'აზერბაიჯანი' },
-  { code: '374', flag: '🇦🇲', name: 'სომხეთი' },
-  { code: '972', flag: '🇮🇱', name: 'ისრაელი' },
-  { code: '49',  flag: '🇩🇪', name: 'გერმანია' },
-  { code: '33',  flag: '🇫🇷', name: 'საფრანგეთი' },
-  { code: '39',  flag: '🇮🇹', name: 'იტალია' },
-  { code: '34',  flag: '🇪🇸', name: 'ესპანეთი' },
-  { code: '30',  flag: '🇬🇷', name: 'საბერძნეთი' },
-  { code: '44',  flag: '🇬🇧', name: 'დიდი ბრიტანეთი' },
-  { code: '48',  flag: '🇵🇱', name: 'პოლონეთი' },
-  { code: '420', flag: '🇨🇿', name: 'ჩეხეთი' },
-  { code: '421', flag: '🇸🇰', name: 'სლოვაკეთი' },
-  { code: '31',  flag: '🇳🇱', name: 'ნიდერლანდები' },
-  { code: '32',  flag: '🇧🇪', name: 'ბელგია' },
   { code: '43',  flag: '🇦🇹', name: 'ავსტრია' },
-  { code: '41',  flag: '🇨🇭', name: 'შვეიცარია' },
+  { code: '994', flag: '🇦🇿', name: 'აზერბაიჯანი' },
+  { code: '1',   flag: '🇺🇸', name: 'აშშ / კანადა' },
+  { code: '32',  flag: '🇧🇪', name: 'ბელგია' },
+  { code: '49',  flag: '🇩🇪', name: 'გერმანია' },
+  { code: '44',  flag: '🇬🇧', name: 'დიდი ბრიტანეთი' },
+  { code: '34',  flag: '🇪🇸', name: 'ესპანეთი' },
   { code: '372', flag: '🇪🇪', name: 'ესტონეთი' },
+  { code: '90',  flag: '🇹🇷', name: 'თურქეთი' },
+  { code: '972', flag: '🇮🇱', name: 'ისრაელი' },
+  { code: '39',  flag: '🇮🇹', name: 'იტალია' },
   { code: '371', flag: '🇱🇻', name: 'ლატვია' },
   { code: '370', flag: '🇱🇹', name: 'ლიტვა' },
+  { code: '31',  flag: '🇳🇱', name: 'ნიდერლანდები' },
+  { code: '48',  flag: '🇵🇱', name: 'პოლონეთი' },
+  { code: '7',   flag: '🇷🇺', name: 'რუსეთი / ყაზახეთი' },
+  { code: '30',  flag: '🇬🇷', name: 'საბერძნეთი' },
+  { code: '33',  flag: '🇫🇷', name: 'საფრანგეთი' },
+  { code: '995', flag: '🇬🇪', name: 'საქართველო' },
+  { code: '421', flag: '🇸🇰', name: 'სლოვაკეთი' },
+  { code: '374', flag: '🇦🇲', name: 'სომხეთი' },
+  { code: '380', flag: '🇺🇦', name: 'უკრაინა' },
   { code: '358', flag: '🇫🇮', name: 'ფინეთი' },
-  { code: '1',   flag: '🇺🇸', name: 'აშშ / კანადა' },
+  { code: '41',  flag: '🇨🇭', name: 'შვეიცარია' },
+  { code: '420', flag: '🇨🇿', name: 'ჩეხეთი' },
 ];
 
 function Login({ onAuthSuccess, initialError, labels = {} }) {
@@ -2091,16 +2092,27 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
                 <select
                   value={countryCode}
                   onChange={(e) => { setCountryCode(e.target.value); setErr(''); }}
-                  className="px-2 py-3.5 rounded-xl outline-none text-sm cursor-pointer"
+                  className="cursor-pointer outline-none transition-all focus:scale-[1.02]"
                   style={{
-                    background: theme.cream,
-                    border: `1.5px solid ${theme.gold}44`,
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    MozAppearance: 'none',
+                    background: `${theme.cream} url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23B8860B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 0.7rem center`,
+                    border: `1.5px solid ${theme.gold}55`,
                     color: theme.ink,
                     minWidth: '108px',
-                    maxWidth: '108px'
-                  }}>
+                    maxWidth: '108px',
+                    padding: '14px 28px 14px 12px',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    letterSpacing: '0.02em',
+                    boxShadow: `0 1px 2px ${theme.gold}11, inset 0 1px 0 rgba(255,255,255,0.6)`,
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = theme.wine}
+                  onBlur={(e) => e.target.style.borderColor = `${theme.gold}55`}>
                   {COUNTRIES.map(c => (
-                    <option key={c.code} value={c.code}>{c.flag} +{c.code}</option>
+                    <option key={c.code} value={c.code}>{c.flag} +{c.code}  ·  {c.name}</option>
                   ))}
                 </select>
                 <div className="relative flex-1">
@@ -2286,11 +2298,25 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
               value: countryCode,
               onChange: (e) => { setCountryCode(e.target.value); if (error) setError(''); },
               disabled: loading,
-              className: 'px-2 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none cursor-pointer disabled:bg-slate-100',
-              style: { minWidth: '108px', maxWidth: '108px' }
+              className: 'cursor-pointer outline-none transition-all focus:scale-[1.02] disabled:bg-slate-100',
+              style: {
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                background: 'white url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23BE185D\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'/%3E%3C/svg%3E") no-repeat right 0.7rem center',
+                border: '1.5px solid rgb(203 213 225)',
+                minWidth: '108px',
+                maxWidth: '108px',
+                padding: '12px 28px 12px 12px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                color: '#0f172a',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+              }
             },
               COUNTRIES.map(c => 
-                React.createElement('option', { key: c.code, value: c.code }, c.flag + ' +' + c.code)
+                React.createElement('option', { key: c.code, value: c.code }, c.flag + ' +' + c.code + '  ·  ' + c.name)
               )
             ),
             React.createElement('input', {
