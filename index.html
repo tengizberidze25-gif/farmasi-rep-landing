@@ -2718,10 +2718,31 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   }, [repCode]);
 
   // Load leads (contact form submissions)
+  // Hidden leads are stored ONLY in this browser's localStorage.
+  // This does NOT delete or edit anything in Google Sheets.
+  const hiddenLeadsKey = `farmasi_hidden_leads_${repCode || 'default'}`;
+  const getHiddenLeads = () => {
+    try {
+      return JSON.parse(localStorage.getItem(hiddenLeadsKey) || '[]');
+    } catch {
+      return [];
+    }
+  };
+
+  const isLeadHidden = (lead) => {
+    const hidden = getHiddenLeads();
+    const key = String(lead.row || lead.id || `${lead.phone || ''}_${lead.timestamp || ''}`);
+    return hidden.includes(key);
+  };
+
   useEffect(() => {
     if (!repCode) return;
     api({ action: 'get_leads', pid: repCode })
-      .then(data => { if (data.ok && Array.isArray(data.leads)) setLeads(data.leads); })
+      .then(data => {
+        if (data.ok && Array.isArray(data.leads)) {
+          setLeads(data.leads.filter(lead => lead.status !== 'hidden' && !isLeadHidden(lead)));
+        }
+      })
       .catch(() => {});
   }, [repCode]);
 
@@ -2737,19 +2758,24 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
   };
 
-  // ─── Soft-delete (hide) a lead. Stays in Sheets with status='hidden',
-  // but disappears from rep's dashboard. Admin can still inspect history.
-  const hideLead = async (leadRow) => {
-    if (!confirm(L('leads_confirm_delete', 'ნამდვილად გინდა ამ შეტყობინების წაშლა?'))) return;
-    try {
-      const res = await editApi({ action: 'update_lead_status', row: leadRow, status: 'hidden' });
-      if (res.ok && leads) {
-        // Remove from local state immediately — disappears from view
-        setLeads(leads.filter(l => l.row !== leadRow));
-      }
-    } catch (err) {
-      console.error('Failed to hide lead', err);
+  // ─── Local-only hide for a lead.
+  // Important: this does NOT call editApi and does NOT delete/edit Google Sheets.
+  // It only remembers hidden lead row IDs in this browser's localStorage.
+  const hideLead = (lead) => {
+    if (!confirm(L('leads_confirm_hide', 'დამალო ეს შეტყობინება პანელიდან? Google Sheets-ში დარჩება.'))) return;
+
+    const key = String(lead.row || lead.id || `${lead.phone || ''}_${lead.timestamp || ''}`);
+    const hidden = getHiddenLeads();
+
+    if (!hidden.includes(key)) {
+      hidden.push(key);
+      localStorage.setItem(hiddenLeadsKey, JSON.stringify(hidden));
     }
+
+    setLeads(prev => (prev || []).filter(l => {
+      const currentKey = String(l.row || l.id || `${l.phone || ''}_${l.timestamp || ''}`);
+      return currentKey !== key;
+    }));
   };
 
   // Load rep's curated products
@@ -3507,11 +3533,11 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                             ↻ {L('leads_button_reopen', 'ხელახლა გახსნა')}
                           </button>
                         )}
-                        <button onClick={() => hideLead(lead.row)}
+                        <button onClick={() => hideLead(lead)}
                           className="text-[10px] px-3 py-1.5 rounded-full transition hover:scale-105 ml-auto"
                           style={{ background: '#FEE2E2', color: '#DC2626', border: `1px solid #DC262633` }}
-                          title={L('leads_delete_tooltip', 'წაშლა (ამოშლა შენი ხედვიდან)')}>
-                          🗑 {L('leads_button_delete', 'წაშლა')}
+                          title={L('leads_hide_tooltip', 'დამალვა მხოლოდ ამ პანელიდან — Google Sheets-ში დარჩება')}>
+                          🙈 {L('leads_button_hide', 'დამალვა')}
                         </button>
                       </div>
                     </div>
