@@ -1927,9 +1927,35 @@ function ViewSwitcher({ view, setView, hasRep }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// Country codes for international SMS login.
+// Georgia first (default), then common diaspora destinations and neighbors.
+// ════════════════════════════════════════════════════════════════════════════
+const COUNTRIES = [
+  { code: '995', flag: '🇬🇪', name: 'საქართველო' },
+  { code: '90',  flag: '🇹🇷', name: 'თურქეთი' },
+  { code: '7',   flag: '🇷🇺', name: 'რუსეთი / ყაზახეთი' },
+  { code: '380', flag: '🇺🇦', name: 'უკრაინა' },
+  { code: '994', flag: '🇦🇿', name: 'აზერბაიჯანი' },
+  { code: '374', flag: '🇦🇲', name: 'სომხეთი' },
+  { code: '49',  flag: '🇩🇪', name: 'გერმანია' },
+  { code: '33',  flag: '🇫🇷', name: 'საფრანგეთი' },
+  { code: '39',  flag: '🇮🇹', name: 'იტალია' },
+  { code: '34',  flag: '🇪🇸', name: 'ესპანეთი' },
+  { code: '30',  flag: '🇬🇷', name: 'საბერძნეთი' },
+  { code: '44',  flag: '🇬🇧', name: 'დიდი ბრიტანეთი' },
+  { code: '48',  flag: '🇵🇱', name: 'პოლონეთი' },
+  { code: '31',  flag: '🇳🇱', name: 'ნიდერლანდები' },
+  { code: '32',  flag: '🇧🇪', name: 'ბელგია' },
+  { code: '43',  flag: '🇦🇹', name: 'ავსტრია' },
+  { code: '41',  flag: '🇨🇭', name: 'შვეიცარია' },
+  { code: '1',   flag: '🇺🇸', name: 'აშშ / კანადა' },
+];
+
 function Login({ onAuthSuccess, initialError, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('995'); // default Georgia
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [phoneMask, setPhoneMask] = useState('');
@@ -1938,23 +1964,38 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
 
   // Send SMS code to phone
   const handleRequestOtp = async () => {
-    // Normalize: strip non-digits, remove 995 prefix if Georgian
-    let normalized = phone.replace(/[^\d]/g, '');
-    if (normalized.startsWith('995') && normalized.length === 12) normalized = normalized.substring(3);
-    // Accept Georgian 9-digit (599...) OR international (10-15 digits)
-    const isGeorgian = /^5\d{8}$/.test(normalized);
-    const isIntl = normalized.length >= 10 && normalized.length <= 15;
-    if (!isGeorgian && !isIntl) {
-      setErr(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია (599XXXXXX ან +905551234567)'));
-      return;
+    // Normalize local part: strip non-digits, leading zeros, accidental country prefix
+    let localDigits = phone.replace(/[^\d]/g, '');
+    while (localDigits.startsWith('0') && localDigits.length > 1) {
+      localDigits = localDigits.substring(1);
+    }
+    if (localDigits.startsWith(countryCode)) {
+      localDigits = localDigits.substring(countryCode.length);
+    }
+
+    let phoneToSend;
+    if (countryCode === '995') {
+      // Georgia: 9 digits starting with 5 (existing convention — send as 9-digit form)
+      if (!/^5\d{8}$/.test(localDigits)) {
+        setErr(L('login_phone_format_error_ge', 'საქართველოს ნომერი: 9 ციფრი, იწყება 5-ით (მაგ: 599123456)'));
+        return;
+      }
+      phoneToSend = localDigits;
+    } else {
+      // International: prepend country code, expect 6-13 digits local part
+      if (localDigits.length < 6 || localDigits.length > 13) {
+        setErr(L('login_phone_format_error_intl', 'ნომერი არასწორი ფორმატია არჩეული ქვეყნისთვის'));
+        return;
+      }
+      phoneToSend = countryCode + localDigits;
     }
     setLoading(true);
     setErr('');
     try {
-      const res = await api({ action: 'request_otp', phone: normalized });
+      const res = await api({ action: 'request_otp', phone: phoneToSend });
       if (res.ok) {
-        setPhone(normalized);
-        setPhoneMask(res.phoneMask || '****' + normalized.slice(-4));
+        setPhone(phoneToSend);
+        setPhoneMask(res.phoneMask || '****' + phoneToSend.slice(-4));
         setStep('otp');
       } else {
         setErr(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
@@ -2038,14 +2079,31 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
               </div>
               <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_phone_title', 'შესვლა ტელეფონის ნომრით')}</h2>
               <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_phone_label', 'ტელეფონის ნომერი')}</label>
-              <div className="relative">
-                <input type="tel" inputMode="numeric" value={phone}
-                  onChange={(e) => { setPhone(e.target.value); setErr(''); }}
-                  placeholder={L('welcome_phone_placeholder', '599 12 34 56')}
-                  className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
-                  style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleRequestOtp()} />
-                <Ic name="lock" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2" style={{ color: theme.gold }} />
+              <div className="flex gap-2">
+                <select
+                  value={countryCode}
+                  onChange={(e) => { setCountryCode(e.target.value); setErr(''); }}
+                  className="px-2 py-3.5 rounded-xl outline-none text-sm cursor-pointer"
+                  style={{
+                    background: theme.cream,
+                    border: `1.5px solid ${theme.gold}44`,
+                    color: theme.ink,
+                    minWidth: '108px',
+                    maxWidth: '108px'
+                  }}>
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.flag} +{c.code}</option>
+                  ))}
+                </select>
+                <div className="relative flex-1">
+                  <input type="tel" inputMode="numeric" value={phone}
+                    onChange={(e) => { setPhone(e.target.value); setErr(''); }}
+                    placeholder={countryCode === '995' ? '599 12 34 56' : '555 123 4567'}
+                    className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
+                    style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleRequestOtp()} />
+                  <Ic name="lock" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2" style={{ color: theme.gold }} />
+                </div>
               </div>
               {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
               <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
@@ -2108,6 +2166,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
 function LoginScreen({ onLoginSuccess, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('995'); // default Georgia
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [phoneMask, setPhoneMask] = useState('');
@@ -2115,22 +2174,34 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const [loading, setLoading] = useState(false);
 
   const handleRequestOtp = async () => {
-    let normalized = phone.replace(/[^\d]/g, '');
-    if (normalized.startsWith('995') && normalized.length === 12) normalized = normalized.substring(3);
-    // Accept Georgian 9-digit (599...) OR international (10-15 digits)
-    const isGeorgian = /^5\d{8}$/.test(normalized);
-    const isIntl = normalized.length >= 10 && normalized.length <= 15;
-    if (!isGeorgian && !isIntl) {
-      setError(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია (599XXXXXX ან +905551234567)'));
-      return;
+    let localDigits = phone.replace(/[^\d]/g, '');
+    while (localDigits.startsWith('0') && localDigits.length > 1) {
+      localDigits = localDigits.substring(1);
+    }
+    if (localDigits.startsWith(countryCode)) {
+      localDigits = localDigits.substring(countryCode.length);
+    }
+    let phoneToSend;
+    if (countryCode === '995') {
+      if (!/^5\d{8}$/.test(localDigits)) {
+        setError(L('login_phone_format_error_ge', 'საქართველოს ნომერი: 9 ციფრი, იწყება 5-ით (მაგ: 599123456)'));
+        return;
+      }
+      phoneToSend = localDigits;
+    } else {
+      if (localDigits.length < 6 || localDigits.length > 13) {
+        setError(L('login_phone_format_error_intl', 'ნომერი არასწორი ფორმატია არჩეული ქვეყნისთვის'));
+        return;
+      }
+      phoneToSend = countryCode + localDigits;
     }
     setLoading(true);
     setError('');
     try {
-      const response = await api({ action: 'request_otp', phone: normalized });
+      const response = await api({ action: 'request_otp', phone: phoneToSend });
       if (response.ok) {
-        setPhone(normalized);
-        setPhoneMask(response.phoneMask || '****' + normalized.slice(-4));
+        setPhone(phoneToSend);
+        setPhoneMask(response.phoneMask || '****' + phoneToSend.slice(-4));
         setStep('otp');
       } else {
         setError(response.error || L('login_pid_send_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
@@ -2202,17 +2273,30 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
           React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
             L('login_phone_label', 'ტელეფონის ნომერი')
           ),
-          React.createElement('input', {
-            type: 'tel',
-            inputMode: 'numeric',
-            value: phone,
-            onChange: (e) => { setPhone(e.target.value); if (error) setError(''); },
-            onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
-            placeholder: L('login_phone_placeholder', '599 12 34 56'),
-            disabled: loading,
-            maxLength: '15',
-            className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
-          }),
+          React.createElement('div', { className: 'flex gap-2' },
+            React.createElement('select', {
+              value: countryCode,
+              onChange: (e) => { setCountryCode(e.target.value); if (error) setError(''); },
+              disabled: loading,
+              className: 'px-2 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none cursor-pointer disabled:bg-slate-100',
+              style: { minWidth: '108px', maxWidth: '108px' }
+            },
+              COUNTRIES.map(c => 
+                React.createElement('option', { key: c.code, value: c.code }, c.flag + ' +' + c.code)
+              )
+            ),
+            React.createElement('input', {
+              type: 'tel',
+              inputMode: 'numeric',
+              value: phone,
+              onChange: (e) => { setPhone(e.target.value); if (error) setError(''); },
+              onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
+              placeholder: countryCode === '995' ? '599 12 34 56' : '555 123 4567',
+              disabled: loading,
+              maxLength: '15',
+              className: 'flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
+            })
+          ),
           error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
           React.createElement('button', {
             onClick: () => handleRequestOtp(),
