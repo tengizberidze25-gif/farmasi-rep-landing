@@ -1929,7 +1929,8 @@ function ViewSwitcher({ view, setView, hasRep }) {
 
 // ════════════════════════════════════════════════════════════════════════════
 // Country codes for international SMS login.
-// Georgia first (default), then common diaspora destinations and neighbors.
+// Georgia first (default), then synced with FARMASI's official registration
+// country list (https://farmasi.ge/ka/signup) + neighbors/diaspora destinations.
 // ════════════════════════════════════════════════════════════════════════════
 const COUNTRIES = [
   { code: '995', flag: '🇬🇪', name: 'საქართველო' },
@@ -1938,6 +1939,7 @@ const COUNTRIES = [
   { code: '380', flag: '🇺🇦', name: 'უკრაინა' },
   { code: '994', flag: '🇦🇿', name: 'აზერბაიჯანი' },
   { code: '374', flag: '🇦🇲', name: 'სომხეთი' },
+  { code: '972', flag: '🇮🇱', name: 'ისრაელი' },
   { code: '49',  flag: '🇩🇪', name: 'გერმანია' },
   { code: '33',  flag: '🇫🇷', name: 'საფრანგეთი' },
   { code: '39',  flag: '🇮🇹', name: 'იტალია' },
@@ -1945,10 +1947,16 @@ const COUNTRIES = [
   { code: '30',  flag: '🇬🇷', name: 'საბერძნეთი' },
   { code: '44',  flag: '🇬🇧', name: 'დიდი ბრიტანეთი' },
   { code: '48',  flag: '🇵🇱', name: 'პოლონეთი' },
+  { code: '420', flag: '🇨🇿', name: 'ჩეხეთი' },
+  { code: '421', flag: '🇸🇰', name: 'სლოვაკეთი' },
   { code: '31',  flag: '🇳🇱', name: 'ნიდერლანდები' },
   { code: '32',  flag: '🇧🇪', name: 'ბელგია' },
   { code: '43',  flag: '🇦🇹', name: 'ავსტრია' },
   { code: '41',  flag: '🇨🇭', name: 'შვეიცარია' },
+  { code: '372', flag: '🇪🇪', name: 'ესტონეთი' },
+  { code: '371', flag: '🇱🇻', name: 'ლატვია' },
+  { code: '370', flag: '🇱🇹', name: 'ლიტვა' },
+  { code: '358', flag: '🇫🇮', name: 'ფინეთი' },
   { code: '1',   flag: '🇺🇸', name: 'აშშ / კანადა' },
 ];
 
