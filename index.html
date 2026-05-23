@@ -2442,6 +2442,38 @@ function MyOrdersSection({ repCode, labels = {} }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [expandedId, setExpandedId] = useState(null);
+  const [visibleLimit, setVisibleLimit] = useState(8);
+  const [localStatuses, setLocalStatuses] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(`orderStatuses_${repCode || 'default'}`) || '{}'); }
+    catch { return {}; }
+  });
+
+  const statusBadges = {
+    'new': { label: 'ახალი', emoji: '🆕', color: theme.wine, bg: '#FCE7F3' },
+    'processing': { label: 'მუშავდება', emoji: '⏳', color: '#D97706', bg: '#FEF3C7' },
+    'shipped': { label: 'გაგზავნილი', emoji: '🚚', color: '#7C3AED', bg: '#EDE9FE' },
+    'completed': { label: 'დასრულებული', emoji: '✅', color: '#16A34A', bg: '#DCFCE7' },
+    'cancelled': { label: 'გაუქმებული', emoji: '❌', color: '#DC2626', bg: '#FEE2E2' }
+  };
+
+  const getOrderId = (o, idx = 0) => String(o.order_id || o.id || `${o.customer_phone || 'order'}_${o.timestamp || idx}`);
+  const getStatus = (o, idx) => localStatuses[getOrderId(o, idx)] || o.status || 'new';
+  const getItemsCount = (o) => Array.isArray(o.items) ? o.items.reduce((sum, item) => sum + Number(item.qty || item.quantity || 1), 0) : 0;
+  const getCustomer = (o) => o.customer_name || o.name || '(ანონიმური)';
+  const getPhone = (o) => String(o.customer_phone || o.phone || '').replace(/[^0-9+]/g, '');
+  const getTotal = (o) => Number(o.total || o.amount || 0);
+
+  const saveStatuses = (next) => {
+    setLocalStatuses(next);
+    try { localStorage.setItem(`orderStatuses_${repCode || 'default'}`, JSON.stringify(next)); } catch {}
+  };
+
+  const changeStatus = (orderId, status) => {
+    saveStatuses({ ...localStatuses, [orderId]: status });
+  };
 
   const loadOrders = () => {
     if (!repCode) return;
@@ -2450,7 +2482,8 @@ function MyOrdersSection({ repCode, labels = {} }) {
     api({ action: 'get_rep_orders', pid: repCode })
       .then(res => {
         if (res.ok && Array.isArray(res.orders)) {
-          setOrders(res.orders);
+          const sorted = [...res.orders].sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+          setOrders(sorted);
         } else {
           setError(res.error || L('orders_load_failed', 'შეცდომა შეკვეთების ჩატვირთვისას'));
         }
@@ -2460,22 +2493,57 @@ function MyOrdersSection({ repCode, labels = {} }) {
   };
 
   useEffect(() => { loadOrders(); }, [repCode]);
+  useEffect(() => {
+    try { setLocalStatuses(JSON.parse(localStorage.getItem(`orderStatuses_${repCode || 'default'}`) || '{}')); }
+    catch { setLocalStatuses({}); }
+  }, [repCode]);
 
-  const statusBadges = {
-    'new': { label: '🆕 ახალი', color: theme.wine },
-    'processing': { label: '⏳ მუშავდება', color: theme.gold },
-    'completed': { label: '✅ დასრულდა', color: '#22c55e' },
-    'cancelled': { label: '❌ გაუქმდა', color: theme.rose }
+  const summary = useMemo(() => {
+    const today = new Date().toDateString();
+    return orders.reduce((acc, o, idx) => {
+      const status = getStatus(o, idx);
+      const total = getTotal(o);
+      const d = o.timestamp ? new Date(o.timestamp) : null;
+      acc.total += total;
+      if (d && d.toDateString() === today) { acc.todayCount += 1; acc.todayTotal += total; }
+      if (status === 'new') acc.newCount += 1;
+      if (status === 'completed') acc.completedCount += 1;
+      return acc;
+    }, { total: 0, todayCount: 0, todayTotal: 0, newCount: 0, completedCount: 0 });
+  }, [orders, localStatuses]);
+
+  const filteredOrders = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return orders.filter((o, idx) => {
+      const status = getStatus(o, idx);
+      const haystack = [getOrderId(o, idx), getCustomer(o), getPhone(o), o.customer_city, o.city, o.address]
+        .filter(Boolean).join(' ').toLowerCase();
+      const matchesQuery = !q || haystack.includes(q);
+      const matchesFilter = filter === 'all' || status === filter;
+      return matchesQuery && matchesFilter;
+    });
+  }, [orders, query, filter, localStatuses]);
+
+  const shownOrders = filteredOrders.slice(0, visibleLimit);
+
+  const openInvoice = (o, idx) => {
+    const invoiceUrl = `${window.location.origin}/?order=${getOrderId(o, idx)}`;
+    window.open(invoiceUrl, '_blank', 'noopener');
   };
 
   return (
     <Card>
-      <div className="flex items-center justify-between mb-4">
-        <SectionLabel n="🛒" t={L('orders_section_title', 'ჩემი შეკვეთები')} />
+      <div className="flex items-start justify-between gap-3 mb-5">
+        <div>
+          <SectionLabel n="🛒" t={L('orders_section_title', 'ჩემი შეკვეთები')} />
+          <p className="text-xs mt-1" style={{ color: theme.ink + '88' }}>
+            {orders.length ? `${orders.length} შეკვეთა · ${summary.total.toFixed(2)} ₾ სულ` : 'შეკვეთები გამოჩნდება აქ'}
+          </p>
+        </div>
         <button onClick={loadOrders} disabled={loading}
-          className="text-xs px-3 py-1.5 rounded-full hover:scale-105 transition-transform disabled:opacity-50"
+          className="text-xs px-3 py-1.5 rounded-full hover:scale-105 transition-transform disabled:opacity-50 flex items-center gap-1"
           style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>
-          {loading ? '⏳' : '🔄 განახლება'}
+          {loading ? '⏳' : '🔄'} {L('orders_refresh', 'განახლება')}
         </button>
       </div>
 
@@ -2494,45 +2562,145 @@ function MyOrdersSection({ repCode, labels = {} }) {
         </div>
       ) : (
         <>
-          <p className="text-xs mb-4" style={{ color: theme.ink + '88' }}>
-            {L('orders_count_label', 'სულ:')} <span className="font-bold" style={{ color: theme.wine }}>{orders.length}</span> {L('orders_count_word', 'შეკვეთა')}
-          </p>
-          <div className="space-y-2.5" style={{ maxHeight: 480, overflowY: 'auto' }}>
-            {orders.map((o, idx) => {
-              const status = statusBadges[o.status] || { label: o.status, color: theme.ink };
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mb-5">
+            {[
+              ['დღეს', `${summary.todayCount}`, `${summary.todayTotal.toFixed(0)} ₾`],
+              ['ახალი', `${summary.newCount}`, 'ყურადღება'],
+              ['დასრულებული', `${summary.completedCount}`, 'შეკვეთა'],
+              ['სულ თანხა', `${summary.total.toFixed(0)} ₾`, 'ყველა დრო']
+            ].map((s, i) => (
+              <div key={i} className="rounded-2xl p-3 text-center" style={{ background: 'linear-gradient(135deg,#fff,#FDF2F8)', border: `1px solid ${theme.gold}22` }}>
+                <p className="text-[10px] mb-1" style={{ color: theme.ink + '88' }}>{s[0]}</p>
+                <p className="font-display text-xl leading-none" style={{ color: theme.wine }}>{s[1]}</p>
+                <p className="text-[10px] mt-1" style={{ color: theme.ink + '66' }}>{s[2]}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-2.5 mb-4">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-50">🔍</span>
+              <input value={query} onChange={e => { setQuery(e.target.value); setVisibleLimit(8); }}
+                placeholder="ძებნა: სახელი, ტელეფონი, ID..."
+                className="w-full rounded-2xl pl-9 pr-3 py-2.5 text-xs outline-none"
+                style={{ background: '#fff', border: `1px solid ${theme.gold}33`, color: theme.ink }} />
+            </div>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+              {[['all','ყველა'], ['new','ახალი'], ['processing','მუშავდება'], ['shipped','გაგზავნილი'], ['completed','დასრულებული']].map(([key, label]) => (
+                <button key={key} onClick={() => { setFilter(key); setVisibleLimit(8); }}
+                  className="px-3 py-2 rounded-full text-[11px] whitespace-nowrap transition-transform hover:scale-105"
+                  style={{ background: filter === key ? theme.wine : '#fff', color: filter === key ? '#fff' : theme.ink, border: `1px solid ${theme.gold}33` }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3" style={{ maxHeight: 620, overflowY: 'auto', paddingRight: 4 }}>
+            {shownOrders.length === 0 ? (
+              <div className="text-center py-8 rounded-2xl" style={{ background: theme.cream, border: `1px dashed ${theme.gold}44` }}>
+                <p className="text-sm" style={{ color: theme.ink + '99' }}>ამ ფილტრით შეკვეთა ვერ მოიძებნა</p>
+              </div>
+            ) : shownOrders.map((o, idx) => {
+              const originalIndex = orders.indexOf(o);
+              const orderId = getOrderId(o, originalIndex);
+              const statusKey = getStatus(o, originalIndex);
+              const status = statusBadges[statusKey] || statusBadges.new;
               const date = o.timestamp ? new Date(o.timestamp) : null;
               const formattedDate = date ? date.toLocaleString('ka-GE', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-              const invoiceUrl = `${window.location.origin}/?order=${o.order_id}`;
+              const phone = getPhone(o);
+              const isOpen = expandedId === orderId;
+              const items = Array.isArray(o.items) ? o.items : [];
+              const waText = encodeURIComponent(`გამარჯობა ${getCustomer(o)}, თქვენი FARMASI შეკვეთა #${orderId} მივიღე. დაგიკავშირდით დასადასტურებლად.`);
+              const whatsappUrl = phone ? `https://wa.me/${phone.replace(/^\+/, '')}?text=${waText}` : '';
+
               return (
-                <a key={o.order_id || idx} href={invoiceUrl} target="_blank" rel="noopener"
-                  className="block rounded-xl p-3.5 hover:scale-[1.01] transition-transform"
-                  style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
-                  <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                    <span className="text-[10px] tracking-widest uppercase font-medium px-2 py-0.5 rounded-full"
-                      style={{ background: status.color + '22', color: status.color }}>
-                      {status.label}
-                    </span>
-                    <span className="text-[10px] opacity-60" style={{ color: theme.ink }}>{formattedDate}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm leading-tight truncate" style={{ color: theme.ink }}>
-                        {o.customer_name || '(ანონიმური)'}
-                      </p>
-                      <p className="text-xs mt-0.5 opacity-70" style={{ color: theme.ink }}>
-                        📱 {o.customer_phone} · {(Array.isArray(o.items) ? o.items.length : 0)} ც.
-                      </p>
+                <div key={orderId} className="rounded-2xl overflow-hidden transition-all"
+                  style={{ background: statusKey === 'new' ? '#FFF7FB' : '#fff', border: `1px solid ${statusKey === 'new' ? theme.wine + '55' : theme.gold + '22'}`, boxShadow: statusKey === 'new' ? '0 10px 28px -18px rgba(229,5,113,.45)' : 'none' }}>
+                  <button type="button" onClick={() => setExpandedId(isOpen ? null : orderId)} className="w-full text-left p-3.5">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] tracking-widest uppercase font-medium px-2.5 py-1 rounded-full"
+                        style={{ background: status.bg, color: status.color }}>
+                        {status.emoji} {status.label}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] opacity-60" style={{ color: theme.ink }}>{formattedDate}</span>
+                        <span className="text-xs" style={{ color: theme.ink + '77' }}>{isOpen ? '⌃' : '⌄'}</span>
+                      </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="font-display text-lg" style={{ color: theme.wine }}>
-                        {Number(o.total).toFixed(2)} ₾
-                      </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm leading-tight truncate" style={{ color: theme.ink }}>{getCustomer(o)}</p>
+                        <p className="text-xs mt-1 opacity-70" style={{ color: theme.ink }}>
+                          📱 {o.customer_phone || o.phone || '—'} · {getItemsCount(o)} ც. · #{orderId}
+                        </p>
+                      </div>
+                      <p className="font-display text-lg flex-shrink-0" style={{ color: theme.wine }}>{getTotal(o).toFixed(2)} ₾</p>
                     </div>
-                  </div>
-                </a>
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-3.5 pb-3.5 border-t" style={{ borderColor: theme.gold + '22' }}>
+                      <div className="grid md:grid-cols-2 gap-3 py-3 text-xs" style={{ color: theme.ink + 'AA' }}>
+                        <div className="rounded-xl p-3" style={{ background: theme.cream }}>
+                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>კლიენტი</p>
+                          <p>{getCustomer(o)}</p>
+                          <p>{o.customer_phone || o.phone || 'ტელეფონი არ ჩანს'}</p>
+                          {(o.customer_city || o.city || o.address) && <p className="mt-1">📍 {[o.customer_city || o.city, o.address].filter(Boolean).join(', ')}</p>}
+                        </div>
+                        <div className="rounded-xl p-3" style={{ background: theme.cream }}>
+                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>შეკვეთა</p>
+                          <p>ID: #{orderId}</p>
+                          <p>თანხა: {getTotal(o).toFixed(2)} ₾</p>
+                          {o.payment_method && <p>გადახდა: {o.payment_method}</p>}
+                        </div>
+                      </div>
+
+                      {items.length > 0 && (
+                        <div className="rounded-xl p-3 mb-3" style={{ background: '#fff', border: `1px solid ${theme.gold}22` }}>
+                          <p className="text-xs font-semibold mb-2" style={{ color: theme.ink }}>პროდუქტები</p>
+                          <div className="space-y-2">
+                            {items.map((item, i) => (
+                              <div key={i} className="flex items-center justify-between gap-3 text-xs">
+                                <span className="truncate" style={{ color: theme.ink + 'CC' }}>{item.name || item.title || 'პროდუქტი'}</span>
+                                <span className="flex-shrink-0" style={{ color: theme.wine }}>{item.qty || item.quantity || 1} × {Number(item.price || 0).toFixed(2)} ₾</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {o.comment && <p className="text-xs rounded-xl p-3 mb-3" style={{ background: theme.blush, color: theme.ink }}>💬 {o.comment}</p>}
+
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {Object.entries(statusBadges).map(([key, s]) => (
+                          <button key={key} type="button" onClick={() => changeStatus(orderId, key)}
+                            className="px-2.5 py-1.5 rounded-full text-[10px] transition-transform hover:scale-105"
+                            style={{ background: statusKey === key ? s.color : '#fff', color: statusKey === key ? '#fff' : s.color, border: `1px solid ${s.color}44` }}>
+                            {s.emoji} {s.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noopener" className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#DCFCE7', color: '#16A34A' }}>WhatsApp</a>}
+                        {phone && <a href={`tel:${phone}`} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#EFF6FF', color: '#2563EB' }}>დარეკვა</a>}
+                        <button type="button" onClick={() => openInvoice(o, originalIndex)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.wine, color: '#fff' }}>ინვოისი</button>
+                        <button type="button" onClick={() => navigator.clipboard?.writeText(orderId)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>Copy ID</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
+
+          {filteredOrders.length > visibleLimit && (
+            <button onClick={() => setVisibleLimit(v => v + 8)} className="w-full mt-4 py-3 rounded-2xl text-sm font-semibold hover:scale-[1.01] transition-transform"
+              style={{ background: theme.blush, color: theme.wine }}>
+              კიდევ {Math.min(8, filteredOrders.length - visibleLimit)} შეკვეთის ჩვენება
+            </button>
+          )}
         </>
       )}
     </Card>
