@@ -1938,11 +1938,14 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
 
   // Send SMS code to phone
   const handleRequestOtp = async () => {
-    // Normalize: strip non-digits, remove 995 prefix if present
+    // Normalize: strip non-digits, remove 995 prefix if Georgian
     let normalized = phone.replace(/[^\d]/g, '');
-    if (normalized.startsWith('995') && normalized.length > 9) normalized = normalized.substring(3);
-    if (!/^5\d{8}$/.test(normalized)) {
-      setErr(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია. უნდა იყოს 9 ციფრი (მაგ: 599123456)'));
+    if (normalized.startsWith('995') && normalized.length === 12) normalized = normalized.substring(3);
+    // Accept Georgian 9-digit (599...) OR international (10-15 digits)
+    const isGeorgian = /^5\d{8}$/.test(normalized);
+    const isIntl = normalized.length >= 10 && normalized.length <= 15;
+    if (!isGeorgian && !isIntl) {
+      setErr(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია (599XXXXXX ან +905551234567)'));
       return;
     }
     setLoading(true);
@@ -2113,9 +2116,12 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
 
   const handleRequestOtp = async () => {
     let normalized = phone.replace(/[^\d]/g, '');
-    if (normalized.startsWith('995') && normalized.length > 9) normalized = normalized.substring(3);
-    if (!/^5\d{8}$/.test(normalized)) {
-      setError(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია (599XXXXXX)'));
+    if (normalized.startsWith('995') && normalized.length === 12) normalized = normalized.substring(3);
+    // Accept Georgian 9-digit (599...) OR international (10-15 digits)
+    const isGeorgian = /^5\d{8}$/.test(normalized);
+    const isIntl = normalized.length >= 10 && normalized.length <= 15;
+    if (!isGeorgian && !isIntl) {
+      setError(L('login_phone_format_error', 'ნომერი არასწორი ფორმატია (599XXXXXX ან +905551234567)'));
       return;
     }
     setLoading(true);
