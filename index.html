@@ -1234,6 +1234,26 @@ function App() {
     personalId: '', title: '',
   });
 
+  // ════════════════════════════════════════════════════════════════════════
+  // ─── Profile-saved snapshot (lifted to App level) ───
+  // Tracks last successfully-saved required fields. Stays empty until backend
+  // confirms a save, then updates via setSavedSnapshot (passed to Dashboard).
+  // Used to:
+  //   1) Hide "საჯარო ფეიჯი" tab in ViewSwitcher until profile is saved
+  //   2) Show locked/unlocked share-block in Dashboard
+  // Required fields: name (≥2 chars) + photo + city.
+  // ════════════════════════════════════════════════════════════════════════
+  const [savedSnapshot, setSavedSnapshot] = useState({
+    name: '', photo: '', city: '',
+  });
+  const isProfileSaved = !!(
+    savedSnapshot.name &&
+    savedSnapshot.name.trim().length >= 2 &&
+    savedSnapshot.photo &&
+    savedSnapshot.city &&
+    savedSnapshot.city.trim().length > 0
+  );
+
   // ─── Shopping cart state ───
   // Cart is scoped per-rep (each rep page has its own cart in localStorage).
   // Customers can browse multiple rep pages without their cart leaking between them.
@@ -1391,6 +1411,12 @@ function App() {
       personalId: rep?.personal_id || '',
       title: rep?.title || '',
     });
+    // Initialize saved-snapshot from login response (last-saved values from backend)
+    setSavedSnapshot({
+      name: rep?.name || '',
+      photo: rep?.photo_url || '',
+      city: rep?.city || '',
+    });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
     window.history.replaceState({}, document.title, newUrl);
@@ -1538,6 +1564,13 @@ function App() {
             personalId: data.rep.personal_id || '',
             title: data.rep.title || '',
           });
+          // Initialize saved-snapshot from server (these are the last-saved values)
+          // Used to drive the "საჯარო ფეიჯი" tab visibility and Dashboard share block
+          setSavedSnapshot({
+            name: data.rep.name || '',
+            photo: data.rep.photo_url || '',
+            city: data.rep.city || '',
+          });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
             setView('dashboard');
@@ -1602,11 +1635,11 @@ function App() {
 
         return (
           <>
-            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} />}
+            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
             {view === 'loading' && <LoadingScreen labels={labels} />}
             {view === 'notfound' && <NotFoundScreen labels={labels} />}
             {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
-            {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} />}
+            {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
             {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
@@ -1907,12 +1940,14 @@ function NotFoundScreen({ labels = {} }) {
   );
 }
 
-function ViewSwitcher({ view, setView, hasRep }) {
+function ViewSwitcher({ view, setView, hasRep, isProfileSaved }) {
+  // "საჯარო ფეიჯი" tab is hidden until the rep saves required fields (name, photo, city).
+  // Prevents reps from sharing/previewing an incomplete page.
   const items = [
     { k: 'login', l: 'შესვლა' },
     { k: 'dashboard', l: 'პანელი', disabled: !hasRep },
-    { k: 'public', l: 'საჯარო ფეიჯი', disabled: !hasRep },
-  ];
+    { k: 'public', l: 'საჯარო ფეიჯი', disabled: !hasRep, hidden: !isProfileSaved },
+  ].filter(it => !it.hidden);
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 rounded-full backdrop-blur-md text-xs"
       style={{ background: 'rgba(35,23,18,0.85)', border: `1px solid ${theme.gold}33` }}>
@@ -2494,7 +2529,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
   );
 }
 
-function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {} }) {
+function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {}, savedSnapshot, setSavedSnapshot, isProfileSaved }) {
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
   const [copied, setCopied] = useState(false);
@@ -2516,24 +2551,11 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [visits, setVisits] = useState(null);
 
   // ════════════════════════════════════════════════════════════════════════
-  // SAVE GATE — Snapshot of what's actually persisted in Sheets (vs live edits).
-  // Initialized from rep at mount (rep came from API). Updated only after a
-  // successful save_rep API call. Used to decide whether share/preview UI is
-  // shown — prevents the "tender-aurora 404" bug where reps copied auto-generated
-  // URLs before saving (slug never persisted to Sheets).
+  // SAVE GATE — savedSnapshot is now lifted to App level (shared with ViewSwitcher
+  // so the "საჯარო ფეიჯი" tab can hide until profile is saved). isProfileSaved
+  // and setSavedSnapshot come in as props. profileMissingFields is derived locally
+  // because it's only consumed by the locked-card UI in this component.
   // ════════════════════════════════════════════════════════════════════════
-  const [savedSnapshot, setSavedSnapshot] = useState(() => ({
-    name: rep.name || '',
-    photo: rep.photo || '',
-    city: rep.city || '',
-  }));
-  const isProfileSaved = !!(
-    savedSnapshot.name &&
-    savedSnapshot.name.trim().length >= 2 &&
-    savedSnapshot.photo &&
-    savedSnapshot.city &&
-    savedSnapshot.city.trim().length > 0
-  );
   const profileMissingFields = (() => {
     const missing = [];
     if (!savedSnapshot.name || savedSnapshot.name.trim().length < 2) missing.push('სახელი');
