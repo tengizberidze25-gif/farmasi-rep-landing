@@ -156,6 +156,27 @@
 <div id="root"></div>
 
 <script type="text/babel" data-presets="env,react">
+  const params = new URLSearchParams(window.location.search);
+
+const smsSource = params.get('src');
+const smsPhone = params.get('phone');
+
+if (smsSource) {
+  localStorage.setItem('sms_source', smsSource);
+}
+
+if (smsPhone) {
+  localStorage.setItem('sms_phone', smsPhone);
+}
+if (smsSource && smsPhone) {
+  fetch('https://script.google.com/macros/s/AKfycbzHEfgXXyRUpt7ZHG3ZjxaH_4kr1pR7AaTuzIH9h15GJk5xwwETwzvQT6Ce-d-4Kf5p/exec?action=log_sms_open&source=' +
+    encodeURIComponent(smsSource) +
+    '&phone=' +
+    encodeURIComponent(smsPhone) +
+    '&page=' +
+    encodeURIComponent(window.location.pathname)
+  ).catch(console.error);
+}
 const { useState, useRef, useEffect, useMemo } = React;
 
 function Ic({ name, className = '', style = {} }) {
