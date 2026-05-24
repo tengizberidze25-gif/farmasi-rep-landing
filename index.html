@@ -2734,7 +2734,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const L = (key, fallback) => labels[key] || fallback;
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
-  const PUBLIC_URL = `${window.location.origin}/${rep.slug}`;
+  const PUBLIC_URL = `${window.location.origin}/${rep?.slug || ''}`;
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
   const hasSavedData = Boolean(
   rep &&
