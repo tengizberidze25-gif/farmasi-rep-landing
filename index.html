@@ -2714,10 +2714,11 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [guideCopied, setGuideCopied] = useState(false);
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
   const hasSavedData = Boolean(
-    rep?.name?.trim() &&
-    rep?.phone?.trim() &&
-    rep?.slug?.trim()
-  );
+  rep &&
+  rep.name &&
+  rep.phone &&
+  rep.slug
+);
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
