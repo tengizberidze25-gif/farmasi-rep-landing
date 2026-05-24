@@ -1561,6 +1561,7 @@ function App() {
           setRep({
             name: data.rep.name || '',
             bio: data.rep.bio || '',
+            slug: data.rep.slug || '',
             photo: data.rep.photo_url || null,
             phone: data.rep.phone || '',
             whatsapp: data.rep.whatsapp || '',
@@ -2733,6 +2734,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const L = (key, fallback) => labels[key] || fallback;
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
+  const PUBLIC_URL = `${window.location.origin}/${rep.slug}`;
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
   const hasSavedData = Boolean(
   rep &&
@@ -2746,6 +2748,14 @@ const copyGuideUrl = () => {
     navigator.clipboard?.writeText(GUIDE_URL);
     setGuideCopied(true);
     setTimeout(() => setGuideCopied(false), 2000);
+  } catch {}
+};
+
+const copyPublicUrl = () => {
+  try {
+    navigator.clipboard?.writeText(PUBLIC_URL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   } catch {}
 };
   const [saving, setSaving] = useState(false);
@@ -3584,7 +3594,51 @@ const copyGuideUrl = () => {
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
             💡 {L('dash_guide_hint', 'გადაუგზავნე ლინკი WhatsApp/Facebook/SMS-ით — დაინტერესებული პირი წაიკითხავს FARMASI-ში როგორ უნდა გახდეს წარმომადგენელი')}
           </p>
-        </Card>
+          <Card className="mt-4">
+  <div className="flex items-center justify-between mb-3">
+    <div>
+      <p className="text-xs tracking-widest uppercase mb-1">
+        🌐 საჯარო ფეიჯი
+      </p>
+
+      <p className="font-display text-lg">
+        შენი პერსონალური ლინკი
+      </p>
+    </div>
+  </div>
+
+  <div
+    className="flex items-center gap-2 p-3 rounded-xl"
+    style={{
+      background: theme.cream,
+      border: `1px dashed ${theme.gold}66`
+    }}
+  >
+    <a
+      href={PUBLIC_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sm flex-1 truncate font-mono hover:underline transition cursor-pointer"
+      style={{
+        color: theme.wine,
+        textDecoration: 'none'
+      }}
+    >
+      {PUBLIC_URL.replace('https://', '')}
+    </a>
+
+    <button
+      onClick={copyPublicUrl}
+      className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
+      style={{
+        background: copied ? theme.gold : theme.wine,
+        color: theme.cream
+      }}
+    >
+      {copied ? 'დაკოპირდა' : 'კოპი'}
+    </button>
+  </div>
+  </Card>
 
         {/* Visits Analytics Card */}
         {visits && (
