@@ -3594,51 +3594,38 @@ const copyPublicUrl = () => {
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
             💡 {L('dash_guide_hint', 'გადაუგზავნე ლინკი WhatsApp/Facebook/SMS-ით — დაინტერესებული პირი წაიკითხავს FARMASI-ში როგორ უნდა გახდეს წარმომადგენელი')}
           </p>
-          <Card className="mt-4">
-  <div className="flex items-center justify-between mb-3">
-    <div>
-      <p className="text-xs tracking-widest uppercase mb-1">
-        🌐 საჯარო ფეიჯი
-      </p>
+        </Card>
 
-      <p className="font-display text-lg">
-        შენი პერსონალური ლინკი
-      </p>
-    </div>
-  </div>
-
-  <div
-    className="flex items-center gap-2 p-3 rounded-xl"
-    style={{
-      background: theme.cream,
-      border: `1px dashed ${theme.gold}66`
-    }}
-  >
-    <a
-      href={PUBLIC_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-sm flex-1 truncate font-mono hover:underline transition cursor-pointer"
-      style={{
-        color: theme.wine,
-        textDecoration: 'none'
-      }}
-    >
-      {PUBLIC_URL.replace('https://', '')}
-    </a>
-
-    <button
-      onClick={copyPublicUrl}
-      className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
-      style={{
-        background: copied ? theme.gold : theme.wine,
-        color: theme.cream
-      }}
-    >
-      {copied ? 'დაკოპირდა' : 'კოპი'}
-    </button>
-  </div>
-  </Card>
+        {/* Public Page Link Card */}
+        <Card>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>🌐 საჯარო ფეიჯი</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>შენი პერსონალური ლინკი</p>
+            </div>
+            <a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer"
+              className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
+              style={{ background: theme.ink, color: theme.cream, textDecoration: 'none' }}>
+              <Ic name="eye" className="w-3 h-3" /> ნახე
+            </a>
+          </div>
+          <div className="flex items-center gap-2 p-3 rounded-xl"
+            style={{ background: theme.cream, border: `1px dashed ${theme.gold}66` }}>
+            <a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer"
+              className="text-sm flex-1 truncate font-mono hover:underline transition cursor-pointer"
+              style={{ color: theme.wine, textDecoration: 'none' }}>
+              {PUBLIC_URL.replace('https://', '')}
+            </a>
+            <button onClick={copyPublicUrl}
+              className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
+              style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
+              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დაკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+            </button>
+          </div>
+          <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
+            💡 ეს არის შენი საჯარო გვერდი — გაუზიარე მომხმარებლებს და წარმომადგენლებს.
+          </p>
+        </Card>
 
         {/* Visits Analytics Card */}
         {visits && (
