@@ -4,13 +4,15 @@
 <meta property="og:type" content="website" />
 <meta property="og:title" content="თენგიზ ბერიძე • FARMASI" />
 <meta property="og:description" content="FARMASI ოფიციალური წარმომადგენელი — თბილისი" />
-<meta property="og:image" content="https://my.farmasi.ge/cards/tengiz-beridze.png" />
+<meta property="og:image" content="https://my.farmasi.ge/og/tengiz-beridze.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta property="og:url" content="https://my.farmasi.ge/tengiz-beridze" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="თენგიზ ბერიძე • FARMASI" />
 <meta name="twitter:description" content="FARMASI ოფიციალური წარმომადგენელი" />
-<meta name="twitter:image" content="https://my.farmasi.ge/cards/tengiz-beridze.png" />
+<meta name="twitter:image" content="https://my.farmasi.ge/og/tengiz-beridze.jpg" />
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#0F0F0F" />
@@ -148,6 +150,19 @@
 </style>
 </head>
 <body>
+<script>
+  const url = new URL(window.location.href);
+
+  if (url.searchParams.has('fbclid')) {
+    url.searchParams.delete('fbclid');
+
+    window.history.replaceState(
+      {},
+      document.title,
+      url.pathname + url.search
+    );
+  }
+</script>
 <div id="root"></div>
 
 <script type="text/babel" data-presets="env,react">
