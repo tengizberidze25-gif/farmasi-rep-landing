@@ -2713,13 +2713,11 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
-  const copyGuideUrl = () => {
-    try {
-      navigator.clipboard?.writeText(GUIDE_URL);
-      setGuideCopied(true);
-      setTimeout(() => setGuideCopied(false), 2000);
-    } catch {}
-  };
+  const hasSavedData = Boolean(
+    rep?.name?.trim() &&
+    rep?.phone?.trim() &&
+    rep?.slug?.trim()
+  );
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -3444,7 +3442,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
-        {isProfileSaved && (
+        {hasSavedData && (
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
