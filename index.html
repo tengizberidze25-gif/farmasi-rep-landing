@@ -3526,7 +3526,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             </div>
             <button onClick={onPreview} className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
               style={{ background: theme.ink, color: theme.cream }}>
-              <Ic name="eye" className="w-3 h-3" /> ნახე
+              <Ic name="eye" className="w-3 h-3" /> {L('dash_public_view', 'ნახე')}
             </button>
           </div>
 
@@ -3635,8 +3635,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>🌐 საჯარო ფეიჯი</p>
-              <p className="font-display text-lg" style={{ color: theme.ink }}>შენი პერსონალური ლინკი</p>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>🌐 {L('dash_public_eyebrow', 'საჯარო ფეიჯი')}</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>{L('dash_public_title', 'შენი პერსონალური ლინკი')}</p>
             </div>
             <a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer"
               className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
@@ -3654,7 +3654,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             <button onClick={copyPublicUrl}
               className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
               style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
-              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დაკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_public_copied', 'დაკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> {L('dash_public_copy', 'კოპი')}</>}
             </button>
           </div>
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
