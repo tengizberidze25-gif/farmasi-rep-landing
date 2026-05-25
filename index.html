@@ -2730,18 +2730,68 @@ function MyOrdersSection({ repCode, labels = {} }) {
 }
 
 function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {}, savedSnapshot, setSavedSnapshot, isProfileSaved }) {
+
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
+
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
-  const PUBLIC_URL = `${window.location.origin}/${rep?.slug || ''}`;
+
+  // Fallback slug logic
+  const pathSlug = window.location.pathname
+    .replace(/^\/+|\/+$/g, '')
+    .trim();
+
+  const safeSlug = String(
+    rep?.slug ||
+    pathSlug ||
+    ''
+  ).trim();
+
+  // Final public URL
+  const PUBLIC_URL = safeSlug
+    ? `${window.location.origin}/${safeSlug}`
+    : window.location.origin;
+
+  // Guide URL
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
+
+  // Validation
   const hasSavedData = Boolean(
-  rep &&
-  rep.name?.trim() &&
-  rep.phone?.trim() &&
-  rep.slug?.trim()
-);
+    rep &&
+    rep.name?.trim() &&
+    rep.phone?.trim()
+  );
+
+  // Copy public URL
+  const copyPublicUrl = () => {
+    try {
+      navigator.clipboard?.writeText(PUBLIC_URL);
+      setCopied(true);
+
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Copy guide URL
+  const copyGuideUrl = () => {
+    try {
+      navigator.clipboard?.writeText(GUIDE_URL);
+      setGuideCopied(true);
+
+      setTimeout(() => {
+        setGuideCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
 const copyGuideUrl = () => {
   try {
