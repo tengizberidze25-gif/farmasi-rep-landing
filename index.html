@@ -1448,7 +1448,12 @@ function App() {
     // Do NOT unlock from backend-loaded values, because the user asked to show
     // "საჯარო ფეიჯი" and "შენი ლენდინგ ფეიჯი" only after Save.
     setSavedSnapshot({
-      name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
+      name: rep?.name || '',
+      city: rep?.city || '',
+      phone: rep?.phone || '',
+      facebook: rep?.facebook || '',
+      referralLink: rep?.referral_link || '',
+      personalId: rep?.personal_id || '',
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1601,7 +1606,12 @@ function App() {
           // Keep share/public UI locked until the rep clicks Save in this dashboard session.
           // Do NOT unlock from server-loaded values.
           setSavedSnapshot({
-            name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
+            name: data.rep.name || '',
+            city: data.rep.city || '',
+            phone: data.rep.phone || '',
+            facebook: data.rep.facebook || '',
+            referralLink: data.rep.referral_link || '',
+            personalId: data.rep.personal_id || '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
