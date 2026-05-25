@@ -2793,21 +2793,6 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
   };
 
-const copyGuideUrl = () => {
-  try {
-    navigator.clipboard?.writeText(GUIDE_URL);
-    setGuideCopied(true);
-    setTimeout(() => setGuideCopied(false), 2000);
-  } catch {}
-};
-
-const copyPublicUrl = () => {
-  try {
-    navigator.clipboard?.writeText(PUBLIC_URL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {}
-};
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
