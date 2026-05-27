@@ -5664,10 +5664,17 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
     let list = (products || []).filter(p => {
       if (categoryFilter !== 'all' && String(p.cat || '').trim() !== categoryFilter) return false;
       if (q) {
-        const txt = [
-          p.name, p.fullName, p.cat, p.id, p.sku, p.code, p.product_id, p.productId, p.tag
-        ].map(v => String(v || '')).join(' ').toLowerCase();
-        if (!txt.includes(q)) return false;
+        const searchableCodes = [p.id, p.sku, p.code, p.product_id, p.productId]
+          .map(v => String(v || '').replace(/\D/g, ''))
+          .filter(Boolean);
+        if (/^\d+$/.test(q)) {
+          if (!searchableCodes.some(code => code === q)) return false;
+        } else {
+          const txt = [
+            p.name, p.fullName, p.cat, p.id, p.sku, p.code, p.product_id, p.productId, p.tag
+          ].map(v => String(v || '')).join(' ').toLowerCase();
+          if (!txt.includes(q)) return false;
+        }
       }
       return true;
     });
@@ -6030,6 +6037,7 @@ function TestProductsGallery({ labels = {} }) {
 function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const hasImage = !!product.image;
+  const productCode = String(product.sku || product.code || product.product_id || product.productId || product.id || '').trim();
   return (
     <div onClick={onCardClick}
       className="relative rounded-2xl overflow-hidden cursor-pointer transition hover:shadow-xl group flex flex-col"
@@ -6066,6 +6074,11 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
         <p className="text-xs sm:text-sm font-medium leading-snug mb-2 clamp-2 flex-1" style={{ color: theme.ink, minHeight: '2.5em' }}>
           {product.name}
         </p>
+        {productCode && (
+          <p className="text-[10px] font-mono mb-2 truncate" style={{ color: theme.ink + '77' }}>
+            კოდი: {productCode}
+          </p>
+        )}
         <div className="flex items-center justify-between gap-2 mt-auto">
           <p className="font-display text-base sm:text-lg" style={{ color: theme.wine }}>
             {product.price} ₾
@@ -6087,6 +6100,7 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
 function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const subtotal = Math.round((Number(product.price) || 0) * qty * 100) / 100;
+  const productCode = String(product.sku || product.code || product.product_id || product.productId || product.id || '').trim();
   return (
     <>
       {/* Modal backdrop */}
@@ -6134,6 +6148,11 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} })
             <h3 className="font-display text-2xl leading-tight mb-2" style={{ color: theme.ink }}>
               {product.name}
             </h3>
+            {productCode && (
+              <p className="text-xs font-mono mb-3" style={{ color: theme.ink + '77' }}>
+                კოდი: {productCode}
+              </p>
+            )}
             {product.description && (
               <p className="text-sm leading-relaxed mb-4" style={{ color: theme.ink + '99' }}>
                 {product.description}
