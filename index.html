@@ -253,6 +253,31 @@
   body {
     padding-bottom: env(safe-area-inset-bottom);
   }
+  @media (max-width: 640px) {
+  .login-page input,
+  .login-page select,
+  .login-page textarea,
+  .login-page button {
+    font-size: 16px !important;
+  }
+
+  .login-page select:focus,
+  .login-page input:focus,
+  .login-page button:focus {
+    transform: none !important;
+  }
+
+  .login-page,
+  .login-shell,
+  .login-card {
+    transform: none !important;
+    overflow-x: clip;
+  }
+
+  .login-card {
+    max-width: calc(100vw - 24px) !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -9937,34 +9962,7 @@ function ChatModal({ rep, onClose, product, t = (k, fb) => fb }) {
     </div>
   );
 }
-
-// ─── Mount React app to #root ───
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-@media (max-width: 640px) {
-  .login-page input,
-  .login-page select,
-  .login-page textarea,
-  .login-page button {
-    font-size: 16px !important;
-  }
-
-  .login-page select:focus,
-  .login-page input:focus,
-  .login-page button:focus {
-    transform: none !important;
-  }
-
-  .login-page,
-  .login-shell,
-  .login-card {
-    transform: none !important;
-    overflow-x: clip;
-  }
-
-  .login-card {
-    max-width: calc(100vw - 24px) !important;
-  }
-}
 </script>
 </body>
 </html>
