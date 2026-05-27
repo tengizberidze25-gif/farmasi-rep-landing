@@ -25,7 +25,7 @@
 <!-- Favicon — FARMASI brand icon -->
 <link rel="icon" type="image/png" href="/farmasi-icon.png" />
 <link rel="shortcut icon" type="image/png" href="/farmasi-icon.png" />
-<link rel="apple-touch-icon" href="/farmasi-icon.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/farmasi-icon.png" />
 
 <!-- PWA — installable web app -->
 <link rel="manifest" href="/manifest.json" />
@@ -38,7 +38,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;500;600;700;800;900&family=FiraGO:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -2730,69 +2730,34 @@ function MyOrdersSection({ repCode, labels = {} }) {
 }
 
 function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {}, savedSnapshot, setSavedSnapshot, isProfileSaved }) {
-
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
-
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
-
-  // Fallback slug logic
-  const pathSlug = window.location.pathname
-    .replace(/^\/+|\/+$/g, '')
-    .trim();
-
-  const safeSlug = String(
-    rep?.slug ||
-    pathSlug ||
-    ''
-  ).trim();
-
-  // Final public URL
-  const PUBLIC_URL = safeSlug
-    ? `${window.location.origin}/${safeSlug}`
-    : window.location.origin;
-
-  // Guide URL
+  const PUBLIC_URL = `${window.location.origin}/${rep?.slug || ''}`;
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
-
-  // Validation
   const hasSavedData = Boolean(
-    rep &&
-    rep.name?.trim() &&
-    rep.phone?.trim()
-  );
+  rep &&
+  rep.name?.trim() &&
+  rep.phone?.trim() &&
+  rep.slug?.trim()
+);
 
-  // Copy public URL
-  const copyPublicUrl = () => {
-    try {
-      navigator.clipboard?.writeText(PUBLIC_URL);
-      setCopied(true);
+const copyGuideUrl = () => {
+  try {
+    navigator.clipboard?.writeText(GUIDE_URL);
+    setGuideCopied(true);
+    setTimeout(() => setGuideCopied(false), 2000);
+  } catch {}
+};
 
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Copy guide URL
-  const copyGuideUrl = () => {
-    try {
-      navigator.clipboard?.writeText(GUIDE_URL);
-      setGuideCopied(true);
-
-      setTimeout(() => {
-        setGuideCopied(false);
-      }, 2000);
-
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
+const copyPublicUrl = () => {
+  try {
+    navigator.clipboard?.writeText(PUBLIC_URL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  } catch {}
+};
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -5699,7 +5664,9 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
     let list = (products || []).filter(p => {
       if (categoryFilter !== 'all' && String(p.cat || '').trim() !== categoryFilter) return false;
       if (q) {
-        const txt = (String(p.name || '') + ' ' + String(p.cat || '') + ' ' + String(p.id || '') + ' ' + String(p.tag || '')).toLowerCase();
+        const txt = [
+          p.name, p.fullName, p.cat, p.id, p.sku, p.code, p.product_id, p.productId, p.tag
+        ].map(v => String(v || '')).join(' ').toLowerCase();
         if (!txt.includes(q)) return false;
       }
       return true;
