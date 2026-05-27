@@ -4477,7 +4477,7 @@ const copyPublicUrl = () => {
               ) : (
                 <>
                   <Ic name="upload" className="w-4 h-4" />
-                  ატვირთე ვიდეო ფაილი (MP4, max 5 MB)
+                  {L('profile_video_upload_button', 'ატვირთე ვიდეო ფაილი (MP4, max 5 MB)')}
                 </>
               )}
             </button>
@@ -4490,7 +4490,7 @@ const copyPublicUrl = () => {
             <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*"
               onChange={onVideoFile} className="hidden" />
             <p className="text-[10px] mt-2 leading-relaxed text-center" style={{ color: theme.ink + '77' }}>
-              💡 TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე
+              💡 {L('profile_video_save_hint', 'TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე')}
             </p>
           </div>
 
