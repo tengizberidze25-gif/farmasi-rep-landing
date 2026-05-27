@@ -5675,20 +5675,31 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
     }
   }, [open]);
 
+  const uniqueProducts = useMemo(() => {
+    const seen = new Set();
+    return (products || []).filter(p => {
+      const key = String(p.id || p.code || p.sku || p.product_id || p.productId || '').trim();
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [products]);
+
   // Build category list with counts
   const categories = useMemo(() => {
     const counts = new Map();
-    (products || []).forEach(p => {
+    uniqueProducts.forEach(p => {
       const c = String(p.cat || '').trim();
       if (!c) return;
       counts.set(c, (counts.get(c) || 0) + 1);
     });
     return Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0], 'ka'));
-  }, [products]);
+  }, [uniqueProducts]);
 
   // Filtered + sorted list
   const filtered = useMemo(() => {
-    let list = (products || []).filter(p => {
+    let list = uniqueProducts.filter(p => {
       if (categoryFilter !== 'all' && String(p.cat || '').trim() !== categoryFilter) return false;
       if (!productMatchesSearch(p, searchQuery)) return false;
       return true;
@@ -5701,7 +5712,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
       list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
     }
     return list;
-  }, [products, searchQuery, categoryFilter, sortBy]);
+  }, [uniqueProducts, searchQuery, categoryFilter, sortBy]);
 
   const filteredKey = useMemo(() => {
     const ids = filtered.slice(0, 24).map(p => String(p.id || p.code || p.sku || p.product_id || p.name || '')).join('|');
@@ -5819,7 +5830,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
                 style={categoryFilter === 'all'
                   ? { background: theme.wine, color: theme.cream }
                   : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
-                {L('catalog_modal_cat_all', 'ყველა')} ({(products || []).length})
+                {L('catalog_modal_cat_all', 'ყველა')} ({uniqueProducts.length})
               </button>
               {categories.map(([cat, count]) => (
                 <button key={cat} onClick={() => setCategoryFilter(cat)}
