@@ -1294,8 +1294,9 @@ function App() {
 
   // ════════════════════════════════════════════════════════════════════════
   // ─── Profile-saved snapshot (lifted to App level) ───
-  // Tracks last successfully-saved required fields. Stays empty until backend
-  // confirms a save, then updates via setSavedSnapshot (passed to Dashboard).
+  // Tracks last successfully-saved required fields from the backend.
+  // If a returning rep already has all required fields saved, public-page UI
+  // unlocks immediately; incomplete profiles remain locked until Save succeeds.
   // Used to:
   //   1) Hide "საჯარო ფეიჯი" tab in ViewSwitcher until profile is saved
   //   2) Show locked/unlocked share-block in Dashboard
@@ -1305,7 +1306,7 @@ function App() {
     name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
   });
 
-  // TRUE only after the representative has saved the required profile data.
+  // TRUE when the representative has all required profile data saved.
   // Used to show/hide both:
   //   1) the top "საჯარო ფეიჯი" tab
   //   2) the Dashboard "შენი ლენდინგ ფეიჯი" card
@@ -1481,11 +1482,16 @@ function App() {
       personalId: rep?.personal_id || '',
       title: rep?.title || '',
     });
-    // Keep share/public UI locked until the rep clicks Save in this dashboard session.
-    // Do NOT unlock from backend-loaded values, because the user asked to show
-    // "საჯარო ფეიჯი" and "შენი ლენდინგ ფეიჯი" only after Save.
+    // Initialize saved-snapshot from login response (last-saved values from backend).
+    // Complete existing profiles unlock public-page UI immediately; incomplete
+    // profiles stay locked until the rep fills required fields and saves.
     setSavedSnapshot({
-      name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
+      name: rep?.name || '',
+      city: rep?.city || '',
+      phone: rep?.phone || '',
+      facebook: rep?.facebook || '',
+      referralLink: rep?.referral_link || '',
+      personalId: rep?.personal_id || '',
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1635,10 +1641,15 @@ function App() {
             personalId: data.rep.personal_id || '',
             title: data.rep.title || '',
           });
-          // Keep share/public UI locked until the rep clicks Save in this dashboard session.
-          // Do NOT unlock from server-loaded values.
+          // Initialize saved-snapshot from server (these are the last-saved values).
+          // Used to drive the "საჯარო ფეიჯი" tab visibility and Dashboard share block.
           setSavedSnapshot({
-            name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
+            name: data.rep.name || '',
+            city: data.rep.city || '',
+            phone: data.rep.phone || '',
+            facebook: data.rep.facebook || '',
+            referralLink: data.rep.referral_link || '',
+            personalId: data.rep.personal_id || '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
