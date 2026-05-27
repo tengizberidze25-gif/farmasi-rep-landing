@@ -4995,7 +4995,7 @@ function VideoIntro({ url }) {
     instagram: { top: '-12%', height: '155%' },  // hide top username bar + bottom caption/likes
     tiktok:    { top: '-6%',  height: '125%' },  // hide bottom info strip + watermark
     facebook:  { top: '-4%',  height: '115%' },  // minor trim
-    drive:     { top: '-7%',  height: '116%' },  // hide Drive file title bar
+    drive:     { top: '0',    height: '100%' },
     youtube:   { top: '0',    height: '100%' },  // already minimal with rel=0
     vimeo:     { top: '0',    height: '100%' },
   };
@@ -7726,7 +7726,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               <Ic name="x" className="w-5 h-5" />
             </button>
             <div onClick={(e) => e.stopPropagation()}
-              className={`relative ${isVertical ? 'h-[85vh] aspect-[9/16]' : 'w-[92vw] max-w-5xl aspect-video'} rounded-3xl overflow-hidden`}
+              className={`relative ${isVertical ? 'h-[70vh] max-h-[620px] sm:h-[58vh] sm:max-h-[560px] aspect-[9/16]' : 'w-[92vw] max-w-4xl aspect-video'} rounded-2xl overflow-hidden`}
               style={{ background: theme.ink, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
               <VideoIntro url={videoToPlay} />
             </div>
