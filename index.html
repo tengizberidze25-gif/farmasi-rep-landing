@@ -227,6 +227,43 @@ const theme = {
   mist:  '#F4F4F5',     // very light gray
 };
 
+function normalizeSearchValue(value) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()"'’“”[\]\\|<>?]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function productMatchesSearch(product, rawQuery) {
+  const q = normalizeSearchValue(rawQuery);
+  if (!q) return true;
+
+  const codeQuery = q.replace(/\D/g, '');
+  const searchableCodes = [
+    product.id, product.sku, product.code, product.product_id, product.productId
+  ].map(v => String(v || '').replace(/\D/g, '')).filter(Boolean);
+
+  if (codeQuery && searchableCodes.some(code => code.includes(codeQuery))) return true;
+
+  const text = normalizeSearchValue([
+    product.name,
+    product.fullName,
+    product.cat,
+    product.category,
+    product.id,
+    product.sku,
+    product.code,
+    product.product_id,
+    product.productId,
+    product.tag,
+    product.description
+  ].join(' '));
+
+  return text.includes(q);
+}
+
 const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
 const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
 
@@ -4059,13 +4096,7 @@ const copyPublicUrl = () => {
                 const q = (pickerSearchQuery || '').trim().toLowerCase();
                 const filtered = availableProducts.filter(p => {
                   if (pickerCategoryFilter !== 'all' && String(p.cat || '').trim() !== pickerCategoryFilter) return false;
-                  if (q) {
-                    const matches = String(p.name || '').toLowerCase().includes(q)
-                                 || String(p.cat || '').toLowerCase().includes(q)
-                                 || String(p.id || '').toLowerCase().includes(q)
-                                 || String(p.tag || '').toLowerCase().includes(q);
-                    if (!matches) return false;
-                  }
+                  if (!productMatchesSearch(p, pickerSearchQuery)) return false;
                   return true;
                 });
                 // Apply sort
@@ -4142,10 +4173,7 @@ const copyPublicUrl = () => {
                         // Smart empty state: check if search matches already-selected product
                         let alreadySelectedMatch = null;
                         if (q && Array.isArray(myProducts)) {
-                          alreadySelectedMatch = myProducts.find(mp =>
-                            String(mp.id || '').toLowerCase().includes(q) ||
-                            String(mp.name || '').toLowerCase().includes(q)
-                          );
+                          alreadySelectedMatch = myProducts.find(mp => productMatchesSearch(mp, pickerSearchQuery));
                         }
                         let message;
                         if (alreadySelectedMatch) {
@@ -5660,22 +5688,9 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
 
   // Filtered + sorted list
   const filtered = useMemo(() => {
-    const q = (searchQuery || '').trim().toLowerCase();
     let list = (products || []).filter(p => {
       if (categoryFilter !== 'all' && String(p.cat || '').trim() !== categoryFilter) return false;
-      if (q) {
-        const searchableCodes = [p.id, p.sku, p.code, p.product_id, p.productId]
-          .map(v => String(v || '').replace(/\D/g, ''))
-          .filter(Boolean);
-        if (/^\d+$/.test(q)) {
-          if (!searchableCodes.some(code => code === q)) return false;
-        } else {
-          const txt = [
-            p.name, p.fullName, p.cat, p.id, p.sku, p.code, p.product_id, p.productId, p.tag
-          ].map(v => String(v || '')).join(' ').toLowerCase();
-          if (!txt.includes(q)) return false;
-        }
-      }
+      if (!productMatchesSearch(p, searchQuery)) return false;
       return true;
     });
     if (sortBy === 'name') {
