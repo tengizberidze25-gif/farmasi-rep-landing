@@ -1805,7 +1805,7 @@ function App() {
 
         return (
           <>
-            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} labels={labels} />
+            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} labels={labels} />}
             {view === 'loading' && <LoadingScreen labels={labels} />}
             {view === 'notfound' && <NotFoundScreen labels={labels} />}
             {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
