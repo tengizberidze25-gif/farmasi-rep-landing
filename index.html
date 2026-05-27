@@ -25,7 +25,7 @@
 <!-- Favicon — FARMASI brand icon -->
 <link rel="icon" type="image/png" href="/farmasi-icon.png" />
 <link rel="shortcut icon" type="image/png" href="/farmasi-icon.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="/farmasi-icon.png" />
+<link rel="apple-touch-icon" href="/farmasi-icon.png" />
 
 <!-- PWA — installable web app -->
 <link rel="manifest" href="/manifest.json" />
@@ -47,6 +47,109 @@
   * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   html { scroll-behavior: smooth; }
   body { font-family: 'FiraGO', 'Noto Serif Georgian', system-ui, sans-serif; margin: 0; background: #FFFFFF; overscroll-behavior-y: none; }
+  html, body, #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  img, video, canvas, svg {
+    max-width: 100%;
+  }
+  .login-page {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  .login-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .phone-row {
+    display: grid;
+    grid-template-columns: minmax(92px, 108px) minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+  .phone-row select,
+  .phone-row input,
+  .phone-row > div {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .phone-row select {
+    width: 100%;
+  }
+  @media (max-width: 380px) {
+    .login-page {
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    .login-card {
+      padding: 20px !important;
+      border-radius: 20px !important;
+    }
+    .phone-row {
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 6px;
+    }
+    .phone-row select {
+      font-size: 16px !important;
+      padding-left: 8px !important;
+      padding-right: 22px !important;
+    }
+    .phone-row input {
+      font-size: 16px !important;
+      padding-left: 10px !important;
+      padding-right: 36px !important;
+    }
+  }
+
+    .login-shell {
+    width: min(100%, 448px);
+    max-width: calc(100vw - 24px);
+    min-width: 0;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .login-bg-blob {
+    max-width: 55vw;
+    max-height: 55vw;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  @media (max-width: 480px) {
+    .login-page {
+      position: relative;
+      left: 0;
+      right: 0;
+      width: 100vw;
+      max-width: 100vw;
+      padding-left: max(12px, env(safe-area-inset-left)) !important;
+      padding-right: max(12px, env(safe-area-inset-right)) !important;
+    }
+
+    .login-shell {
+      width: 100%;
+      max-width: calc(100vw - 24px);
+    }
+
+    .login-bg-blob {
+      display: none;
+    }
+
+    .login-card h1,
+    .login-card h2 {
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+  }
 
   /* Reduced motion accessibility */
   @media (prefers-reduced-motion: reduce) {
@@ -1448,7 +1551,12 @@ function App() {
     // Do NOT unlock from backend-loaded values, because the user asked to show
     // "საჯარო ფეიჯი" and "შენი ლენდინგ ფეიჯი" only after Save.
     setSavedSnapshot({
-      name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
+      name: rep?.name || '',
+      city: rep?.city || '',
+      phone: rep?.phone || '',
+      facebook: rep?.facebook || '',
+      referralLink: rep?.referral_link || '',
+      personalId: rep?.personal_id || '',
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1601,7 +1709,12 @@ function App() {
           // Keep share/public UI locked until the rep clicks Save in this dashboard session.
           // Do NOT unlock from server-loaded values.
           setSavedSnapshot({
-            name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
+            name: data.rep.name || '',
+            city: data.rep.city || '',
+            phone: data.rep.phone || '',
+            facebook: data.rep.facebook || '',
+            referralLink: data.rep.referral_link || '',
+            personalId: data.rep.personal_id || '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
@@ -2130,12 +2243,12 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
   }, [step]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-5 py-20 grain relative" style={{ background: theme.cream }}>
-      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
+    <div className="login-page min-h-screen flex items-center justify-center px-3 sm:px-5 py-16 sm:py-20 grain relative" style={{ background: theme.cream }}>
+      <div className="login-bg-blob absolute top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
         style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
-      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-25 blur-3xl"
+      <div className="login-bg-blob absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-25 blur-3xl"
         style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
-      <div className="relative w-full max-w-md anim-fadeup">
+      <div className="login-shell relative anim-fadeup">
         <div className="text-center mb-10">
           <img src="/farmasi-logo.png" alt="FARMASI"
             className="mx-auto mb-6"
@@ -2143,7 +2256,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
           <h1 className="font-display text-3xl sm:text-4xl mb-2 leading-tight" style={{ color: theme.ink }}>{L('welcome_hero_title', 'წარმომადგენლის შესვლა')}</h1>
           <p className="font-display-lat text-2xl sm:text-3xl italic" style={{ color: theme.wine }}>{L('welcome_hero_subtitle', 'FARMASI Georgia')}</p>
         </div>
-        <div className="rounded-2xl p-8 backdrop-blur-sm shadow-2xl"
+        <div className="login-card rounded-2xl p-5 sm:p-8 backdrop-blur-sm shadow-2xl"
           style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
 
           {/* STEP 1: phone */}
@@ -2155,7 +2268,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
               </div>
               <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_phone_title', 'შესვლა ტელეფონის ნომრით')}</h2>
               <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_phone_label', 'ტელეფონის ნომერი')}</label>
-              <div className="flex gap-2">
+              <div className="phone-row">
                 <select
                   value={countryCode}
                   onChange={(e) => { setCountryCode(e.target.value); setErr(''); }}
@@ -2182,7 +2295,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
                     <option key={c.code} value={c.code}>{c.flag} +{c.code}  ·  {c.name}</option>
                   ))}
                 </select>
-                <div className="relative flex-1">
+                <div className="relative min-w-0">
                   <input type="tel" inputMode="numeric" value={phone}
                     onChange={(e) => { setPhone(e.target.value); setErr(''); }}
                     placeholder={countryCode === '995' ? '599 12 34 56' : '555 123 4567'}
@@ -2730,34 +2843,69 @@ function MyOrdersSection({ repCode, labels = {} }) {
 }
 
 function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {}, savedSnapshot, setSavedSnapshot, isProfileSaved }) {
+
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
+
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
-  const PUBLIC_URL = `${window.location.origin}/${rep?.slug || ''}`;
+
+  // Fallback slug logic
+  const pathSlug = window.location.pathname
+    .replace(/^\/+|\/+$/g, '')
+    .trim();
+
+  const safeSlug = String(
+    rep?.slug ||
+    pathSlug ||
+    ''
+  ).trim();
+
+  // Final public URL
+  const PUBLIC_URL = safeSlug
+    ? `${window.location.origin}/${safeSlug}`
+    : window.location.origin;
+
+  // Guide URL
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
+
+  // Validation
   const hasSavedData = Boolean(
-  rep &&
-  rep.name?.trim() &&
-  rep.phone?.trim() &&
-  rep.slug?.trim()
-);
+    rep &&
+    rep.name?.trim() &&
+    rep.phone?.trim()
+  );
 
-const copyGuideUrl = () => {
-  try {
-    navigator.clipboard?.writeText(GUIDE_URL);
-    setGuideCopied(true);
-    setTimeout(() => setGuideCopied(false), 2000);
-  } catch {}
-};
+  // Copy public URL
+  const copyPublicUrl = () => {
+    try {
+      navigator.clipboard?.writeText(PUBLIC_URL);
+      setCopied(true);
 
-const copyPublicUrl = () => {
-  try {
-    navigator.clipboard?.writeText(PUBLIC_URL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {}
-};
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Copy guide URL
+  const copyGuideUrl = () => {
+    try {
+      navigator.clipboard?.writeText(GUIDE_URL);
+      setGuideCopied(true);
+
+      setTimeout(() => {
+        setGuideCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -3491,7 +3639,7 @@ const copyPublicUrl = () => {
             </div>
             <button onClick={onPreview} className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
               style={{ background: theme.ink, color: theme.cream }}>
-              <Ic name="eye" className="w-3 h-3" /> ნახე
+              <Ic name="eye" className="w-3 h-3" /> {L('dash_public_view', 'ნახე')}
             </button>
           </div>
 
@@ -3600,8 +3748,8 @@ const copyPublicUrl = () => {
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>🌐 საჯარო ფეიჯი</p>
-              <p className="font-display text-lg" style={{ color: theme.ink }}>შენი პერსონალური ლინკი</p>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>🌐 {L('dash_public_eyebrow', 'საჯარო ფეიჯი')}</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>{L('dash_public_title', 'შენი პერსონალური ლინკი')}</p>
             </div>
             <a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer"
               className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
@@ -3619,7 +3767,7 @@ const copyPublicUrl = () => {
             <button onClick={copyPublicUrl}
               className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
               style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
-              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დაკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_public_copied', 'დაკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> {L('dash_public_copy', 'კოპი')}</>}
             </button>
           </div>
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
@@ -9792,6 +9940,31 @@ function ChatModal({ rep, onClose, product, t = (k, fb) => fb }) {
 
 // ─── Mount React app to #root ───
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+@media (max-width: 640px) {
+  .login-page input,
+  .login-page select,
+  .login-page textarea,
+  .login-page button {
+    font-size: 16px !important;
+  }
+
+  .login-page select:focus,
+  .login-page input:focus,
+  .login-page button:focus {
+    transform: none !important;
+  }
+
+  .login-page,
+  .login-shell,
+  .login-card {
+    transform: none !important;
+    overflow-x: clip;
+  }
+
+  .login-card {
+    max-width: calc(100vw - 24px) !important;
+  }
+}
 </script>
 </body>
 </html>
