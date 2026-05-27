@@ -7267,6 +7267,61 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </section>
       )}
 
+      {!selectedProblem && (rep.customerVideos || []).filter(v => parseVideoUrl(v.url)).length > 0 && (
+        <section className="relative overflow-hidden px-5 sm:px-12 py-16 sm:py-20"
+          style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
+                {t('act7_eyebrow', '✦ მათ გაიარეს იგივე')}
+              </p>
+              <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
+                {t('act7_headline_left', 'ნამდვილი')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act7_headline_right', 'ისტორიები')}</span>
+              </h2>
+              <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
+                {t('customer_stories_public_subtitle', 'კმაყოფილი მომხმარებლების ვიდეო-რეცენზიები')}
+              </p>
+            </div>
+            <div className={`grid gap-5 sm:gap-6 ${
+              (rep.customerVideos || []).length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+              (rep.customerVideos || []).length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
+              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+            }`}>
+              {(rep.customerVideos || []).filter(v => parseVideoUrl(v.url)).map((v, idx) => {
+                const parsed = parseVideoUrl(v.url);
+                const isVertical = parsed.orientation === 'vertical';
+                return (
+                  <div key={idx} className="group">
+                    <button onClick={() => setVideoToPlay(v.url)}
+                      className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
+                      style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`, boxShadow: `0 20px 50px -10px ${theme.wine}44`, border: `2px solid ${theme.cream}` }}>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                          style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
+                          <Ic name="play" className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.wine, marginLeft: '4px' }} />
+                        </div>
+                      </div>
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium"
+                        style={{ background: 'rgba(255,255,255,0.18)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
+                        {parsed.type}
+                      </div>
+                      {v.caption && (
+                        <div className="absolute bottom-0 left-0 right-0 p-4"
+                          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
+                          <p className="text-sm italic text-center font-display-lat" style={{ color: theme.cream }}>
+                            "{v.caption}"
+                          </p>
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ═══ REP'S CURATED PICKS — Personal favorite products ═══ */}
       {repPicks.length > 0 && (
         <section className="px-5 py-16 sm:py-20" style={{ background: theme.cream }}>
