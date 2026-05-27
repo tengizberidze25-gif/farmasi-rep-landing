@@ -2833,6 +2833,26 @@ const copyPublicUrl = () => {
     return missing;
   })();
 
+  const profileCompletion = (() => {
+    const nameParts = (rep.name || '').trim().split(/\s+/).filter(Boolean);
+    const fields = [
+      { label: 'სახელი', done: !!nameParts[0] },
+      { label: 'გვარი', done: nameParts.length >= 2 },
+      { label: 'ქალაქი', done: !!(rep.city || '').trim() },
+      { label: 'ტელეფონის ნომერი', done: !!(rep.phone || '').trim() },
+      { label: 'Facebook ლინკი', done: !!(rep.facebook || '').trim() },
+      { label: 'რეფერალური ლინკი', done: !!(rep.referralLink || '').trim() },
+      { label: 'პირადი ნომერი', done: String(rep.personalId || '').trim().length === 11 },
+    ];
+    const doneCount = fields.filter(f => f.done).length;
+    return {
+      total: fields.length,
+      done: doneCount,
+      percent: Math.round((doneCount / fields.length) * 100),
+      missing: fields.filter(f => !f.done).map(f => f.label),
+    };
+  })();
+
   // ─── Authenticated API wrappers ───
   // editApi / editApiUpload automatically include the rep's edit_token from
   // localStorage and detect invalid_token errors. Use these for ANY mutation
@@ -3530,6 +3550,45 @@ const copyPublicUrl = () => {
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
+        <Card>
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
+                {L('profile_completion_eyebrow', 'პროფილის შევსება')}
+              </p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>
+                {profileCompletion.percent}% {L('profile_completion_title', 'მზადაა')}
+              </p>
+            </div>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: `conic-gradient(${theme.wine} ${profileCompletion.percent * 3.6}deg, ${theme.blush} 0deg)`, color: theme.ink }}>
+              <div className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-semibold"
+                style={{ background: theme.cream }}>
+                {profileCompletion.percent}%
+              </div>
+            </div>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden mb-3" style={{ background: theme.blush }}>
+            <div className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${profileCompletion.percent}%`, background: theme.wine }} />
+          </div>
+          <p className="text-sm leading-relaxed" style={{ color: theme.ink + '99' }}>
+            {profileCompletion.percent === 100
+              ? L('profile_completion_done', 'ყველა სავალდებულო ველი შევსებულია. შენი საჯარო ფეიჯი უფრო სანდო და მიმზიდველია მომხმარებლისთვის.')
+              : L('profile_completion_hint', 'შეავსე დარჩენილი ველები, რომ შენი საჯარო ფეიჯი მომხმარებლისთვის უფრო სანდო და მიმზიდველი გახდეს.')}
+          </p>
+          {profileCompletion.missing.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {profileCompletion.missing.map(field => (
+                <span key={field} className="text-xs px-3 py-1 rounded-full"
+                  style={{ background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                  {field}
+                </span>
+              ))}
+            </div>
+          )}
+        </Card>
+
         {hasSavedData && (
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
