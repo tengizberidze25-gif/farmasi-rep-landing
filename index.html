@@ -38,7 +38,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;500;600;700;800;900&family=FiraGO:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -2793,21 +2793,6 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
   };
 
-const copyGuideUrl = () => {
-  try {
-    navigator.clipboard?.writeText(GUIDE_URL);
-    setGuideCopied(true);
-    setTimeout(() => setGuideCopied(false), 2000);
-  } catch {}
-};
-
-const copyPublicUrl = () => {
-  try {
-    navigator.clipboard?.writeText(PUBLIC_URL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {}
-};
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
