@@ -5703,6 +5703,11 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
     return list;
   }, [products, searchQuery, categoryFilter, sortBy]);
 
+  const filteredKey = useMemo(() => {
+    const ids = filtered.slice(0, 24).map(p => String(p.id || p.code || p.sku || p.product_id || p.name || '')).join('|');
+    return `${normalizeSearchValue(searchQuery)}|${categoryFilter}|${sortBy}|${filtered.length}|${ids}`;
+  }, [filtered, searchQuery, categoryFilter, sortBy]);
+
   const handleQuickAdd = (product, e) => {
     if (e) e.stopPropagation();
     if (!cart) return;
@@ -5850,7 +5855,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
         </div>
 
         {/* Scrollable grid */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
+        <div key={filteredKey} className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
           {filtered.length === 0 ? (
             <div className="text-center py-20">
               <div className="text-5xl mb-4 opacity-30">🌸</div>
