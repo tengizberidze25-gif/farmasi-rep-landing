@@ -2835,14 +2835,28 @@ const copyPublicUrl = () => {
 
   const profileCompletion = (() => {
     const nameParts = (rep.name || '').trim().split(/\s+/).filter(Boolean);
+    const completeBankAccount = (rep.bankAccounts || []).some(acc =>
+      (acc.bank || '').trim() && (acc.recipient || '').trim() && (acc.account || '').trim()
+    );
     const fields = [
+      { label: 'პროფილის ფოტო', done: !!rep.photo },
       { label: 'სახელი', done: !!nameParts[0] },
       { label: 'გვარი', done: nameParts.length >= 2 },
       { label: 'ქალაქი', done: !!(rep.city || '').trim() },
+      { label: 'მოკლე ბიო', done: !!(rep.bio || '').trim() },
       { label: 'ტელეფონის ნომერი', done: !!(rep.phone || '').trim() },
+      { label: 'WhatsApp', done: !!(rep.whatsapp || '').trim() },
       { label: 'Facebook ლინკი', done: !!(rep.facebook || '').trim() },
+      { label: 'Instagram ლინკი', done: !!(rep.instagram || '').trim() },
+      { label: 'TikTok ლინკი', done: !!(rep.tiktok || '').trim() },
+      { label: 'YouTube ლინკი', done: !!(rep.youtube || '').trim() },
+      { label: 'Telegram ლინკი', done: !!(rep.telegram || '').trim() },
+      { label: 'პერსონალური ლინკი', done: !!(rep.slug || '').trim() },
       { label: 'რეფერალური ლინკი', done: !!(rep.referralLink || '').trim() },
+      { label: 'საბანკო რეკვიზიტები', done: completeBankAccount },
       { label: 'პირადი ნომერი', done: String(rep.personalId || '').trim().length === 11 },
+      { label: 'ვიდეო მიმართვა', done: !!(rep.videoUrl || '').trim() },
+      { label: 'მომხმარებლის ვიდეო-რეცენზია', done: (rep.customerVideos || []).length > 0 },
     ];
     const doneCount = fields.filter(f => f.done).length;
     return {
