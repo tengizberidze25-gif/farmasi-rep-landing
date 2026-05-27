@@ -1062,6 +1062,16 @@ function apiUpload(params) {
   });
 }
 
+async function waitForUploadResult(pid, uploadId, attempts = 12) {
+  for (let i = 0; i < attempts; i++) {
+    await new Promise(resolve => setTimeout(resolve, 900));
+    const result = await api({ action: 'get_upload_result', pid, upload_id: uploadId, _ts: Date.now() });
+    if (result && result.video_url) return result.video_url;
+    if (result && result.ok === false) throw new Error(result.error || 'Upload result error');
+  }
+  throw new Error('ვიდეო აიტვირთა, მაგრამ URL ჯერ ვერ მივიღე. სცადე გვერდის გადატვირთვა.');
+}
+
 // Extract URL identifiers:
 //   /?pid=153205         → pid lookup
 //   /?pid=153205&edit=1  → pid + edit mode
@@ -1566,16 +1576,9 @@ function App() {
       })
       .catch(() => {/* silent — non-hair-loss problems will just not show product showcase */});
 
-    // Dual-load for UI labels — Sheet-driven text overrides (empty = use hardcoded defaults)
-    try {
-      const cached = localStorage.getItem('farmasi_labels_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === 'object') setLabels(parsed);
-      }
-    } catch {}
-
-    api({ action: 'get_labels' })
+    // Load UI labels fresh from Sheet. Do not hydrate from old localStorage cache,
+    // because copy edits should appear immediately after the Labels sheet changes.
+    api({ action: 'get_labels', _ts: Date.now() })
       .then(data => {
         if (data.ok && data.labels && typeof data.labels === 'object') {
           setLabels(data.labels);
@@ -3350,10 +3353,12 @@ const copyPublicUrl = () => {
 
       setCustomerUploadProgress(70);
 
+      const uploadId = 'customer_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       const result = await editApiUpload({
         action: 'upload_video',
         pid: repCode,
         slot: 'customer',  // tells Apps Script to NOT update video_url field
+        upload_id: uploadId,
         video_data: base64Data,
         video_filename: f.name,
       });
@@ -3364,11 +3369,7 @@ const copyPublicUrl = () => {
       if (result.ok && result.video_url) {
         returnedUrl = result.video_url;
       } else if (result._silent) {
-        // Fallback: re-fetch isn't useful here since slot='customer' doesn't update Sheet
-        // The URL is in result, but if we can't read it, ask user to retry
-        setSaveError('ვიდეო ატვირთულია, მაგრამ პასუხი ვერ წავიკითხე. გადატვირთე გვერდი და ცადე ხელახლა.');
-        setTimeout(() => setSaveError(''), 6000);
-        return;
+        returnedUrl = await waitForUploadResult(repCode, uploadId);
       } else {
         setSaveError(result.error || 'ატვირთვა ვერ მოხერხდა');
         return;
@@ -4502,7 +4503,7 @@ const copyPublicUrl = () => {
           </div>
 
           {/* SECONDARY: URL paste */}
-          <Input icon="link" label={L('profile_paste_link', 'ჩასვი ლინკი (გამოჩნდება მეტადატით)')} value={rep.videoUrl}
+          <Input icon="link" label={L('profile_paste_link', 'ჩასვი ვიდეოს ლინკი')} value={rep.videoUrl}
             onChange={upd('videoUrl')}
             placeholder="https://instagram.com/reel/... ან https://youtu.be/..." />
           {rep.videoUrl && (
@@ -4527,7 +4528,7 @@ const copyPublicUrl = () => {
             </div>
           )}
           <p className="text-[10px] mt-3 leading-relaxed" style={{ color: theme.ink + '77' }}>
-            {L('profile_supported_platforms', 'მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Facebook (Watch/Reels) · Vimeo · MP4 პირდაპირი ლინკი')}
+            {L('profile_supported_platforms', 'მხარდაჭერილია: YouTube, Instagram, TikTok, Facebook, Vimeo და MP4 ლინკი')}
           </p>
         </Card>
 
