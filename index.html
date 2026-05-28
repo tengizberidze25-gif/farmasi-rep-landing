@@ -25,7 +25,7 @@
 <!-- Favicon — FARMASI brand icon -->
 <link rel="icon" type="image/png" href="/farmasi-icon.png" />
 <link rel="shortcut icon" type="image/png" href="/farmasi-icon.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="/farmasi-icon.png" />
+<link rel="apple-touch-icon" href="/farmasi-icon.png" />
 
 <!-- PWA — installable web app -->
 <link rel="manifest" href="/manifest.json" />
@@ -38,7 +38,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;500;600;700;800;900&family=FiraGO:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -226,43 +226,6 @@ const theme = {
   ink:   '#0F0F0F',     // near-black text
   mist:  '#F4F4F5',     // very light gray
 };
-
-function normalizeSearchValue(value) {
-  return String(value || '')
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()"'’“”[\]\\|<>?]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function productMatchesSearch(product, rawQuery) {
-  const q = normalizeSearchValue(rawQuery);
-  if (!q) return true;
-
-  const codeQuery = q.replace(/\D/g, '');
-  const searchableCodes = [
-    product.id, product.sku, product.code, product.product_id, product.productId
-  ].map(v => String(v || '').replace(/\D/g, '')).filter(Boolean);
-
-  if (codeQuery && searchableCodes.some(code => code.includes(codeQuery))) return true;
-
-  const text = normalizeSearchValue([
-    product.name,
-    product.fullName,
-    product.cat,
-    product.category,
-    product.id,
-    product.sku,
-    product.code,
-    product.product_id,
-    product.productId,
-    product.tag,
-    product.description
-  ].join(' '));
-
-  return text.includes(q);
-}
 
 const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
 const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
@@ -1062,16 +1025,6 @@ function apiUpload(params) {
   });
 }
 
-async function waitForUploadResult(pid, uploadId, attempts = 12) {
-  for (let i = 0; i < attempts; i++) {
-    await new Promise(resolve => setTimeout(resolve, 900));
-    const result = await api({ action: 'get_upload_result', pid, upload_id: uploadId, _ts: Date.now() });
-    if (result && result.video_url) return result.video_url;
-    if (result && result.ok === false) throw new Error(result.error || 'Upload result error');
-  }
-  throw new Error('ვიდეო აიტვირთა, მაგრამ URL ჯერ ვერ მივიღე. სცადე გვერდის გადატვირთვა.');
-}
-
 // Extract URL identifiers:
 //   /?pid=153205         → pid lookup
 //   /?pid=153205&edit=1  → pid + edit mode
@@ -1304,9 +1257,8 @@ function App() {
 
   // ════════════════════════════════════════════════════════════════════════
   // ─── Profile-saved snapshot (lifted to App level) ───
-  // Tracks last successfully-saved required fields from the backend.
-  // If a returning rep already has all required fields saved, public-page UI
-  // unlocks immediately; incomplete profiles remain locked until Save succeeds.
+  // Tracks last successfully-saved required fields. Stays empty until backend
+  // confirms a save, then updates via setSavedSnapshot (passed to Dashboard).
   // Used to:
   //   1) Hide "საჯარო ფეიჯი" tab in ViewSwitcher until profile is saved
   //   2) Show locked/unlocked share-block in Dashboard
@@ -1316,7 +1268,7 @@ function App() {
     name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
   });
 
-  // TRUE when the representative has all required profile data saved.
+  // TRUE only after the representative has saved the required profile data.
   // Used to show/hide both:
   //   1) the top "საჯარო ფეიჯი" tab
   //   2) the Dashboard "შენი ლენდინგ ფეიჯი" card
@@ -1492,16 +1444,11 @@ function App() {
       personalId: rep?.personal_id || '',
       title: rep?.title || '',
     });
-    // Initialize saved-snapshot from login response (last-saved values from backend).
-    // Complete existing profiles unlock public-page UI immediately; incomplete
-    // profiles stay locked until the rep fills required fields and saves.
+    // Keep share/public UI locked until the rep clicks Save in this dashboard session.
+    // Do NOT unlock from backend-loaded values, because the user asked to show
+    // "საჯარო ფეიჯი" and "შენი ლენდინგ ფეიჯი" only after Save.
     setSavedSnapshot({
-      name: rep?.name || '',
-      city: rep?.city || '',
-      phone: rep?.phone || '',
-      facebook: rep?.facebook || '',
-      referralLink: rep?.referral_link || '',
-      personalId: rep?.personal_id || '',
+      name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
     });
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
@@ -1576,9 +1523,16 @@ function App() {
       })
       .catch(() => {/* silent — non-hair-loss problems will just not show product showcase */});
 
-    // Load UI labels fresh from Sheet. Do not hydrate from old localStorage cache,
-    // because copy edits should appear immediately after the Labels sheet changes.
-    api({ action: 'get_labels', _ts: Date.now() })
+    // Dual-load for UI labels — Sheet-driven text overrides (empty = use hardcoded defaults)
+    try {
+      const cached = localStorage.getItem('farmasi_labels_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') setLabels(parsed);
+      }
+    } catch {}
+
+    api({ action: 'get_labels' })
       .then(data => {
         if (data.ok && data.labels && typeof data.labels === 'object') {
           setLabels(data.labels);
@@ -1644,15 +1598,10 @@ function App() {
             personalId: data.rep.personal_id || '',
             title: data.rep.title || '',
           });
-          // Initialize saved-snapshot from server (these are the last-saved values).
-          // Used to drive the "საჯარო ფეიჯი" tab visibility and Dashboard share block.
+          // Keep share/public UI locked until the rep clicks Save in this dashboard session.
+          // Do NOT unlock from server-loaded values.
           setSavedSnapshot({
-            name: data.rep.name || '',
-            city: data.rep.city || '',
-            phone: data.rep.phone || '',
-            facebook: data.rep.facebook || '',
-            referralLink: data.rep.referral_link || '',
-            personalId: data.rep.personal_id || '',
+            name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
           });
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
@@ -2781,34 +2730,69 @@ function MyOrdersSection({ repCode, labels = {} }) {
 }
 
 function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {}, savedSnapshot, setSavedSnapshot, isProfileSaved }) {
+
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
+
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
-  const PUBLIC_URL = `${window.location.origin}/${rep?.slug || ''}`;
+
+  // Fallback slug logic
+  const pathSlug = window.location.pathname
+    .replace(/^\/+|\/+$/g, '')
+    .trim();
+
+  const safeSlug = String(
+    rep?.slug ||
+    pathSlug ||
+    ''
+  ).trim();
+
+  // Final public URL
+  const PUBLIC_URL = safeSlug
+    ? `${window.location.origin}/${safeSlug}`
+    : window.location.origin;
+
+  // Guide URL
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
+
+  // Validation
   const hasSavedData = Boolean(
-  rep &&
-  rep.name?.trim() &&
-  rep.phone?.trim() &&
-  rep.slug?.trim()
-);
+    rep &&
+    rep.name?.trim() &&
+    rep.phone?.trim()
+  );
 
-const copyGuideUrl = () => {
-  try {
-    navigator.clipboard?.writeText(GUIDE_URL);
-    setGuideCopied(true);
-    setTimeout(() => setGuideCopied(false), 2000);
-  } catch {}
-};
+  // Copy public URL
+  const copyPublicUrl = () => {
+    try {
+      navigator.clipboard?.writeText(PUBLIC_URL);
+      setCopied(true);
 
-const copyPublicUrl = () => {
-  try {
-    navigator.clipboard?.writeText(PUBLIC_URL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {}
-};
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Copy guide URL
+  const copyGuideUrl = () => {
+    try {
+      navigator.clipboard?.writeText(GUIDE_URL);
+      setGuideCopied(true);
+
+      setTimeout(() => {
+        setGuideCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -2834,40 +2818,6 @@ const copyPublicUrl = () => {
     if (!savedSnapshot.referralLink || !savedSnapshot.referralLink.trim()) missing.push('რეფერალური ლინკი');
     if (!savedSnapshot.personalId || String(savedSnapshot.personalId).trim().length !== 11) missing.push('პირადი ნომერი');
     return missing;
-  })();
-
-  const profileCompletion = (() => {
-    const nameParts = (rep.name || '').trim().split(/\s+/).filter(Boolean);
-    const completeBankAccount = (rep.bankAccounts || []).some(acc =>
-      (acc.bank || '').trim() && (acc.recipient || '').trim() && (acc.account || '').trim()
-    );
-    const fields = [
-      { label: 'პროფილის ფოტო', done: !!rep.photo },
-      { label: 'სახელი', done: !!nameParts[0] },
-      { label: 'გვარი', done: nameParts.length >= 2 },
-      { label: 'ქალაქი', done: !!(rep.city || '').trim() },
-      { label: 'მოკლე ბიო', done: !!(rep.bio || '').trim() },
-      { label: 'ტელეფონის ნომერი', done: !!(rep.phone || '').trim() },
-      { label: 'WhatsApp', done: !!(rep.whatsapp || '').trim() },
-      { label: 'Facebook ლინკი', done: !!(rep.facebook || '').trim() },
-      { label: 'Instagram ლინკი', done: !!(rep.instagram || '').trim() },
-      { label: 'TikTok ლინკი', done: !!(rep.tiktok || '').trim() },
-      { label: 'YouTube ლინკი', done: !!(rep.youtube || '').trim() },
-      { label: 'Telegram ლინკი', done: !!(rep.telegram || '').trim() },
-      { label: 'პერსონალური ლინკი', done: !!(rep.slug || '').trim() },
-      { label: 'რეფერალური ლინკი', done: !!(rep.referralLink || '').trim() },
-      { label: 'საბანკო რეკვიზიტები', done: completeBankAccount },
-      { label: 'პირადი ნომერი', done: String(rep.personalId || '').trim().length === 11 },
-      { label: 'ვიდეო მიმართვა', done: !!(rep.videoUrl || '').trim() },
-      { label: 'მომხმარებლის ვიდეო-რეცენზია', done: (rep.customerVideos || []).length > 0 },
-    ];
-    const doneCount = fields.filter(f => f.done).length;
-    return {
-      total: fields.length,
-      done: doneCount,
-      percent: Math.round((doneCount / fields.length) * 100),
-      missing: fields.filter(f => !f.done).map(f => f.label),
-    };
   })();
 
   // ─── Authenticated API wrappers ───
@@ -3353,12 +3303,10 @@ const copyPublicUrl = () => {
 
       setCustomerUploadProgress(70);
 
-      const uploadId = 'customer_' + Date.now() + '_' + Math.random().toString(36).slice(2);
       const result = await editApiUpload({
         action: 'upload_video',
         pid: repCode,
         slot: 'customer',  // tells Apps Script to NOT update video_url field
-        upload_id: uploadId,
         video_data: base64Data,
         video_filename: f.name,
       });
@@ -3369,7 +3317,11 @@ const copyPublicUrl = () => {
       if (result.ok && result.video_url) {
         returnedUrl = result.video_url;
       } else if (result._silent) {
-        returnedUrl = await waitForUploadResult(repCode, uploadId);
+        // Fallback: re-fetch isn't useful here since slot='customer' doesn't update Sheet
+        // The URL is in result, but if we can't read it, ask user to retry
+        setSaveError('ვიდეო ატვირთულია, მაგრამ პასუხი ვერ წავიკითხე. გადატვირთე გვერდი და ცადე ხელახლა.');
+        setTimeout(() => setSaveError(''), 6000);
+        return;
       } else {
         setSaveError(result.error || 'ატვირთვა ვერ მოხერხდა');
         return;
@@ -3565,45 +3517,6 @@ const copyPublicUrl = () => {
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
-        <Card>
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
-                {L('profile_completion_eyebrow', 'პროფილის შევსება')}
-              </p>
-              <p className="font-display text-lg" style={{ color: theme.ink }}>
-                {profileCompletion.percent}% {L('profile_completion_title', 'მზადაა')}
-              </p>
-            </div>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: `conic-gradient(${theme.wine} ${profileCompletion.percent * 3.6}deg, ${theme.blush} 0deg)`, color: theme.ink }}>
-              <div className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-semibold"
-                style={{ background: theme.cream }}>
-                {profileCompletion.percent}%
-              </div>
-            </div>
-          </div>
-          <div className="h-2 rounded-full overflow-hidden mb-3" style={{ background: theme.blush }}>
-            <div className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${profileCompletion.percent}%`, background: theme.wine }} />
-          </div>
-          <p className="text-sm leading-relaxed" style={{ color: theme.ink + '99' }}>
-            {profileCompletion.percent === 100
-              ? L('profile_completion_done', 'ყველა სავალდებულო ველი შევსებულია. შენი საჯარო ფეიჯი უფრო სანდო და მიმზიდველია მომხმარებლისთვის.')
-              : L('profile_completion_hint', 'შეავსე დარჩენილი ველები, რომ შენი საჯარო ფეიჯი მომხმარებლისთვის უფრო სანდო და მიმზიდველი გახდეს.')}
-          </p>
-          {profileCompletion.missing.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {profileCompletion.missing.map(field => (
-                <span key={field} className="text-xs px-3 py-1 rounded-full"
-                  style={{ background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
-                  {field}
-                </span>
-              ))}
-            </div>
-          )}
-        </Card>
-
         {hasSavedData && (
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -4181,7 +4094,13 @@ const copyPublicUrl = () => {
                 const q = (pickerSearchQuery || '').trim().toLowerCase();
                 const filtered = availableProducts.filter(p => {
                   if (pickerCategoryFilter !== 'all' && String(p.cat || '').trim() !== pickerCategoryFilter) return false;
-                  if (!productMatchesSearch(p, pickerSearchQuery)) return false;
+                  if (q) {
+                    const matches = String(p.name || '').toLowerCase().includes(q)
+                                 || String(p.cat || '').toLowerCase().includes(q)
+                                 || String(p.id || '').toLowerCase().includes(q)
+                                 || String(p.tag || '').toLowerCase().includes(q);
+                    if (!matches) return false;
+                  }
                   return true;
                 });
                 // Apply sort
@@ -4258,7 +4177,10 @@ const copyPublicUrl = () => {
                         // Smart empty state: check if search matches already-selected product
                         let alreadySelectedMatch = null;
                         if (q && Array.isArray(myProducts)) {
-                          alreadySelectedMatch = myProducts.find(mp => productMatchesSearch(mp, pickerSearchQuery));
+                          alreadySelectedMatch = myProducts.find(mp =>
+                            String(mp.id || '').toLowerCase().includes(q) ||
+                            String(mp.name || '').toLowerCase().includes(q)
+                          );
                         }
                         let message;
                         if (alreadySelectedMatch) {
@@ -4478,7 +4400,7 @@ const copyPublicUrl = () => {
               ) : (
                 <>
                   <Ic name="upload" className="w-4 h-4" />
-                  {L('profile_video_upload_button', 'ატვირთე ვიდეო ფაილი (MP4, max 5 MB)')}
+                  ატვირთე ვიდეო ფაილი (MP4, max 5 MB)
                 </>
               )}
             </button>
@@ -4491,7 +4413,7 @@ const copyPublicUrl = () => {
             <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*"
               onChange={onVideoFile} className="hidden" />
             <p className="text-[10px] mt-2 leading-relaxed text-center" style={{ color: theme.ink + '77' }}>
-              💡 {L('profile_video_save_hint', 'TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე')}
+              💡 TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე
             </p>
           </div>
 
@@ -4503,7 +4425,7 @@ const copyPublicUrl = () => {
           </div>
 
           {/* SECONDARY: URL paste */}
-          <Input icon="link" label={L('profile_paste_link', 'ჩასვი ვიდეოს ლინკი')} value={rep.videoUrl}
+          <Input icon="link" label={L('profile_paste_link', 'ჩასვი ლინკი (გამოჩნდება მეტადატით)')} value={rep.videoUrl}
             onChange={upd('videoUrl')}
             placeholder="https://instagram.com/reel/... ან https://youtu.be/..." />
           {rep.videoUrl && (
@@ -4528,7 +4450,7 @@ const copyPublicUrl = () => {
             </div>
           )}
           <p className="text-[10px] mt-3 leading-relaxed" style={{ color: theme.ink + '77' }}>
-            {L('profile_supported_platforms', 'მხარდაჭერილია: YouTube, Instagram, TikTok, Facebook, Vimeo და MP4 ლინკი')}
+            {L('profile_supported_platforms', 'მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Facebook (Watch/Reels) · Vimeo · MP4 პირდაპირი ლინკი')}
           </p>
         </Card>
 
@@ -4935,7 +4857,7 @@ function parseVideoUrl(url) {
     const tMatch = u.match(/[?&]t=(\d+)/);
     const startParam = tMatch ? `&start=${tMatch[1]}` : '';
     return { type: 'youtube', orientation: isShort ? 'vertical' : 'horizontal',
-      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1${startParam}` };
+      embedUrl: `https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1${startParam}` };
   }
 
   // Vimeo: vimeo.com/{id}
@@ -4995,7 +4917,7 @@ function VideoIntro({ url }) {
     instagram: { top: '-12%', height: '155%' },  // hide top username bar + bottom caption/likes
     tiktok:    { top: '-6%',  height: '125%' },  // hide bottom info strip + watermark
     facebook:  { top: '-4%',  height: '115%' },  // minor trim
-    drive:     { top: '0',    height: '100%' },
+    drive:     { top: '-7%',  height: '116%' },  // hide Drive file title bar
     youtube:   { top: '0',    height: '100%' },  // already minimal with rel=0
     vimeo:     { top: '0',    height: '100%' },
   };
@@ -5760,33 +5682,26 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
     }
   }, [open]);
 
-  const uniqueProducts = useMemo(() => {
-    const seen = new Set();
-    return (products || []).filter(p => {
-      const key = String(p.id || p.code || p.sku || p.product_id || p.productId || '').trim();
-      if (!key) return true;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [products]);
-
   // Build category list with counts
   const categories = useMemo(() => {
     const counts = new Map();
-    uniqueProducts.forEach(p => {
+    (products || []).forEach(p => {
       const c = String(p.cat || '').trim();
       if (!c) return;
       counts.set(c, (counts.get(c) || 0) + 1);
     });
     return Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0], 'ka'));
-  }, [uniqueProducts]);
+  }, [products]);
 
   // Filtered + sorted list
   const filtered = useMemo(() => {
-    let list = uniqueProducts.filter(p => {
+    const q = (searchQuery || '').trim().toLowerCase();
+    let list = (products || []).filter(p => {
       if (categoryFilter !== 'all' && String(p.cat || '').trim() !== categoryFilter) return false;
-      if (!productMatchesSearch(p, searchQuery)) return false;
+      if (q) {
+        const txt = (String(p.name || '') + ' ' + String(p.cat || '') + ' ' + String(p.id || '') + ' ' + String(p.tag || '')).toLowerCase();
+        if (!txt.includes(q)) return false;
+      }
       return true;
     });
     if (sortBy === 'name') {
@@ -5797,12 +5712,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
       list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
     }
     return list;
-  }, [uniqueProducts, searchQuery, categoryFilter, sortBy]);
-
-  const filteredKey = useMemo(() => {
-    const ids = filtered.slice(0, 24).map(p => String(p.id || p.code || p.sku || p.product_id || p.name || '')).join('|');
-    return `${normalizeSearchValue(searchQuery)}|${categoryFilter}|${sortBy}|${filtered.length}|${ids}`;
-  }, [filtered, searchQuery, categoryFilter, sortBy]);
+  }, [products, searchQuery, categoryFilter, sortBy]);
 
   const handleQuickAdd = (product, e) => {
     if (e) e.stopPropagation();
@@ -5915,7 +5825,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
                 style={categoryFilter === 'all'
                   ? { background: theme.wine, color: theme.cream }
                   : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
-                {L('catalog_modal_cat_all', 'ყველა')} ({uniqueProducts.length})
+                {L('catalog_modal_cat_all', 'ყველა')} ({(products || []).length})
               </button>
               {categories.map(([cat, count]) => (
                 <button key={cat} onClick={() => setCategoryFilter(cat)}
@@ -5951,7 +5861,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
         </div>
 
         {/* Scrollable grid */}
-        <div key={filteredKey} className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
           {filtered.length === 0 ? (
             <div className="text-center py-20">
               <div className="text-5xl mb-4 opacity-30">🌸</div>
@@ -6153,7 +6063,6 @@ function TestProductsGallery({ labels = {} }) {
 function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const hasImage = !!product.image;
-  const productCode = String(product.sku || product.code || product.product_id || product.productId || product.id || '').trim();
   return (
     <div onClick={onCardClick}
       className="relative rounded-2xl overflow-hidden cursor-pointer transition hover:shadow-xl group flex flex-col"
@@ -6190,11 +6099,6 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
         <p className="text-xs sm:text-sm font-medium leading-snug mb-2 clamp-2 flex-1" style={{ color: theme.ink, minHeight: '2.5em' }}>
           {product.name}
         </p>
-        {productCode && (
-          <p className="text-[10px] font-mono mb-2 truncate" style={{ color: theme.ink + '77' }}>
-            კოდი: {productCode}
-          </p>
-        )}
         <div className="flex items-center justify-between gap-2 mt-auto">
           <p className="font-display text-base sm:text-lg" style={{ color: theme.wine }}>
             {product.price} ₾
@@ -6216,7 +6120,6 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
 function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const subtotal = Math.round((Number(product.price) || 0) * qty * 100) / 100;
-  const productCode = String(product.sku || product.code || product.product_id || product.productId || product.id || '').trim();
   return (
     <>
       {/* Modal backdrop */}
@@ -6264,11 +6167,6 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} })
             <h3 className="font-display text-2xl leading-tight mb-2" style={{ color: theme.ink }}>
               {product.name}
             </h3>
-            {productCode && (
-              <p className="text-xs font-mono mb-3" style={{ color: theme.ink + '77' }}>
-                კოდი: {productCode}
-              </p>
-            )}
             {product.description && (
               <p className="text-sm leading-relaxed mb-4" style={{ color: theme.ink + '99' }}>
                 {product.description}
@@ -7267,61 +7165,6 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </section>
       )}
 
-      {!selectedProblem && (rep.customerVideos || []).filter(v => parseVideoUrl(v.url)).length > 0 && (
-        <section className="relative overflow-hidden px-5 sm:px-12 py-16 sm:py-20"
-          style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-10">
-              <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
-                {t('act7_eyebrow', '✦ მათ გაიარეს იგივე')}
-              </p>
-              <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
-                {t('act7_headline_left', 'ნამდვილი')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act7_headline_right', 'ისტორიები')}</span>
-              </h2>
-              <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
-                {t('customer_stories_public_subtitle', 'კმაყოფილი მომხმარებლების ვიდეო-რეცენზიები')}
-              </p>
-            </div>
-            <div className={`grid gap-5 sm:gap-6 ${
-              (rep.customerVideos || []).length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-              (rep.customerVideos || []).length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
-              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-            }`}>
-              {(rep.customerVideos || []).filter(v => parseVideoUrl(v.url)).map((v, idx) => {
-                const parsed = parseVideoUrl(v.url);
-                const isVertical = parsed.orientation === 'vertical';
-                return (
-                  <div key={idx} className="group">
-                    <button onClick={() => setVideoToPlay(v.url)}
-                      className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
-                      style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`, boxShadow: `0 20px 50px -10px ${theme.wine}44`, border: `2px solid ${theme.cream}` }}>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
-                          style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
-                          <Ic name="play" className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.wine, marginLeft: '4px' }} />
-                        </div>
-                      </div>
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium"
-                        style={{ background: 'rgba(255,255,255,0.18)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
-                        {parsed.type}
-                      </div>
-                      {v.caption && (
-                        <div className="absolute bottom-0 left-0 right-0 p-4"
-                          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
-                          <p className="text-sm italic text-center font-display-lat" style={{ color: theme.cream }}>
-                            "{v.caption}"
-                          </p>
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ═══ REP'S CURATED PICKS — Personal favorite products ═══ */}
       {repPicks.length > 0 && (
         <section className="px-5 py-16 sm:py-20" style={{ background: theme.cream }}>
@@ -7726,7 +7569,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               <Ic name="x" className="w-5 h-5" />
             </button>
             <div onClick={(e) => e.stopPropagation()}
-              className={`relative ${isVertical ? 'h-[70vh] max-h-[620px] sm:h-[58vh] sm:max-h-[560px] aspect-[9/16]' : 'w-[92vw] max-w-4xl aspect-video'} rounded-2xl overflow-hidden`}
+              className={`relative ${isVertical ? 'h-[85vh] aspect-[9/16]' : 'w-[92vw] max-w-5xl aspect-video'} rounded-3xl overflow-hidden`}
               style={{ background: theme.ink, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
               <VideoIntro url={videoToPlay} />
             </div>
@@ -9541,7 +9384,7 @@ function BrandVideo({ videoId, thumbnail }) {
       onClick={() => setPlaying(true)}>
       {playing ? (
         <iframe
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
           title="FARMASI"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
