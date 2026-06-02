@@ -3280,13 +3280,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     const f = e.target.files?.[0];
     if (!f) return;
     if (!f.type.startsWith('video/')) {
-      setSaveError('ფაილი უნდა იყოს ვიდეო');
+      setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
       setTimeout(() => setSaveError(''), 4000);
-      return;
-    }
-    if (f.size > 5 * 1024 * 1024) {
-      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB.`);
-      setTimeout(() => setSaveError(''), 5000);
       return;
     }
     if ((rep.customerVideos || []).length >= 6) {
@@ -3296,54 +3291,68 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
 
     setUploadingCustomerVideo(true);
-    setCustomerUploadProgress(0);
+    setCustomerUploadProgress(1);
     setSaveError('');
 
     try {
-      const reader = new FileReader();
-      reader.onprogress = (ev) => {
-        if (ev.lengthComputable) setCustomerUploadProgress(Math.round((ev.loaded / ev.total) * 50));
-      };
-      const base64Data = await new Promise((resolve, reject) => {
-        reader.onload = () => { setCustomerUploadProgress(50); resolve(reader.result); };
-        reader.onerror = reject;
-        reader.readAsDataURL(f);
-      });
-
-      setCustomerUploadProgress(70);
-
-      const result = await editApiUpload({
-        action: 'upload_video',
+      // 1. Bunny-ზე ვიდეოს შექმნა + TUS credentials
+      const init = await editApi({
+        action: 'bunny_create_customer_video',
         pid: repCode,
-        slot: 'customer',  // tells Apps Script to NOT update video_url field
-        video_data: base64Data,
-        video_filename: f.name,
+        filename: f.name,
+        filesize: f.size,
       });
 
-      setCustomerUploadProgress(90);
-
-      let returnedUrl = '';
-      if (result.ok && result.video_url) {
-        returnedUrl = result.video_url;
-      } else if (result._silent) {
-        // Fallback: re-fetch isn't useful here since slot='customer' doesn't update Sheet
-        // The URL is in result, but if we can't read it, ask user to retry
-        setSaveError('ვიდეო ატვირთულია, მაგრამ პასუხი ვერ წავიკითხე. გადატვირთე გვერდი და ცადე ხელახლა.');
-        setTimeout(() => setSaveError(''), 6000);
-        return;
-      } else {
-        setSaveError(result.error || 'ატვირთვა ვერ მოხერხდა');
+      if (!init.ok || !init.videoId) {
+        setSaveError(init.error || 'Bunny-ზე ვიდეოს შექმნა ვერ მოხერხდა');
         return;
       }
 
-      const newItem = { url: returnedUrl, caption: newCustomerCaption.trim(), problem: newCustomerProblem || '' };
+      setCustomerUploadProgress(5);
+
+      // 2. TUS ატვირთვა პირდაპირ Bunny-ზე
+      await new Promise((resolve, reject) => {
+        const upload = new tus.Upload(f, {
+          endpoint: 'https://video.bunnycdn.com/tusupload',
+          retryDelays: [0, 3000, 6000],
+          headers: {
+            'AuthorizationSignature': init.tusHeaders.AuthorizationSignature,
+            'AuthorizationExpire': init.tusHeaders.AuthorizationExpire,
+            'VideoId': init.videoId,
+            'LibraryId': String(init.libraryId),
+          },
+          metadata: {
+            filetype: f.type,
+            title: f.name,
+          },
+          onProgress(bytesUploaded, bytesTotal) {
+            const pct = Math.round((bytesUploaded / bytesTotal) * 85) + 10;
+            setCustomerUploadProgress(pct);
+          },
+          onSuccess() { resolve(); },
+          onError(err) { reject(err); },
+        });
+        upload.start();
+      });
+
+      setCustomerUploadProgress(95);
+
+      // 3. Bunny embed URL-ის ჩამატება customer_videos სიაში
+      const embedUrl = `https://iframe.mediadelivery.net/embed/${init.libraryId}/${init.videoId}`;
+      const newItem = {
+        url: embedUrl,
+        caption: newCustomerCaption.trim(),
+        problem: newCustomerProblem || '',
+        videoId: init.videoId,  // შენახვა წაშლის დროს
+      };
       const updated = [...(rep.customerVideos || []), newItem];
       setNewCustomerCaption('');
       setNewCustomerProblem('');
       setCustomerUploadProgress(100);
       await persistCustomerVideos(updated);
+
     } catch (err) {
-      setSaveError('ატვირთვის შეცდომა: ' + err.message);
+      setSaveError('ატვირთვის შეცდომა: ' + (err.message || err));
     } finally {
       setUploadingCustomerVideo(false);
       setTimeout(() => setCustomerUploadProgress(0), 1500);
@@ -3352,6 +3361,19 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   };
 
   const removeCustomerVideo = async (index) => {
+    const video = (rep.customerVideos || [])[index];
+    // Bunny-ზე ატვირთული ვიდეოა — წავშალოთ
+    if (video?.videoId) {
+      try {
+        await editApi({
+          action: 'bunny_delete_customer_video',
+          pid: repCode,
+          video_id: video.videoId,
+        });
+      } catch (_) {
+        // წაშლა Bunny-ზე ვერ მოხდა, მაგრამ სიაში მაინც ამოვიღებთ
+      }
+    }
     const updated = (rep.customerVideos || []).filter((_, i) => i !== index);
     await persistCustomerVideos(updated);
   };
@@ -4595,7 +4617,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         <Card>
           <SectionLabel n="05" t={L('profile_section_5', 'კმაყოფილი მომხმარებლები')} />
           <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
-            დაამატე მომხმარებლების ვიდეო-რეცენზიები (მაქს. 6) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. იგივე წესები: ფაილი 5 MB-მდე, ან ნებისმიერი ვიდეო-პლატფორმის ლინკი.
+            დაამატე მომხმარებლების ვიდეო-რეცენზიები (მაქს. 6) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. ფაილი ნებისმიერი ზომის (Bunny Stream-ით), ან ნებისმიერი ვიდეო-პლატფორმის ლინკი.
           </p>
 
           {/* Existing customer videos list */}
