@@ -3191,7 +3191,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         r.readAsDataURL(blob);
       });
 
-      const chunkResult = await editApi({
+      const chunkResult = await editApiUpload({
         action: 'bunny_upload_chunk',
         pid: repCode,
         video_id: init.videoId,
