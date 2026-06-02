@@ -3153,7 +3153,6 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const onVideoFile = async (e) => {
   const f = e.target.files?.[0];
   if (!f) return;
-
   if (!f.type.startsWith('video/')) {
     setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
     setTimeout(() => setSaveError(''), 4000);
@@ -3165,51 +3164,64 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   setSaveError('');
 
   try {
-    // Step 1: Apps Script ქმნის Bunny-ში ვიდეოს და გვიბრუნებს TUS URL-ს
+    // Step 1: Bunny-ში ვიდეოს შექმნა
     const init = await editApi({
       action: 'bunny_create_video',
       pid: repCode,
       filename: f.name,
       filesize: f.size,
     });
-
-    if (!init.ok || !init.uploadUrl) {
+    if (!init.ok || !init.videoId) {
       setSaveError(init.error || 'Bunny-ზე ვიდეოს შექმნა ვერ მოხერხდა');
       return;
     }
 
-    const { uploadUrl, videoId, libraryId } = init;
     setVideoUploadProgress(5);
 
-    // Step 2: TUS პირდაპირი ატვირთვა Bunny-ზე (browser → Bunny CDN)
-    await new Promise((resolve, reject) => {
-      const upload = new tus.Upload(f, {
-        uploadUrl,
-        headers: init.tusHeaders,
-        retryDelays: [0, 2000, 5000],
-        metadata: { filename: f.name, filetype: f.type },
-        onProgress(bytesUploaded, bytesTotal) {
-          const pct = Math.round((bytesUploaded / bytesTotal) * 90) + 5;
-          setVideoUploadProgress(pct);
-        },
-        onSuccess() { resolve(); },
-        onError(err) { reject(err); },
+    // Step 2: chunk-ებად ატვირთვა Apps Script-ის გავლით
+    const CHUNK = 4 * 1024 * 1024; // 4MB chunks
+    const totalChunks = Math.ceil(f.size / CHUNK);
+
+    for (let i = 0; i < totalChunks; i++) {
+      const blob = f.slice(i * CHUNK, (i + 1) * CHUNK);
+      const base64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = rej;
+        r.readAsDataURL(blob);
       });
-      upload.start();
-    });
+
+      const chunkResult = await editApi({
+        action: 'bunny_upload_chunk',
+        pid: repCode,
+        video_id: init.videoId,
+        chunk_data: base64,
+        chunk_index: i,
+        total_chunks: totalChunks,
+        total_size: f.size,
+      });
+
+      if (!chunkResult.ok) {
+        setSaveError('ატვირთვა ჩაიშალა chunk ' + i + '-ზე');
+        return;
+      }
+
+      const pct = Math.round(((i + 1) / totalChunks) * 85) + 10;
+      setVideoUploadProgress(pct);
+    }
 
     setVideoUploadProgress(95);
 
-    // Step 3: Apps Script ინახავს bunny_video_id-ს Sheets-ში
+    // Step 3: შენახვა Sheets-ში
     const save = await editApi({
       action: 'bunny_save_video',
       pid: repCode,
-      video_id: videoId,
-      library_id: libraryId,
+      video_id: init.videoId,
+      library_id: init.libraryId,
     });
 
     if (save.ok) {
-      const streamUrl = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}`;
+      const streamUrl = `https://iframe.mediadelivery.net/embed/${init.libraryId}/${init.videoId}`;
       setRep(r => ({ ...r, videoUrl: streamUrl }));
       setVideoUploadProgress(100);
       setSavedToast(true);
@@ -3219,7 +3231,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     }
 
   } catch (err) {
-    setSaveError('ატვირთვის შეცდომა: ' + (err.message || err));
+    setSaveError('შეცდომა: ' + (err.message || err));
   } finally {
     setUploadingVideo(false);
     setTimeout(() => setVideoUploadProgress(0), 1500);
