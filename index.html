@@ -43,6 +43,8 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
 <style>
   * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   html { scroll-behavior: smooth; }
@@ -3149,78 +3151,80 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   };
 
   const onVideoFile = async (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const f = e.target.files?.[0];
+  if (!f) return;
 
-    // Type check
-    if (!f.type.startsWith('video/')) {
-      setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
-      setTimeout(() => setSaveError(''), 4000);
+  if (!f.type.startsWith('video/')) {
+    setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
+    setTimeout(() => setSaveError(''), 4000);
+    return;
+  }
+
+  setUploadingVideo(true);
+  setVideoUploadProgress(1);
+  setSaveError('');
+
+  try {
+    // Step 1: Apps Script ქმნის Bunny-ში ვიდეოს და გვიბრუნებს TUS URL-ს
+    const init = await editApi({
+      action: 'bunny_create_video',
+      pid: repCode,
+      filename: f.name,
+      filesize: f.size,
+    });
+
+    if (!init.ok || !init.uploadUrl) {
+      setSaveError(init.error || 'Bunny-ზე ვიდეოს შექმნა ვერ მოხერხდა');
       return;
     }
 
-    // Size limit: 5MB (Apps Script payload limit)
-    if (f.size > 5 * 1024 * 1024) {
-      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB. მოკლედ ჩაჭერი ან ხარისხი დააწიე.`);
-      setTimeout(() => setSaveError(''), 6000);
-      return;
+    const { uploadUrl, videoId, libraryId } = init;
+    setVideoUploadProgress(5);
+
+    // Step 2: TUS პირდაპირი ატვირთვა Bunny-ზე (browser → Bunny CDN)
+    await new Promise((resolve, reject) => {
+      const upload = new tus.Upload(f, {
+        uploadUrl,
+        retryDelays: [0, 2000, 5000],
+        metadata: { filename: f.name, filetype: f.type },
+        onProgress(bytesUploaded, bytesTotal) {
+          const pct = Math.round((bytesUploaded / bytesTotal) * 90) + 5;
+          setVideoUploadProgress(pct);
+        },
+        onSuccess() { resolve(); },
+        onError(err) { reject(err); },
+      });
+      upload.start();
+    });
+
+    setVideoUploadProgress(95);
+
+    // Step 3: Apps Script ინახავს bunny_video_id-ს Sheets-ში
+    const save = await editApi({
+      action: 'bunny_save_video',
+      pid: repCode,
+      video_id: videoId,
+      library_id: libraryId,
+    });
+
+    if (save.ok) {
+      const streamUrl = `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}`;
+      setRep(r => ({ ...r, videoUrl: streamUrl }));
+      setVideoUploadProgress(100);
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 3000);
+    } else {
+      setSaveError(save.error || 'შენახვა ვერ მოხერხდა');
     }
 
-    setUploadingVideo(true);
-    setVideoUploadProgress(0);
-    setSaveError('');
-
-    try {
-      // Read as base64 (with progress simulation since FileReader is sync-ish)
-      const reader = new FileReader();
-      reader.onprogress = (ev) => {
-        if (ev.lengthComputable) {
-          setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 50)); // 0-50% for read
-        }
-      };
-      const base64Data = await new Promise((resolve, reject) => {
-        reader.onload = () => { setVideoUploadProgress(50); resolve(reader.result); };
-        reader.onerror = reject;
-        reader.readAsDataURL(f);
-      });
-
-      setVideoUploadProgress(60); // 60% — uploading to Drive
-
-      const result = await editApiUpload({
-        action: 'upload_video',
-        pid: repCode,
-        video_data: base64Data,
-        video_filename: f.name,
-      });
-
-      setVideoUploadProgress(95);
-
-      if (result.ok && result.video_url) {
-        setRep(r => ({ ...r, videoUrl: result.video_url }));
-        setVideoUploadProgress(100);
-        setSavedToast(true);
-        setTimeout(() => setSavedToast(false), 3000);
-      } else if (result._silent) {
-        // Cross-origin couldn't read response — re-fetch rep data
-        const refresh = await api({ action: 'get_rep', pid: repCode });
-        if (refresh.ok && refresh.rep.video_url) {
-          setRep(r => ({ ...r, videoUrl: refresh.rep.video_url }));
-          setVideoUploadProgress(100);
-          setSavedToast(true);
-          setTimeout(() => setSavedToast(false), 3000);
-        }
-      } else {
-        setSaveError(result.error || 'ვიდეოს ატვირთვა ვერ მოხერხდა');
-      }
-    } catch (err) {
-      setSaveError('ვიდეოს ატვირთვის შეცდომა: ' + err.message);
-    } finally {
-      setUploadingVideo(false);
-      setTimeout(() => setVideoUploadProgress(0), 1500);
-      // Reset file input so same file can be selected again
-      if (videoFileRef.current) videoFileRef.current.value = '';
-    }
-  };
+  } catch (err) {
+    setSaveError('ატვირთვის შეცდომა: ' + (err.message || err));
+  } finally {
+    setUploadingVideo(false);
+    setTimeout(() => setVideoUploadProgress(0), 1500);
+    if (videoFileRef.current) videoFileRef.current.value = '';
+  }
+};
 
   // ─── Customer Videos (testimonial gallery at bottom of public page) ───
   const customerVideoFileRef = useRef(null);
@@ -4400,7 +4404,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
               ) : (
                 <>
                   <Ic name="upload" className="w-4 h-4" />
-                  ატვირთე ვიდეო ფაილი (MP4, max 5 MB)
+                  ატვირთე ვიდეო Bunny-ზე (MP4/WebM, მაქს. 2 GB)
                 </>
               )}
             </button>
@@ -4883,6 +4887,19 @@ function parseVideoUrl(url) {
       embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(u)}&show_text=false&width=560` };
   }
 
+// Bunny Stream (iframe.mediadelivery.net)
+const bunnyMatch = u.match(/iframe\.mediadelivery\.net\/embed\/(\d+)\/([a-f0-9-]+)/i)
+  || u.match(/video\.bunnycdn\.com\/play\/(\d+)\/([a-f0-9-]+)/i);
+if (bunnyMatch) {
+  return {
+    type: 'bunny',
+    orientation: 'vertical',
+    libraryId: bunnyMatch[1],
+    videoId: bunnyMatch[2],
+    embedUrl: `https://iframe.mediadelivery.net/embed/${bunnyMatch[1]}/${bunnyMatch[2]}?autoplay=true&loop=false&muted=false&preload=true`,
+  };
+}
+
   // Direct video file (mp4, webm, mov, m4v)
   if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(u)) return { type: 'direct', orientation: 'vertical', url: u };
 
@@ -4900,6 +4917,31 @@ function parseVideoUrl(url) {
 function VideoIntro({ url }) {
   const parsed = parseVideoUrl(url);
   if (!parsed) return null;
+
+if (parsed.type === 'bunny') {
+  return (
+    <div className="relative w-full h-full" style={{ background: '#000' }}>
+      <iframe
+        src={parsed.embedUrl}
+        title="FARMASI ვიდეო"
+        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+      />
+      <div style={{
+        position: 'absolute', bottom: 16, right: 16,
+        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+        borderRadius: 999, padding: '4px 10px',
+        display: 'flex', alignItems: 'center', gap: 6,
+        pointerEvents: 'none', zIndex: 10,
+      }}>
+        <span style={{ color: '#fff', fontSize: 10, fontFamily: 'sans-serif', letterSpacing: '0.12em', opacity: 0.9 }}>
+          🌸 FARMASI
+        </span>
+      </div>
+    </div>
+  );
+}
 
   if (parsed.type === 'direct') {
     return (
@@ -7549,6 +7591,35 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               style={{ background: theme.cream, color: theme.ink }}>
               <Ic name="x" className="w-5 h-5" />
             </button>
+            <button
+  onClick={async (e) => {
+    e.stopPropagation();
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      await navigator.share({
+        title: rep.name + ' — FARMASI',
+        text: 'გაეცანი ჩემს FARMASI პორტფოლიოს 🌸',
+        url: shareUrl,
+      }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(shareUrl).catch(() => {});
+      const el = document.getElementById('_share_toast');
+      if (el) { el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 2000); }
+    }
+  }}
+  className="absolute top-5 right-16 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 z-10"
+  style={{ background: theme.cream, color: theme.ink }}
+>
+  <Ic name="share-2" className="w-4 h-4" />
+</button>
+<div id="_share_toast" style={{
+  position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+  background: '#1a1a1a', color: '#fff', borderRadius: 999,
+  padding: '8px 18px', fontSize: 12, opacity: 0,
+  transition: 'opacity 0.3s', pointerEvents: 'none', zIndex: 100,
+}}>
+  ✓ ლინკი დაკოპირდა
+</div>
             <div onClick={(e) => e.stopPropagation()}
               className={`relative ${isVertical ? 'h-[85vh] aspect-[9/16]' : 'w-[92vw] max-w-5xl aspect-video'} rounded-3xl overflow-hidden`}
               style={{ background: theme.ink, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
