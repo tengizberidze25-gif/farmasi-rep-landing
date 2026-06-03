@@ -1673,7 +1673,13 @@ function App() {
             {view === 'loading' && <LoadingScreen labels={labels} />}
             {view === 'notfound' && <NotFoundScreen labels={labels} />}
             {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
-            {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
+            {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => {
+              try {
+                const _s = (rep.slug || '').trim();
+                if (_s) window.history.replaceState({}, '', '/' + _s);
+              } catch (_) {}
+              setView('public');
+            }} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
             {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
