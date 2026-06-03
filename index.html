@@ -4701,7 +4701,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                 {uploadingCustomerVideo ? (
                   <><Ic name="loader" className="w-4 h-4 animate-spin" /> ვტვირთავ... {customerUploadProgress}%</>
                 ) : (
-                  <><Ic name="upload" className="w-4 h-4" /> ფაილის ატვირთვა</>
+                  <><Ic name="upload" className="w-4 h-4" /> ფაილის ატვირთვა (MP4/WebM, მაქს. 2 GB)</>
                 )}
               </button>
               {uploadingCustomerVideo && customerUploadProgress > 0 && (
