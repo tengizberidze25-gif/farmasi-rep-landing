@@ -2629,7 +2629,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
           <div className="space-y-3" style={{ maxHeight: 620, overflowY: 'auto', paddingRight: 4 }}>
             {shownOrders.length === 0 ? (
               <div className="text-center py-8 rounded-2xl" style={{ background: theme.cream, border: `1px dashed ${theme.gold}44` }}>
-                <p className="text-sm" style={{ color: theme.ink + '99' }}>ამ ფილტრით შეკვეთა ვერ მოიძებნა</p>
+                <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('orders_no_results', 'ამ ფილტრით შეკვეთა ვერ მოიძებნა')}</p>
               </div>
             ) : shownOrders.map((o, idx) => {
               const originalIndex = orders.indexOf(o);
@@ -2673,13 +2673,13 @@ function MyOrdersSection({ repCode, labels = {} }) {
                     <div className="px-3.5 pb-3.5 border-t" style={{ borderColor: theme.gold + '22' }}>
                       <div className="grid md:grid-cols-2 gap-3 py-3 text-xs" style={{ color: theme.ink + 'AA' }}>
                         <div className="rounded-xl p-3" style={{ background: theme.cream }}>
-                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>კლიენტი</p>
+                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>{L('orders_client', 'კლიენტი')}</p>
                           <p>{getCustomer(o)}</p>
                           <p>{o.customer_phone || o.phone || 'ტელეფონი არ ჩანს'}</p>
                           {(o.customer_city || o.city || o.address) && <p className="mt-1">📍 {[o.customer_city || o.city, o.address].filter(Boolean).join(', ')}</p>}
                         </div>
                         <div className="rounded-xl p-3" style={{ background: theme.cream }}>
-                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>შეკვეთა</p>
+                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>{L('orders_order', 'შეკვეთა')}</p>
                           <p>ID: #{orderId}</p>
                           <p>თანხა: {getTotal(o).toFixed(2)} ₾</p>
                           {o.payment_method && <p>გადახდა: {o.payment_method}</p>}
@@ -2688,7 +2688,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
 
                       {items.length > 0 && (
                         <div className="rounded-xl p-3 mb-3" style={{ background: '#fff', border: `1px solid ${theme.gold}22` }}>
-                          <p className="text-xs font-semibold mb-2" style={{ color: theme.ink }}>პროდუქტები</p>
+                          <p className="text-xs font-semibold mb-2" style={{ color: theme.ink }}>{L('orders_products', 'პროდუქტები')}</p>
                           <div className="space-y-2">
                             {items.map((item, i) => (
                               <div key={i} className="flex items-center justify-between gap-3 text-xs">
@@ -2714,8 +2714,8 @@ function MyOrdersSection({ repCode, labels = {} }) {
 
                       <div className="flex flex-wrap gap-2">
                         {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noopener" className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#DCFCE7', color: '#16A34A' }}>WhatsApp</a>}
-                        {phone && <a href={`tel:${phone}`} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#EFF6FF', color: '#2563EB' }}>დარეკვა</a>}
-                        <button type="button" onClick={() => openInvoice(o, originalIndex)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.wine, color: '#fff' }}>ინვოისი</button>
+                        {phone && <a href={`tel:${phone}`} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#EFF6FF', color: '#2563EB' }}>{L('orders_call', 'დარეკვა')}</a>}
+                        <button type="button" onClick={() => openInvoice(o, originalIndex)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.wine, color: '#fff' }}>{L('orders_invoice', 'ინვოისი')}</button>
                         <button type="button" onClick={() => navigator.clipboard?.writeText(orderId)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>Copy ID</button>
                       </div>
                     </div>
@@ -3585,7 +3585,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                 <button onClick={copyUrl}
                   className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
                   style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
-                  {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_copied', 'დააკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+                  {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_copied', 'დააკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> {L('dash_copy', 'კოპი')}</>}
                 </button>
               </div>
               <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
@@ -3691,7 +3691,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
             <button onClick={copyPublicUrl}
               className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
               style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
-              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_copied_link', 'დაკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_copied_link', 'დაკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> {L('dash_copy', 'კოპი')}</>}
             </button>
           </div>
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
@@ -7881,7 +7881,7 @@ function PainBridge({ rep, problem, onProceed, onBack, t = (k, fb) => fb }) {
         style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
         <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase transition hover:gap-3"
           style={{ color: theme.ink }}>
-          <Ic name="arrow-left" className="w-4 h-4" /> უკან
+          <Ic name="arrow-left" className="w-4 h-4" /> {t('back', 'უკან')}
         </button>
       </div>
 
@@ -8598,7 +8598,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
         <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
           <div className="text-center">
             <p style={{ marginBottom: '20px', color: '#333' }}>{t('prod_load_error', 'პროდუქტი ვერ იტვირთა')}</p>
-            <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+            <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>{t('back', 'უკან')}</button>
           </div>
         </div>
       );
@@ -8634,7 +8634,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
         <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center justify-between"
           style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
           <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: theme.ink }}>
-            <Ic name="arrow-left" className="w-4 h-4" /> უკან
+            <Ic name="arrow-left" className="w-4 h-4" /> {t('back', 'უკან')}
           </button>
           <span className="font-mono text-[10px]" style={{ color: theme.gold }}>#{product.id}</span>
           <button onClick={shareWA} className="flex items-center gap-1 text-xs" style={{ color: theme.wine }}>
@@ -9479,7 +9479,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
         <div className="text-center">
           <p style={{ marginBottom: '20px', color: '#333' }}>{t('prod_something_wrong', 'რაღაც არ ჯდა')}</p>
-          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>{t('back', 'უკან')}</button>
         </div>
       </div>
     );
