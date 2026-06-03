@@ -7621,13 +7621,16 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             <button
   onClick={async (e) => {
     e.stopPropagation();
-    const _u = new URL(window.location.href);
-    _u.searchParams.delete('edit');
-    const shareUrl = _u.toString();
+    // ლამაზი slug-ლინკი (ტელეფონის ნომრის გარეშე); fallback — pid
+    const _origin = window.location.origin;
+    const _slug = (rep.slug || '').trim();
+    const shareUrl = _slug
+      ? `${_origin}/${_slug}`
+      : (() => { const u = new URL(window.location.href); u.searchParams.delete('edit'); return u.toString(); })();
     if (navigator.share) {
       await navigator.share({
         title: rep.name + ' — FARMASI',
-        text: 'გაეცანი ჩემს FARMASI პორტფოლიოს 🌸',
+        text: `${rep.name || ''} — გაეცანი ჩემს FARMASI პორტფოლიოს 🌸`.trim(),
         url: shareUrl,
       }).catch(() => {});
     } else {
