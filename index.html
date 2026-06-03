@@ -6362,7 +6362,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
   const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
-  const goCatalog = () => window.open(CATALOG_URL, '_blank');
+  const goCatalog = () => window.open(t('catalog_url', CATALOG_URL), '_blank');
   const renderCustomerStories = (videos, problem) => {
     const validVideos = (videos || []).filter(v => v && v.url && parseVideoUrl(v.url));
     if (validVideos.length === 0) return null;
