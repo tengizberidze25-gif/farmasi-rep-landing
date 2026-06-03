@@ -4377,7 +4377,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
           <div className="mt-4">
             <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{L('profile_bio_label', 'მოკლე ბიო')}</label>
             <textarea value={rep.bio} onChange={upd('bio')} rows={3} maxLength={200}
-              placeholder={L('profile_bio_placeholder', 'რას გთავაზობ? რატომ შენ?')}
+              placeholder={L('profile_bio_placeholder', 'რას გთავაზობ? რატომ შენ? (ცარიელი თუ დატოვე — გამოჩნდება FARMASI-ს საერთო ტექსტი)')}
               className="w-full px-3 py-2.5 rounded-xl outline-none text-sm resize-none"
               style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
             <p className="text-[10px] mt-1 text-right" style={{ color: theme.ink + '66' }}>{rep.bio.length}/200</p>
@@ -6592,11 +6592,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 </p>
               </div>
 
-              {/* Bio quote */}
-              {rep.bio && (
+              {/* Bio quote — წარმომადგენლის bio, ან საერთო კომპანიის ტექსტი (default) */}
+              {(rep.bio || t('hero_bio', '')) && (
                 <blockquote className="font-display-lat text-base sm:text-lg leading-relaxed italic max-w-xl pt-2"
                   style={{ color: theme.ink + 'BB' }}>
-                  "{rep.bio}"
+                  "{rep.bio || t('hero_bio', '')}"
                 </blockquote>
               )}
 
