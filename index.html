@@ -5452,9 +5452,9 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
 
   return (
     <>
-      {/* Floating cart button — fixed top-right, visible always */}
+      {/* Floating cart button — fixed bottom-right, visible always (TEMU-style) */}
       <button id="cart-icon" onClick={() => setOpen(true)} aria-label={L('cart_button_aria', 'კალათა')}
-        className="fixed top-4 right-4 z-40 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+        className="fixed bottom-5 right-5 z-40 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
         style={{ background: theme.ink, color: theme.cream, width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Ic name="shopping-bag" className="w-6 h-6" />
         {count > 0 && (
@@ -7602,7 +7602,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       {rep.whatsapp && (
         <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`}
           target="_blank" rel="noreferrer"
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
+          className="fixed bottom-24 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
           style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.6)' }}>
           <SocialIcon name="whatsapp" className="w-5 h-5" />
           <span className="text-sm font-medium">{t('floating_whatsapp_label', 'WhatsApp')}</span>
@@ -7611,7 +7611,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {/* Floating scroll-to-top button — appears after scrolling 600px */}
       <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className={`fixed bottom-20 sm:bottom-20 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+        className={`fixed bottom-40 sm:bottom-40 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         style={{
           background: theme.cream,
           color: theme.ink,
