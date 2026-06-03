@@ -7621,9 +7621,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             <button
   onClick={async (e) => {
     e.stopPropagation();
-    const _u = new URL(window.location.href);
-    _u.searchParams.delete('edit');
-    const shareUrl = _u.toString();
+    const shareUrl = window.location.href;
     if (navigator.share) {
       await navigator.share({
         title: rep.name + ' — FARMASI',
