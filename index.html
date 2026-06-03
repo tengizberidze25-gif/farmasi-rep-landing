@@ -3343,6 +3343,22 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
 
       setCustomerUploadProgress(95);
 
+      // ვიდეოს ორიენტაცია — წავიკითხოთ რეალური ზომა ფაილიდან
+      let orientation = 'horizontal';
+      try {
+        orientation = await new Promise((resolve) => {
+          const v = document.createElement('video');
+          v.preload = 'metadata';
+          v.onloadedmetadata = () => {
+            const o = v.videoHeight > v.videoWidth ? 'vertical' : 'horizontal';
+            URL.revokeObjectURL(v.src);
+            resolve(o);
+          };
+          v.onerror = () => resolve('horizontal');
+          v.src = URL.createObjectURL(f);
+        });
+      } catch (_) { orientation = 'horizontal'; }
+
       // 3. Bunny embed URL-ის ჩამატება customer_videos სიაში
       const embedUrl = `https://iframe.mediadelivery.net/embed/${init.libraryId}/${init.videoId}`;
       const newItem = {
@@ -3350,6 +3366,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         caption: newCustomerCaption.trim(),
         problem: newCustomerProblem || '',
         videoId: init.videoId,  // შენახვა წაშლის დროს
+        orientation: orientation,  // vertical / horizontal
       };
       const updated = [...(rep.customerVideos || []), newItem];
       setNewCustomerCaption('');
@@ -4926,7 +4943,7 @@ const bunnyMatch = u.match(/iframe\.mediadelivery\.net\/embed\/(\d+)\/([a-f0-9-]
 if (bunnyMatch) {
   return {
     type: 'bunny',
-    orientation: 'vertical',
+    orientation: 'horizontal',
     libraryId: bunnyMatch[1],
     videoId: bunnyMatch[2],
     embedUrl: `https://iframe.mediadelivery.net/embed/${bunnyMatch[1]}/${bunnyMatch[2]}?autoplay=true&loop=false&muted=false&preload=true`,
@@ -6365,10 +6382,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
           }`}>
             {visibleVideos.map((v, idx) => {
               const parsed = parseVideoUrl(v.url);
-              const isVertical = parsed.orientation === 'vertical';
+              const isVertical = (v.orientation || parsed.orientation) === 'vertical';
               return (
                 <div key={idx} className="group reveal-up" style={{ animationDelay: `${idx * 100}ms` }}>
-                  <button onClick={() => setVideoToPlay(v.url)}
+                  <button onClick={() => setVideoToPlay({ url: v.url, orientation: v.orientation })}
                     className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
                     style={{
                       background: `linear-gradient(135deg, ${accent}, ${theme.ink})`,
@@ -6695,7 +6712,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
                 {/* Floating video play button */}
                 {rep.videoUrl && parseVideoUrl(rep.videoUrl) && (
-                  <button onClick={() => setVideoToPlay(rep.videoUrl)}
+                  <button onClick={() => setVideoToPlay({ url: rep.videoUrl })}
                     className="absolute -bottom-8 -right-4 sm:-right-8 w-28 h-28 rounded-full flex flex-col items-center justify-center gap-1.5 transition hover:scale-110 group"
                     style={{
                       background: theme.cream,
@@ -7632,9 +7649,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {/* Video lightbox modal — opens when ANY video play button is clicked (rep greeting OR customer video) */}
       {videoToPlay && (() => {
-        const parsed = parseVideoUrl(videoToPlay);
+        const _vurl = typeof videoToPlay === 'string' ? videoToPlay : videoToPlay.url;
+        const _vorient = typeof videoToPlay === 'object' ? videoToPlay.orientation : null;
+        const parsed = parseVideoUrl(_vurl);
         if (!parsed) return null;
-        const isVertical = parsed.orientation === 'vertical';
+        const isVertical = (_vorient || parsed.orientation) === 'vertical';
         return (
           <div onClick={() => setVideoToPlay(null)}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fadeup"
@@ -7681,7 +7700,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             <div onClick={(e) => e.stopPropagation()}
               className={`relative ${isVertical ? 'h-[85vh] aspect-[9/16]' : 'w-[92vw] max-w-5xl aspect-video'} rounded-3xl overflow-hidden`}
               style={{ background: theme.ink, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
-              <VideoIntro url={videoToPlay} />
+              <VideoIntro url={_vurl} />
             </div>
           </div>
         );
