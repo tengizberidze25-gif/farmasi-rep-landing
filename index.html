@@ -4672,10 +4672,10 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
           )}
 
           {/* Add new — only show if under limit */}
-          {(rep.customerVideos || []).length < 6 ? (
+          {(rep.customerVideos || []).length < 24 ? (
             <div className="rounded-2xl p-3" style={{ background: theme.cream + '88', border: `1px dashed ${theme.gold}44` }}>
               <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.ink + '99' }}>
-                {L('profile_add_new', 'დაამატე ახალი')} ({(rep.customerVideos || []).length}/6)
+                {L('profile_add_new', 'დაამატე ახალი')} ({(rep.customerVideos || []).length}/24)
               </p>
 
               <input type="text" value={newCustomerCaption}
