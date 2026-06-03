@@ -3269,8 +3269,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
-    if ((rep.customerVideos || []).length >= 6) {
-      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+    if ((rep.customerVideos || []).length >= 24) {
+      setSaveError('მაქსიმუმ 24 ვიდეო — წაშალე ერთი დასამატებლად');
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
@@ -3290,8 +3290,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
-    if ((rep.customerVideos || []).length >= 6) {
-      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+    if ((rep.customerVideos || []).length >= 24) {
+      setSaveError('მაქსიმუმ 24 ვიდეო — წაშალე ერთი დასამატებლად');
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
@@ -4623,7 +4623,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
         <Card>
           <SectionLabel n="05" t={L('profile_section_5', 'კმაყოფილი მომხმარებლები')} />
           <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
-            დაამატე მომხმარებლების ვიდეო-რეცენზიები (მაქს. 6) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. ფაილი ნებისმიერი ზომის (Bunny Stream-ით), ან ნებისმიერი ვიდეო-პლატფორმის ლინკი.
+            დაამატე მომხმარებლების ვიდეო-რეცენზიები ან პროდუქციის ვიდეოები (მაქს. 24) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. ფაილი ნებისმიერი ზომის (Bunny Stream-ით), ან ნებისმიერი ვიდეო-პლატფორმის ლინკი. caption-ში მიუთითე პროდუქტის სახელი ან მომხმარებლის შთაბეჭდილება.
           </p>
 
           {/* Existing customer videos list */}
@@ -6293,6 +6293,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [photoZoom, setPhotoZoom] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false); // Shoppable Catalog drawer
   const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
+  const [showAllStories, setShowAllStories] = useState(false); // "ნახე მეტი" — show all customer videos
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -6326,6 +6327,9 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     const validVideos = (videos || []).filter(v => v && v.url && parseVideoUrl(v.url));
     if (validVideos.length === 0) return null;
     const accent = (problem && problem.accent) || theme.wine;
+    const STORIES_PREVIEW = 6;
+    const visibleVideos = showAllStories ? validVideos : validVideos.slice(0, STORIES_PREVIEW);
+    const hasMore = validVideos.length > STORIES_PREVIEW;
     const title = problem
       ? `"${problem.label}" — ${t('act7_subtitle_suffix', 'მათივე სიტყვებით')}`
       : t('act7_subtitle_all', 'კმაყოფილი მომხმარებლების გამოცდილება');
@@ -6355,11 +6359,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             </p>
           </div>
           <div className={`grid gap-5 sm:gap-6 ${
-            validVideos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-            validVideos.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
+            visibleVideos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
+            visibleVideos.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
             'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
           }`}>
-            {validVideos.map((v, idx) => {
+            {visibleVideos.map((v, idx) => {
               const parsed = parseVideoUrl(v.url);
               const isVertical = parsed.orientation === 'vertical';
               return (
@@ -6400,6 +6404,22 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               );
             })}
           </div>
+          {hasMore && (
+            <div className="text-center mt-10 reveal-up">
+              <button onClick={() => setShowAllStories(s => !s)}
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-medium transition hover:scale-105"
+                style={{
+                  background: 'transparent',
+                  border: `1.5px solid ${accent}66`,
+                  color: accent
+                }}>
+                {showAllStories
+                  ? t('act7_show_less', 'ნაკლების ჩვენება')
+                  : `${t('act7_show_more', 'ნახე ყველა')} (${validVideos.length})`}
+                <Ic name={showAllStories ? 'chevron-up' : 'chevron-down'} className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </section>
     );
