@@ -3595,7 +3595,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
           ) : (
             // ─── EDIT mode: input + regenerate + save/cancel ───
             <div className="p-3 rounded-xl" style={{ background: theme.cream, border: `1.5px solid ${theme.wine}55` }}>
-              <p className="text-[10px] tracking-widest uppercase mb-2" style={{ color: theme.gold }}>slug-ის შეცვლა</p>
+              <p className="text-[10px] tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{L('dash_slug_change_label', 'slug-ის შეცვლა')}</p>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-mono" style={{ color: theme.ink + '99' }}>{window.location.host}/</span>
                 <input type="text" value={slugDraft}
@@ -3628,7 +3628,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                 <button onClick={applySlugEdit}
                   className="px-4 py-2 rounded-lg flex items-center gap-1.5 text-[11px] tracking-wide transition hover:scale-105"
                   style={{ background: theme.wine, color: theme.cream }}>
-                  <Ic name="check" className="w-3 h-3" /> შენახვა
+                  <Ic name="check" className="w-3 h-3" /> {L('dash_save_done', 'შენახვა')}
                 </button>
               </div>
             </div>
@@ -4754,7 +4754,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
           <button onClick={saveProfile} disabled={saving}
             className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
             style={{ background: theme.wine, color: theme.cream }}>
-            {saving ? 'ვინახავ...' : <><Ic name="save" className="w-4 h-4" /> შენახვა</>}
+            {saving ? 'ვინახავ...' : <><Ic name="save" className="w-4 h-4" /> {L('dash_save', 'შენახვა')}</>}
           </button>
           <button onClick={handlePreview} disabled={saving}
             className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
@@ -9141,7 +9141,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                 {/* Three cinematic acts */}
                 <div className="space-y-24 sm:space-y-32">
                   {product.ritual.items.map((item, i) => (
-                    <CinematicAct key={i} item={item} index={i} reverse={i % 2 === 1} onShop={goShop} />
+                    <CinematicAct key={i} item={item} index={i} reverse={i % 2 === 1} onShop={goShop} t={t} />
                   ))}
                 </div>
 
@@ -9573,7 +9573,7 @@ function ProductVideo({ video }) {
 }
 
 // CINEMATIC ACT — masterclass-style dark luxury showcase
-function CinematicAct({ item, index, reverse, onShop }) {
+function CinematicAct({ item, index, reverse, onShop, t = (k, fb) => fb }) {
   const tiltRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -9703,7 +9703,7 @@ function CinematicAct({ item, index, reverse, onShop }) {
           {/* CTA + price row */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>ფასი</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>{t('cinematic_price', 'ფასი')}</p>
               <p className="font-display" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', color: '#F8F6F1' }}>
                 {item.price} ₾
               </p>
