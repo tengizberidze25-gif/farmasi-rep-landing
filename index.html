@@ -1051,6 +1051,7 @@ function getUrlParams() {
     logout: params.get('logout') === '1',
     order: params.get('order'), // Order invoice page: ?order=ORD-XXX
     rate: params.get('rate'), // Rating page: ?rate=ORD-XXX
+    confirm: params.get('confirm'), // Delivery confirm page: ?confirm=ORD-XXX
   };
 }
 
@@ -1241,6 +1242,7 @@ function App() {
   // via the 30-day session token on the ?pid=X&edit=1 redirect that follows.
 
   const [view, setView] = useState(
+    urlParams.confirm ? 'confirm' :
     urlParams.rate ? 'rate' :
     urlParams.order ? 'order' :
     (urlParams.pid || urlParams.slug) ? 'loading' :
@@ -1672,7 +1674,7 @@ function App() {
 
         return (
           <>
-            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
+            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate && !urlParams.confirm)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
             {view === 'loading' && <LoadingScreen labels={labels} />}
             {view === 'notfound' && <NotFoundScreen labels={labels} />}
             {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
@@ -1687,6 +1689,7 @@ function App() {
             {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
             {view === 'rate' && <RatingPage orderId={urlParams.rate} labels={labels} />}
+            {view === 'confirm' && <ConfirmDeliveryPage orderId={urlParams.confirm} labels={labels} />}
           </>
         );
       })()}
@@ -2506,7 +2509,11 @@ function MyOrdersSection({ repCode, labels = {} }) {
   };
 
   const changeStatus = (orderId, status) => {
+    // Optimistic local update for instant UI feedback
     saveStatuses({ ...localStatuses, [orderId]: status });
+    // Notify backend → triggers SMS to customer (delivery link on 'shipped', etc.)
+    api({ action: 'updateOrderStatus', order_id: orderId, status: status, rep_pid: repCode })
+      .catch(() => {});
   };
 
   const loadOrders = () => {
@@ -5034,6 +5041,87 @@ if (parsed.type === 'bunny') {
         border: 0,
         background: theme.ink,
       }} />
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIRM DELIVERY PAGE — customer confirms they received the order
+// Accessed via my.farmasi.ge/?confirm=ORD-XXX  (SMS link on 'shipped' status)
+// Calls confirmOrderDelivery → triggers rating SMS.
+// ════════════════════════════════════════════════════════════════════════════
+
+function ConfirmDeliveryPage({ orderId, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [confirming, setConfirming] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  const confirm = async () => {
+    if (!orderId) { setError(L('confirm_no_id', 'შეკვეთის ID არ მითითებულია')); return; }
+    setConfirming(true);
+    setError('');
+    try {
+      let res = await api({ action: 'confirmOrderDelivery', order_id: orderId });
+      if (res && (res.ok || res.success)) {
+        setDone(true);
+      } else {
+        setError((res && res.error) || L('confirm_error', 'დადასტურება ვერ მოხერხდა'));
+      }
+    } catch (e) {
+      setError(L('confirm_error', 'დადასტურება ვერ მოხერხდა'));
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen px-5 py-10 sm:py-16 grain flex items-center" style={{ background: theme.cream }}>
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+
+      <div className="relative max-w-md mx-auto w-full">
+        <div className="text-center mb-8">
+          <img src="/farmasi-logo.png" alt="FARMASI" className="mx-auto mb-5"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }}
+            onError={(e) => { e.target.style.display = 'none'; }} />
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-2" style={{ color: theme.gold }}>
+            🚚 {L('confirm_eyebrow', 'მიწოდების დადასტურება')}
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+            {done ? L('confirm_thanks_title', 'მადლობა!') : L('confirm_title', 'მიიღე შეკვეთა?')}
+          </h1>
+        </div>
+
+        <div className="rounded-3xl p-8 text-center shadow-2xl"
+          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+          {done ? (
+            <>
+              <div className="text-6xl mb-4">✅</div>
+              <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'CC' }}>
+                {L('confirm_thanks_msg', 'მიწოდება დადასტურდა. მალე მოგივა SMS, სადაც შეგიძლია შეაფასო შენი შეკვეთა. გმადლობთ! 🌸')}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="text-5xl mb-4">📦</div>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: theme.ink + 'CC' }}>
+                {L('confirm_body', 'დაადასტურე, რომ შენი FARMASI შეკვეთა მიიღე. ამის შემდეგ შეგიძლია შეაფასო შენი გამოცდილება.')}
+              </p>
+              {error && <p className="text-xs mb-4" style={{ color: '#DC2626' }}>{error}</p>}
+              <button onClick={confirm} disabled={confirming}
+                className="w-full py-4 rounded-full font-medium text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}AA` }}>
+                {confirming ? (
+                  <><Ic name="loader" className="w-4 h-4 animate-spin" /> {L('confirm_submitting', 'მუშავდება...')}</>
+                ) : (
+                  <><Ic name="check" className="w-4 h-4" /> {L('confirm_button', 'დიახ, მივიღე')}</>
+                )}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
