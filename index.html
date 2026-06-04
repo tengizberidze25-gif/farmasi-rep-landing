@@ -6229,12 +6229,10 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
         <p className="text-xs sm:text-sm font-medium leading-snug mb-1.5 clamp-2 flex-1" style={{ color: theme.ink, minHeight: '2.5em' }}>
           {product.name}
         </p>
-        {/* Rating stars + sold count (TEMU-style) */}
+        {/* Rating stars only (TEMU-style) */}
         {(() => {
-          // Deterministic rating from product id — stable per product, range 4.3–5.0
           const idNum = String(product.id || product.name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-          const rating = (4.3 + (idNum % 8) / 10).toFixed(1);
-          const sold = 30 + (idNum % 470); // 30–499
+          const rating = 4.3 + (idNum % 8) / 10;
           return (
             <div className="flex items-center gap-1 mb-1.5">
               <span className="flex items-center">
@@ -6244,8 +6242,6 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
                              fill: i <= Math.round(rating) ? '#F5A623' : 'none' }} />
                 ))}
               </span>
-              <span className="text-[10px] font-medium" style={{ color: theme.ink }}>{rating}</span>
-              <span className="text-[10px]" style={{ color: theme.ink + '77' }}>· {sold}+ {L('catalog_sold', 'გაყიდვა')}</span>
             </div>
           );
         })()}
