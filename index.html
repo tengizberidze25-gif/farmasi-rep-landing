@@ -5051,8 +5051,17 @@ function RatingPage({ orderId, labels = {} }) {
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
   const [text, setText] = useState('');
+  const [productRatings, setProductRatings] = useState({}); // { product_id: stars }
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  // Parsed order items
+  const orderItems = (() => {
+    if (!order) return [];
+    let its = order.items;
+    if (typeof its === 'string') { try { its = JSON.parse(its); } catch { its = []; } }
+    return Array.isArray(its) ? its : [];
+  })();
 
   useEffect(() => {
     if (!orderId) {
@@ -5096,6 +5105,24 @@ function RatingPage({ orderId, labels = {} }) {
         res = await api({ action: 'submitRating', ...payload });
       }
       if (res.ok) {
+        // Submit per-product ratings (fire-and-forget; order rating is the critical one)
+        const rated = Object.entries(productRatings).filter(([, v]) => v > 0);
+        for (const [pid, pstars] of rated) {
+          const it = orderItems.find(x => String(x.product_id) === String(pid));
+          const pPayload = {
+            order_id: orderId,
+            product_id: pid,
+            product_name: it?.name || '',
+            rating: pstars,
+            customer_name: order?.customer_name || ''
+          };
+          try {
+            let pr = await api({ action: 'submit_product_rating', ...pPayload });
+            if (!pr.ok && /unknown|invalid.*action|action/i.test(pr.error || '')) {
+              await api({ action: 'submitProductRating', ...pPayload });
+            }
+          } catch (_) { /* non-blocking */ }
+        }
         setDone(true);
       } else {
         setError(res.error || L('rate_submit_error', 'შეფასების გაგზავნა ვერ მოხერხდა'));
@@ -5209,6 +5236,41 @@ function RatingPage({ orderId, labels = {} }) {
               className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
               style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }}
             />
+
+            {/* Per-product ratings */}
+            {orderItems.length > 0 && (
+              <div className="mt-6">
+                <p className="text-[10px] tracking-[0.3em] uppercase mb-3 text-center" style={{ color: theme.gold }}>
+                  {L('rate_products_title', 'შეაფასე პროდუქტები')}
+                </p>
+                <div className="space-y-2">
+                  {orderItems.map((it, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-2.5 rounded-2xl"
+                      style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                        style={{ background: theme.blush + '66' }}>
+                        {it.image ? (
+                          <img src={it.image} alt="" className="w-full h-full object-contain p-1" onError={(e) => { e.target.style.display = 'none'; }} />
+                        ) : <span className="text-lg opacity-40">💎</span>}
+                      </div>
+                      <p className="text-xs flex-1 leading-snug clamp-2" style={{ color: theme.ink }}>{it.name}</p>
+                      <div className="flex gap-0.5 flex-shrink-0">
+                        {[1,2,3,4,5].map(s => (
+                          <button key={s}
+                            onClick={() => setProductRatings(pr => ({ ...pr, [it.product_id]: s }))}
+                            className="transition hover:scale-110 active:scale-90" style={{ lineHeight: 0 }}
+                            aria-label={`${s}`}>
+                            <Ic name="star" className="w-4 h-4"
+                              style={{ color: s <= (productRatings[it.product_id] || 0) ? '#F5A623' : theme.ink + '1A',
+                                       fill: s <= (productRatings[it.product_id] || 0) ? '#F5A623' : 'none' }} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {error && (
               <p className="text-xs mt-3 text-center" style={{ color: '#DC2626' }}>{error}</p>
@@ -6428,22 +6490,21 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
         <p className="text-xs sm:text-sm font-medium leading-snug mb-1.5 clamp-2 flex-1" style={{ color: theme.ink, minHeight: '2.5em' }}>
           {product.name}
         </p>
-        {/* Rating stars only (TEMU-style) */}
-        {(() => {
-          const idNum = String(product.id || product.name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-          const rating = 4.3 + (idNum % 8) / 10;
-          return (
-            <div className="flex items-center gap-1 mb-1.5">
-              <span className="flex items-center">
-                {[1,2,3,4,5].map(i => (
-                  <Ic key={i} name="star" className="w-3 h-3"
-                    style={{ color: i <= Math.round(rating) ? '#F5A623' : theme.ink + '22',
-                             fill: i <= Math.round(rating) ? '#F5A623' : 'none' }} />
-                ))}
-              </span>
-            </div>
-          );
-        })()}
+        {/* Rating stars — only real ratings; hidden if product has none */}
+        {product.rating > 0 && (
+          <div className="flex items-center gap-1 mb-1.5">
+            <span className="flex items-center">
+              {[1,2,3,4,5].map(i => (
+                <Ic key={i} name="star" className="w-3 h-3"
+                  style={{ color: i <= Math.round(product.rating) ? '#F5A623' : theme.ink + '22',
+                           fill: i <= Math.round(product.rating) ? '#F5A623' : 'none' }} />
+              ))}
+            </span>
+            {product.reviewCount > 0 && (
+              <span className="text-[10px]" style={{ color: theme.ink + '77' }}>({product.reviewCount})</span>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-2 mt-auto">
           <p className="font-display text-base sm:text-lg" style={{ color: theme.wine }}>
             {product.price} ₾
@@ -8883,6 +8944,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
 
     const t = (key, fallback = '') => (labels && labels[key]) || fallback;
     const [chatOpen, setChatOpen] = useState(false);
+    const [ratingInfoOpen, setRatingInfoOpen] = useState(false);
     const [qty, setQty] = useState(1);
     // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
     const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
@@ -8971,7 +9033,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
               {/* Rating + SKU */}
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 {product.rating && (
-                  <div className="flex items-center gap-1.5">
+                  <button onClick={() => setRatingInfoOpen(true)}
+                    className="flex items-center gap-1.5 transition hover:opacity-70"
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                     <div className="flex">
                       {[1,2,3,4,5].map(i => (
                         <Ic key={i} name="star" className="w-3.5 h-3.5"
@@ -8981,7 +9045,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                     </div>
                     <span className="text-xs font-mono" style={{ color: theme.ink }}>{product.rating}</span>
                     {product.reviewCount && <span className="text-xs" style={{ color: theme.ink + '77' }}>({product.reviewCount} შეფასება)</span>}
-                  </div>
+                  </button>
                 )}
                 {product.sku && (
                   <>
@@ -9540,7 +9604,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                   </h2>
                 </div>
                 {product.rating && (
-                  <div className="flex items-center gap-3">
+                  <button onClick={() => setRatingInfoOpen(true)}
+                    className="flex items-center gap-3 transition hover:opacity-70"
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                     <div className="flex">
                       {[1,2,3,4,5].map(i => (
                         <Ic key={i} name="star" className="w-5 h-5"
@@ -9552,7 +9618,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                       <span className="font-display text-2xl" style={{ color: theme.ink }}>{product.rating}</span>
                       <span className="text-xs ml-2" style={{ color: theme.ink + '77' }}>{product.reviewCount} შეფასებიდან</span>
                     </div>
-                  </div>
+                  </button>
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -9745,6 +9811,46 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
         )}
 
         {chatOpen && <ChatModal rep={rep} product={product} onClose={() => setChatOpen(false)} />}
+
+        {/* Rating info modal — explains how the star rating works (TEMU-style) */}
+        {ratingInfoOpen && (
+          <>
+            <div onClick={() => setRatingInfoOpen(false)}
+              className="fixed inset-0 z-[80] anim-fadeup"
+              style={{ background: 'rgba(15,15,15,0.6)', backdropFilter: 'blur(4px)' }} />
+            <div className="fixed inset-0 z-[90] flex items-center justify-center p-5 pointer-events-none">
+              <div className="relative w-full max-w-sm rounded-3xl p-7 pointer-events-auto anim-fadeup"
+                style={{ background: theme.cream, boxShadow: '0 30px 80px -10px rgba(15,15,15,0.5)' }}>
+                <button onClick={() => setRatingInfoOpen(false)} aria-label={t('rate_info_close', 'დახურვა')}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition hover:scale-110"
+                  style={{ background: theme.ink + '11', color: theme.ink }}>
+                  <Ic name="x" className="w-4 h-4" />
+                </button>
+
+                <div className="flex justify-center mb-4">
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map(i => (
+                      <Ic key={i} name="star" className="w-6 h-6" style={{ color: '#F5A623', fill: '#F5A623' }} />
+                    ))}
+                  </div>
+                </div>
+
+                <h3 className="font-display text-xl text-center mb-3" style={{ color: theme.ink }}>
+                  {t('rate_info_title', 'როგორ ფორმირდება შეფასება')}
+                </h3>
+                <p className="text-sm leading-relaxed text-center" style={{ color: theme.ink + 'CC' }}>
+                  {t('rate_info_body', 'ვარსკვლავებით შეფასებები ეფუძნება მხოლოდ რეალურ შესყიდვებს. პროდუქტის საბოლოო რეიტინგი ყველა ნამდვილი შეფასების საშუალო მაჩვენებელია. შეფასების დატოვება შეუძლია მხოლოდ მომხმარებელს, რომელმაც პროდუქტი შეიძინა და მიიღო.')}
+                </p>
+
+                <button onClick={() => setRatingInfoOpen(false)}
+                  className="w-full mt-6 py-3.5 rounded-full font-medium text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  {t('rate_info_ok', 'გასაგებია')}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Floating cart button + drawer */}
         {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
