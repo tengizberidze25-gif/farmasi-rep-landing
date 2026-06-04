@@ -5736,7 +5736,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
 //   No backend changes — just renders + filters + cart integration.
 //   Pattern mirrors the existing Cart drawer for visual consistency.
 // ═══════════════════════════════════════════════════════════
-function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
+function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -5872,19 +5872,13 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
           {/* Drag handle (mobile affordance) */}
           <div className="mx-auto mb-3 rounded-full" style={{ width: 48, height: 4, background: theme.ink + '22' }} />
 
-          {/* Title + close */}
+          {/* Compact header — just count + close, saves vertical space */}
           <div className="flex items-center justify-between mb-3">
-            <div className="min-w-0">
-              <p className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.gold }}>
-                ✦ {L('catalog_modal_eyebrow', 'სრული კატალოგი')} ✦
-              </p>
-              <h2 className="font-display text-2xl sm:text-3xl mt-0.5 leading-tight" style={{ color: theme.ink }}>
-                {L('catalog_modal_title', 'პროდუქტები')}
-                <span className="text-xs sm:text-sm font-sans ml-2 opacity-50">({filtered.length})</span>
-              </h2>
-            </div>
+            <p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: theme.gold }}>
+              ✦ {L('catalog_modal_eyebrow', 'სრული კატალოგი')} · {filtered.length}
+            </p>
             <button onClick={() => setOpen(false)} aria-label={L('catalog_modal_close_aria', 'დახურვა')}
-              className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110"
+              className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110"
               style={{ background: theme.ink + '11', color: theme.ink }}>
               <Ic name="x" className="w-5 h-5" />
             </button>
@@ -5983,6 +5977,32 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
         </div>
 
         {/* Bottom sticky CTA bar — switches between "Go to cart" and "Close" */}
+        {/* Contact rep — floating avatar with online dot (Alibaba-style), left of cart */}
+        {(() => {
+          const contactPhone = (rep.whatsapp || rep.phone || '').replace(/[^\d]/g, '');
+          if (!contactPhone) return null;
+          const waText = encodeURIComponent(L('catalog_contact_wa_text', 'გამარჯობა! კატალოგის შესახებ მინდა დაგისვათ შეკითხვა 🌸'));
+          return (
+            <a href={`https://wa.me/${contactPhone}?text=${waText}`} target="_blank" rel="noopener"
+              aria-label={L('catalog_contact_aria', 'დაკავშირება წარმომადგენელთან')}
+              className="absolute bottom-24 left-4 sm:left-6 z-[60] rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+              style={{ width: 60, height: 60, display: 'block' }}>
+              <span className="block w-full h-full rounded-full overflow-hidden" style={{ border: `3px solid ${theme.cream}`, background: theme.cream }}>
+                {rep.photo ? (
+                  <img src={rep.photo} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="w-full h-full flex items-center justify-center" style={{ background: theme.wine, color: theme.cream }}>
+                    <Ic name="message-square" className="w-6 h-6" />
+                  </span>
+                )}
+              </span>
+              {/* online green dot */}
+              <span className="absolute bottom-0.5 right-0.5 rounded-full"
+                style={{ width: 15, height: 15, background: '#22C55E', border: `2.5px solid ${theme.cream}` }} />
+            </a>
+          );
+        })()}
+
         {/* TEMU-style floating cart — always visible inside catalog, jumps on add */}
         {cart && (
           <button
@@ -7739,6 +7759,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         products={dynamicProducts}
         cart={cart}
         labels={labels}
+        rep={rep}
       />
 
       {/* Pick product modal — opens elegant detail view when clicking on rep's curated picks */}
