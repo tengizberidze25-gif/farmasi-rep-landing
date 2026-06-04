@@ -5736,7 +5736,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
 //   No backend changes — just renders + filters + cart integration.
 //   Pattern mirrors the existing Cart drawer for visual consistency.
 // ═══════════════════════════════════════════════════════════
-function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {} }) {
+function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -5977,31 +5977,26 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
         </div>
 
         {/* Bottom sticky CTA bar — switches between "Go to cart" and "Close" */}
-        {/* Contact rep — floating avatar with online dot (Alibaba-style), left of cart */}
-        {(() => {
-          const contactPhone = (rep.whatsapp || rep.phone || '').replace(/[^\d]/g, '');
-          if (!contactPhone) return null;
-          const waText = encodeURIComponent(L('catalog_contact_wa_text', 'გამარჯობა! კატალოგის შესახებ მინდა დაგისვათ შეკითხვა 🌸'));
-          return (
-            <a href={`https://wa.me/${contactPhone}?text=${waText}`} target="_blank" rel="noopener"
-              aria-label={L('catalog_contact_aria', 'დაკავშირება წარმომადგენელთან')}
-              className="absolute bottom-24 left-4 sm:left-6 z-[60] rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
-              style={{ width: 60, height: 60, display: 'block' }}>
-              <span className="block w-full h-full rounded-full overflow-hidden" style={{ border: `3px solid ${theme.cream}`, background: theme.cream }}>
-                {rep.photo ? (
-                  <img src={rep.photo} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="w-full h-full flex items-center justify-center" style={{ background: theme.wine, color: theme.cream }}>
-                    <Ic name="message-square" className="w-6 h-6" />
-                  </span>
-                )}
-              </span>
-              {/* online green dot */}
-              <span className="absolute bottom-0.5 right-0.5 rounded-full"
-                style={{ width: 15, height: 15, background: '#22C55E', border: `2.5px solid ${theme.cream}` }} />
-            </a>
-          );
-        })()}
+        {/* Contact rep — floating avatar with online dot (Alibaba-style), opens chat window */}
+        {onContactRep && (
+          <button onClick={onContactRep}
+            aria-label={L('catalog_contact_aria', 'დაკავშირება წარმომადგენელთან')}
+            className="absolute bottom-24 left-4 sm:left-6 z-[60] rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+            style={{ width: 60, height: 60, display: 'block', padding: 0, border: 'none' }}>
+            <span className="block w-full h-full rounded-full overflow-hidden" style={{ border: `3px solid ${theme.cream}`, background: theme.cream }}>
+              {rep.photo ? (
+                <img src={rep.photo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="w-full h-full flex items-center justify-center" style={{ background: theme.wine, color: theme.cream }}>
+                  <Ic name="message-square" className="w-6 h-6" />
+                </span>
+              )}
+            </span>
+            {/* online green dot */}
+            <span className="absolute bottom-0.5 right-0.5 rounded-full"
+              style={{ width: 15, height: 15, background: '#22C55E', border: `2.5px solid ${theme.cream}` }} />
+          </button>
+        )}
 
         {/* TEMU-style floating cart — always visible inside catalog, jumps on add */}
         {cart && (
@@ -7760,6 +7755,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         cart={cart}
         labels={labels}
         rep={rep}
+        onContactRep={() => {
+          setCatalogOpen(false);
+          setTimeout(() => setChatOpen(true), 320);
+        }}
       />
 
       {/* Pick product modal — opens elegant detail view when clicking on rep's curated picks */}
