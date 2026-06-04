@@ -6258,7 +6258,7 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
             aria-label={L('catalog_modal_add_aria', 'კალათაში დამატება')}
             className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 ${pulse ? 'anim-pulse-add' : 'hover:scale-110'}`}
             style={{ background: pulse ? '#10b981' : theme.wine, color: theme.cream, boxShadow: `0 4px 12px -2px ${pulse ? '#10b98166' : theme.wine + '66'}` }}>
-            {pulse ? <Ic name="check" className="w-4 h-4" /> : <Ic name="shopping-bag" className="w-4 h-4" />}
+            {pulse ? <Ic name="check" className="w-4 h-4" /> : <Ic name="shopping-cart" className="w-4 h-4" />}
           </button>
         </div>
       </div>
