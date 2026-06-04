@@ -1050,6 +1050,7 @@ function getUrlParams() {
     token: params.get('token'),
     logout: params.get('logout') === '1',
     order: params.get('order'), // Order invoice page: ?order=ORD-XXX
+    rate: params.get('rate'), // Rating page: ?rate=ORD-XXX
   };
 }
 
@@ -1240,6 +1241,7 @@ function App() {
   // via the 30-day session token on the ?pid=X&edit=1 redirect that follows.
 
   const [view, setView] = useState(
+    urlParams.rate ? 'rate' :
     urlParams.order ? 'order' :
     (urlParams.pid || urlParams.slug) ? 'loading' :
     'login'
@@ -1670,7 +1672,7 @@ function App() {
 
         return (
           <>
-            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
+            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
             {view === 'loading' && <LoadingScreen labels={labels} />}
             {view === 'notfound' && <NotFoundScreen labels={labels} />}
             {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
@@ -1684,6 +1686,7 @@ function App() {
             {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
+            {view === 'rate' && <RatingPage orderId={urlParams.rate} labels={labels} />}
           </>
         );
       })()}
@@ -5031,6 +5034,202 @@ if (parsed.type === 'bunny') {
         border: 0,
         background: theme.ink,
       }} />
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RATING PAGE — Customer leaves a star rating + comment, opened via SMS link
+// Accessed via my.farmasi.ge/?rate=ORD-XXX-XXX
+// Loads order via get_order, submits via submit_rating → Reviews sheet.
+// ════════════════════════════════════════════════════════════════════════════
+
+function RatingPage({ orderId, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [stars, setStars] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!orderId) {
+      setError(L('rate_no_id', 'შეკვეთის ID არ მითითებულია'));
+      setLoading(false);
+      return;
+    }
+    api({ action: 'get_order', order_id: orderId })
+      .then(res => {
+        if (res.ok && res.order) {
+          setOrder(res.order);
+          // If already rated, reflect it
+          if (res.order.customer_rating) {
+            setStars(Number(res.order.customer_rating) || 0);
+            setText(res.order.rating_text || '');
+            setDone(true);
+          }
+        } else {
+          setError(res.error || L('rate_order_not_found', 'შეკვეთა ვერ მოიძებნა'));
+        }
+      })
+      .catch(e => setError(L('rate_load_error', 'შეცდომა: ') + e.message))
+      .finally(() => setLoading(false));
+  }, [orderId]);
+
+  const submit = async () => {
+    if (!stars) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const payload = {
+        order_id: orderId,
+        rep_pid: order?.rep_pid || '',
+        rating: stars,
+        rating_text: text.trim(),
+        customer_name: order?.customer_name || ''
+      };
+      let res = await api({ action: 'submit_rating', ...payload });
+      // Fallback: backend may use camelCase action name
+      if (!res.ok && /unknown|invalid.*action|action/i.test(res.error || '')) {
+        res = await api({ action: 'submitRating', ...payload });
+      }
+      if (res.ok) {
+        setDone(true);
+      } else {
+        setError(res.error || L('rate_submit_error', 'შეფასების გაგზავნა ვერ მოხერხდა'));
+      }
+    } catch (e) {
+      setError(L('rate_submit_error', 'შეფასების გაგზავნა ვერ მოხერხდა'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full border-4 animate-spin" style={{ borderColor: theme.gold + '33', borderTopColor: theme.wine }} />
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('rate_loading', 'იტვირთება...')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="font-display text-2xl mb-3" style={{ color: theme.ink }}>{L('rate_not_found_title', 'შეკვეთა ვერ მოიძებნა')}</h2>
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const starWord = ['', L('rate_word_1', 'ცუდი'), L('rate_word_2', 'საშუალო'), L('rate_word_3', 'კარგი'), L('rate_word_4', 'ძალიან კარგი'), L('rate_word_5', 'შესანიშნავი')];
+  const active = hover || stars;
+
+  return (
+    <div className="min-h-screen px-5 py-10 sm:py-16 grain flex items-center" style={{ background: theme.cream }}>
+      {/* Background glow */}
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
+
+      <div className="relative max-w-md mx-auto w-full">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <img src="/farmasi-logo.png" alt="FARMASI"
+            className="mx-auto mb-5"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }}
+            onError={(e) => { e.target.style.display = 'none'; }} />
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-2" style={{ color: theme.gold }}>
+            ✦ {L('rate_eyebrow', 'შენი აზრი მნიშვნელოვანია')} ✦
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+            {done ? L('rate_thanks_title', 'გმადლობთ!') : L('rate_title', 'შეაფასე შენი შეკვეთა')}
+          </h1>
+        </div>
+
+        {done ? (
+          /* Success state */
+          <div className="rounded-3xl p-8 text-center shadow-2xl anim-fadeup"
+            style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+            <div className="text-6xl mb-4">💕</div>
+            <div className="flex justify-center mb-4">
+              {[1,2,3,4,5].map(i => (
+                <Ic key={i} name="star" className="w-7 h-7"
+                  style={{ color: i <= stars ? '#F5A623' : theme.ink + '22',
+                           fill: i <= stars ? '#F5A623' : 'none' }} />
+              ))}
+            </div>
+            <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'CC' }}>
+              {L('rate_thanks_msg', 'შენი შეფასება მიღებულია. დიდი მადლობა, რომ დაგვეხმარე უკეთესები გავხდეთ! 🌸')}
+            </p>
+          </div>
+        ) : (
+          /* Rating form */
+          <div className="rounded-3xl p-7 sm:p-8 shadow-2xl"
+            style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+
+            {/* Stars */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="flex gap-2 mb-3">
+                {[1,2,3,4,5].map(i => (
+                  <button key={i}
+                    onClick={() => setStars(i)}
+                    onMouseEnter={() => setHover(i)}
+                    onMouseLeave={() => setHover(0)}
+                    className="transition hover:scale-110 active:scale-95"
+                    style={{ lineHeight: 0 }}
+                    aria-label={`${i} ${L('rate_stars_aria', 'ვარსკვლავი')}`}>
+                    <Ic name="star" className="w-10 h-10"
+                      style={{ color: i <= active ? '#F5A623' : theme.ink + '1A',
+                               fill: i <= active ? '#F5A623' : 'none' }} />
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm font-medium h-5" style={{ color: theme.wine }}>
+                {starWord[active] || ''}
+              </p>
+            </div>
+
+            {/* Comment */}
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={4}
+              maxLength={500}
+              placeholder={L('rate_comment_placeholder', 'მოგვიყევი შენი გამოცდილების შესახებ (არასავალდებულო)')}
+              className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
+              style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }}
+            />
+
+            {error && (
+              <p className="text-xs mt-3 text-center" style={{ color: '#DC2626' }}>{error}</p>
+            )}
+
+            {/* Submit */}
+            <button
+              onClick={submit}
+              disabled={!stars || submitting}
+              className="w-full mt-5 py-4 rounded-full font-medium text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}AA` }}>
+              {submitting ? (
+                <><Ic name="loader" className="w-4 h-4 animate-spin" /> {L('rate_submitting', 'იგზავნება...')}</>
+              ) : (
+                <><Ic name="heart" className="w-4 h-4" /> {L('rate_submit', 'შეფასების გაგზავნა')}</>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
