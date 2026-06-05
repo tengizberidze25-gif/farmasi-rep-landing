@@ -7343,7 +7343,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                   <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: selectedProblem.accent }}>
                     {(() => {
                       const hasVideos = (rep.customerVideos || []).filter(v =>
-                        !v.problem || v.problem === selectedProblem.id
+                        v.problem === selectedProblem.id
                       ).length > 0;
                       return hasVideos
                         ? t('act3_scroll_prompt_with_videos', 'ნახე ვინ გაიარა ეს გზა')
@@ -7624,7 +7624,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             </section>
           )}
 
-              {renderCustomerStories((rep.customerVideos || []).filter(v => !v.problem || v.problem === selectedProblem.id), selectedProblem)}
+              {renderCustomerStories((rep.customerVideos || []).filter(v => v.problem === selectedProblem.id), selectedProblem)}
 
           {/* ╔═══════════════════════════════════════════════════════════════╗ */}
           {/* ║ ACT VIII — THE RITUAL (products, finally)                      ║ */}
@@ -7660,8 +7660,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {!selectedProblem && renderCustomerStories(rep.customerVideos || [], null)}
 
-      {/* ═══ REP'S CURATED PICKS — Personal favorite products ═══ */}
-      {repPicks.length > 0 && (
+      {/* ═══ REP'S CURATED PICKS — Personal favorite products (only on general page, not problem page) ═══ */}
+      {!selectedProblem && repPicks.length > 0 && (
         <section className="px-5 py-16 sm:py-20" style={{ background: theme.cream }}>
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-10">
