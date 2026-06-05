@@ -1252,6 +1252,7 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [problems, setProblems] = useState(PROBLEMS); // hardcoded fallback, will be replaced from Sheet
+  const [companyVideos, setCompanyVideos] = useState([]); // admin-uploaded videos shown on every rep's page
   const [dynamicProducts, setDynamicProducts] = useState([]); // from Products sheet, filtered by problem in PublicPage
   const [labels, setLabels] = useState({}); // i18n-style label overrides from Labels sheet; empty = use hardcoded defaults
   const [loadError, setLoadError] = useState('');
@@ -1516,6 +1517,15 @@ function App() {
       })
       .catch(() => {/* silent fallback to hardcoded PROBLEMS */});
 
+    // Company-wide videos (admin-uploaded, shown on every rep's public page)
+    api({ action: 'get_company_videos' })
+      .then(data => {
+        if (data.ok && Array.isArray(data.videos)) {
+          setCompanyVideos(data.videos);
+        }
+      })
+      .catch(() => {/* silent — feature optional */});
+
     // Same dual-load for dynamic products
     try {
       const cached = localStorage.getItem('farmasi_products_cache');
@@ -1685,7 +1695,7 @@ function App() {
               } catch (_) {}
               setView('public');
             }} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
-            {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+            {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} companyVideos={companyVideos} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
             {view === 'rate' && <RatingPage orderId={urlParams.rate} labels={labels} />}
@@ -6705,7 +6715,7 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} })
   );
 }
 
-function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], labels = {}, cart }) {
+function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], companyVideos = [], labels = {}, cart }) {
   // i18n-style label helper — Sheet override wins, hardcoded fallback otherwise
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
   const [chatOpen, setChatOpen] = useState(false);
@@ -6809,7 +6819,12 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                       style={{ background: 'rgba(255,255,255,0.18)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
                       {parsed.type}
                     </div>
-                    {v.caption && (
+                    {v._company && (
+                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium flex items-center gap-1"
+                        style={{ background: theme.gold, color: theme.ink }}>
+                        <Ic name="badge-check" className="w-3 h-3" /> FARMASI
+                      </div>
+                    )}
                       <div className="absolute bottom-0 left-0 right-0 p-4"
                         style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
                         <p className="text-sm italic text-center font-display-lat" style={{ color: theme.cream }}>
@@ -7341,9 +7356,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 <div className="inline-flex flex-col items-center gap-3" style={{ color: theme.ink + '66' }}>
                   <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: selectedProblem.accent }}>
                     {(() => {
-                      const hasVideos = (rep.customerVideos || []).filter(v =>
-                        v.problem === selectedProblem.id
-                      ).length > 0;
+                      const hasVideos = [
+                        ...(rep.customerVideos || []),
+                        ...(companyVideos || [])
+                      ].filter(v => v.problem === selectedProblem.id).length > 0;
                       return hasVideos
                         ? t('act3_scroll_prompt_with_videos', 'ნახე ვინ გაიარა ეს გზა')
                         : t('act3_scroll_prompt_no_videos', 'ნახე რამ უშველათ');
@@ -7623,7 +7639,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             </section>
           )}
 
-              {renderCustomerStories((rep.customerVideos || []).filter(v => v.problem === selectedProblem.id), selectedProblem)}
+              {renderCustomerStories([
+                ...(rep.customerVideos || []).filter(v => v.problem === selectedProblem.id),
+                ...(companyVideos || []).filter(v => v.problem === selectedProblem.id).map(v => ({ ...v, _company: true }))
+              ], selectedProblem)}
 
           {/* ╔═══════════════════════════════════════════════════════════════╗ */}
           {/* ║ ACT VIII — THE RITUAL (products, finally)                      ║ */}
@@ -7657,7 +7676,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </section>
       )}
 
-      {!selectedProblem && renderCustomerStories(rep.customerVideos || [], null)}
+      {!selectedProblem && renderCustomerStories([
+        ...(rep.customerVideos || []),
+        ...(companyVideos || []).map(v => ({ ...v, _company: true }))
+      ], null)}
 
       {/* ═══ REP'S CURATED PICKS — Personal favorite products (only on general page, not problem page) ═══ */}
       {!selectedProblem && repPicks.length > 0 && (
