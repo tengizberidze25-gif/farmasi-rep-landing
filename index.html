@@ -42,6 +42,14 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+// Disable Babel 500KB compact limit
+window.addEventListener('load', function() {});
+Babel.registerPreset('custom', {
+  presets: [['env'], ['react']],
+  generatorOpts: { compact: false }
+});
+</script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
@@ -157,7 +165,7 @@
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-presets="env,react">
+<script type="text/babel" data-presets="custom">
   const params = new URLSearchParams(window.location.search);
 
 const smsSource = params.get('src');
