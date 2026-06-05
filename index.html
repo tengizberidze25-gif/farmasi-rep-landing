@@ -6778,17 +6778,16 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             </p>
           </div>
           <div className={`grid gap-5 sm:gap-6 ${
-            visibleVideos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-            visibleVideos.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
-            'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+            visibleVideos.length === 1 ? 'grid-cols-1 max-w-xs mx-auto' :
+            visibleVideos.length === 2 ? 'grid-cols-2 max-w-2xl mx-auto' :
+            'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
           }`}>
             {visibleVideos.map((v, idx) => {
               const parsed = parseVideoUrl(v.url);
-              const isVertical = (v.orientation || parsed.orientation) === 'vertical';
               return (
                 <div key={idx} className="group reveal-up" style={{ animationDelay: `${idx * 100}ms` }}>
                   <button onClick={() => setVideoToPlay({ url: v.url, orientation: v.orientation })}
-                    className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
+                    className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block"
                     style={{
                       background: `linear-gradient(135deg, ${accent}, ${theme.ink})`,
                       boxShadow: `0 20px 50px -10px ${accent}44`,
@@ -6800,9 +6799,9 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                       <div className="relative">
                         <div className="absolute inset-0 rounded-full animate-ping"
                           style={{ background: theme.cream + '44', animationDuration: '2.5s' }} />
-                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition group-hover:scale-110"
                           style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
-                          <Ic name="play" className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: accent, marginLeft: '4px' }} />
+                          <Ic name="play" className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: accent, marginLeft: '4px' }} />
                         </div>
                       </div>
                     </div>
