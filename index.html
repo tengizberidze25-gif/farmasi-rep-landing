@@ -3917,7 +3917,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     {uploadingPhoto ? 'ვტვირთავ' : (rep.photo ? 'შეცვლა' : 'ატვირთე')}
     </div>
     </button>
-    <input ref={fileRef} type="file" accept="image}
+    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
     <div className="mt-5 pt-5" style={{ borderTop: `1px dashed ${theme.gold}33` }}>
     <Input icon="id-card"
     label={L('profile_personal_id_label', 'პირადი ნომერი')}
@@ -3977,7 +3977,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     style={{ width: `${videoUploadProgress}%`, background: theme.wine }} />
     </div>
     )}
-    <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime,video}
+    <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={handleVideoUpload} />
     <div className="flex items-center gap-3 my-4">
     <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
     <span className="text-[10px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>{L('profile_or', 'ან')}</span>
@@ -4217,7 +4217,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     style={{ width: `${customerUploadProgress}%`, background: theme.wine }} />
     </div>
     )}
-    <input ref={customerVideoFileRef} type="file" accept="video}
+    <input ref={customerVideoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={handleCustomerVideoUpload} />
     {saveError && (
     <div className="px-4 py-3 rounded-xl text-sm" style={{ background: theme.rose + '22', color: theme.wine, border: `1px solid ${theme.rose}55` }}>
     ⚠️ {saveError}
