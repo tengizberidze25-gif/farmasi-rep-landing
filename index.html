@@ -42,6 +42,14 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script>
+// Disable Babel 500KB compact limit
+window.addEventListener('load', function() {});
+Babel.registerPreset('custom', {
+  presets: [['env'], ['react']],
+  generatorOpts: { compact: false }
+});
+</script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
@@ -157,7 +165,7 @@
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-presets="env,react">
+<script type="text/babel" data-presets="custom">
   const params = new URLSearchParams(window.location.search);
 
 const smsSource = params.get('src');
@@ -1052,6 +1060,8 @@ function getUrlParams() {
     order: params.get('order'), // Order invoice page: ?order=ORD-XXX
     rate: params.get('rate'), // Rating page: ?rate=ORD-XXX
     confirm: params.get('confirm'), // Delivery confirm page: ?confirm=ORD-XXX
+    add: params.get('add'), // Deep-link add to cart: ?add=1001964 (product_id from catalog)
+    catalog: params.get('catalog') === '1', // Auto-open catalog drawer: ?catalog=1
   };
 }
 
@@ -1540,6 +1550,30 @@ function App() {
         if (data.ok && Array.isArray(data.products)) {
           setDynamicProducts(data.products);
           try { localStorage.setItem('farmasi_products_cache', JSON.stringify(data.products)); } catch {}
+
+          // ── Deep-link cart: ?add=PRODUCT_ID ──────────────────────────────
+          // კატალოგიდან (fliphtml5 ან სხვა) პირდაპირ კალათაში ჩაგდება.
+          // მაგ: my.farmasi.ge/tengiz-beridze?add=1001964
+          // პროდუქტს ვპოულობთ, კალათაში ვყრით, კალათა ავტომატურად იხსნება.
+          const addParam = urlParams.add ? String(urlParams.add).trim() : null;
+          if (addParam) {
+            const found = data.products.find(p =>
+              String(p.product_id) === addParam || String(p.code) === addParam
+            );
+            if (found) {
+              cartAddItem(found);
+              setCartOpen(true);
+            }
+            // URL-ს ვასუფთავებთ — ?add= აღარ ჩანდეს address bar-ში
+            try {
+              const cleanParams = new URLSearchParams(window.location.search);
+              cleanParams.delete('add');
+              const newSearch = cleanParams.toString();
+              const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+              window.history.replaceState({}, '', newUrl);
+            } catch {}
+          }
+          // ─────────────────────────────────────────────────────────────────
         }
       })
       .catch(() => {/* silent — non-hair-loss problems will just not show product showcase */});
@@ -1695,7 +1729,7 @@ function App() {
               } catch (_) {}
               setView('public');
             }} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
-            {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} companyVideos={companyVideos} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+            {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} companyVideos={companyVideos} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} initialCatalog={urlParams.catalog} />}
             {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
             {view === 'rate' && <RatingPage orderId={urlParams.rate} labels={labels} />}
@@ -6097,6 +6131,11 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
 // ═══════════════════════════════════════════════════════════
 function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep }) {
   const L = (key, fallback) => labels[key] || fallback;
+  const [catalogTab, setCatalogTab] = useState('flip'); // 'flip' | 'shop'
+  const [flipCode, setFlipCode] = useState(''); // product code typed by user in flip tab
+  const [flipSearchQuery, setFlipSearchQuery] = useState('');
+  const [flipMatch, setFlipMatch] = useState(null); // matched product
+  const [flipAdded, setFlipAdded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'price-asc' | 'price-desc'
@@ -6231,10 +6270,10 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
           {/* Drag handle (mobile affordance) */}
           <div className="mx-auto mb-3 rounded-full" style={{ width: 48, height: 4, background: theme.ink + '22' }} />
 
-          {/* Compact header — just count + close, saves vertical space */}
+          {/* Header row: title + close */}
           <div className="flex items-center justify-between mb-3">
             <p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: theme.gold }}>
-              ✦ {L('catalog_modal_eyebrow', 'სრული კატალოგი')} · {filtered.length}
+              ✦ {catalogTab === 'flip' ? L('catalog_flip_tab_eyebrow', 'ციფრული კატალოგი') : L('catalog_modal_eyebrow', 'სრული კატალოგი') + ' · ' + filtered.length}
             </p>
             <button onClick={() => setOpen(false)} aria-label={L('catalog_modal_close_aria', 'დახურვა')}
               className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110"
@@ -6243,8 +6282,24 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
             </button>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-3">
+          {/* Tab switcher */}
+          <div className="flex gap-2 mb-3">
+            {[
+              { k: 'flip', icon: 'book-open', label: '📖 ' + L('catalog_flip_tab', 'ციფრული კატალოგი') },
+              { k: 'shop', icon: 'shopping-bag', label: '🛍 ' + L('catalog_shop_tab', 'პროდუქტები') },
+            ].map(tab => (
+              <button key={tab.k} onClick={() => setCatalogTab(tab.k)}
+                className="flex-1 py-2 rounded-full text-xs font-medium tracking-wide transition hover:scale-[1.02] active:scale-95"
+                style={catalogTab === tab.k
+                  ? { background: theme.wine, color: theme.cream, boxShadow: `0 4px 12px -4px ${theme.wine}88` }
+                  : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search + filters — only in shop tab */}
+          {catalogTab === 'shop' && <div className="relative mb-3">
             <Ic name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: theme.ink + '66' }} />
             <input
               type="text"
@@ -6304,36 +6359,127 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
               </button>
             ))}
           </div>
+          </div>}
         </div>
 
-        {/* Scrollable grid */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
-          {filtered.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="text-5xl mb-4 opacity-30">🌸</div>
-              <p className="text-base mb-3" style={{ color: theme.ink + 'AA' }}>
-                {L('catalog_modal_empty', 'ვერ მოვძებნე პროდუქტი')}
+        {/* Tab content */}
+        {catalogTab === 'flip' ? (
+          /* ── ციფრული კატალოგი — fliphtml5 iframe + კოდით დამატება ── */
+          <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+            {/* iframe */}
+            <div className="flex-1 relative" style={{ minHeight: 0 }}>
+              <iframe
+                src="https://online.fliphtml5.com/mabrw/qktt/"
+                title="FARMASI კატალოგი"
+                className="w-full h-full border-0"
+                allow="fullscreen"
+                style={{ display: 'block', width: '100%', height: '100%' }}
+              />
+            </div>
+
+            {/* Sticky bottom bar — product code search */}
+            <div className="flex-shrink-0 px-4 py-3 border-t" style={{ borderColor: theme.gold + '22', background: theme.cream, paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}>
+              <p className="text-[11px] tracking-widest uppercase text-center mb-2" style={{ color: theme.gold }}>
+                ✦ {L('catalog_flip_hint', 'კატალოგში ნახე კოდი და ჩაწერე')}
               </p>
-              <button onClick={reset}
-                className="text-xs underline transition hover:no-underline" style={{ color: theme.wine }}>
-                {L('catalog_modal_reset_filters', 'ფილტრის გასუფთავება')}
-              </button>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={flipCode}
+                    onChange={e => {
+                      const v = e.target.value.replace(/\D/g, '');
+                      setFlipCode(v);
+                      setFlipAdded(false);
+                      if (v.length >= 4) {
+                        const m = (products || []).find(p => String(p.id) === v || String(p.product_id) === v || String(p.code) === v);
+                        setFlipMatch(m || null);
+                      } else {
+                        setFlipMatch(null);
+                      }
+                    }}
+                    placeholder={L('catalog_flip_code_placeholder', 'პროდუქტის კოდი...')}
+                    className="w-full px-4 py-3 text-sm rounded-full outline-none font-mono"
+                    style={{ background: theme.ivory, border: `1.5px solid ${flipMatch ? '#22C55E' : theme.gold + '44'}`, color: theme.ink }}
+                  />
+                </div>
+                <button
+                  disabled={!flipMatch || flipAdded}
+                  onClick={() => {
+                    if (!flipMatch || !cart) return;
+                    flyToCart('flip-add-btn');
+                    cart.addItem({ product_id: flipMatch.id, name: flipMatch.name, price: flipMatch.price, image: flipMatch.image, quantity: 1 });
+                    setFlipAdded(true);
+                    setFlipCode('');
+                    setFlipMatch(null);
+                    setTimeout(() => setFlipAdded(false), 2000);
+                  }}
+                  className="flex-shrink-0 px-5 py-3 rounded-full font-medium text-sm tracking-wide transition hover:scale-[1.03] active:scale-95"
+                  style={flipMatch && !flipAdded
+                    ? { background: theme.wine, color: theme.cream, boxShadow: `0 6px 16px -4px ${theme.wine}88` }
+                    : { background: theme.ink + '22', color: theme.ink + '66', cursor: 'not-allowed' }}>
+                  {flipAdded ? '✓' : L('catalog_flip_add_btn', 'კალათაში')}
+                </button>
+              </div>
+              {/* matched product preview */}
+              {flipMatch && (
+                <div className="mt-2 flex items-center gap-2 px-1">
+                  {flipMatch.image && <img src={flipMatch.image} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" style={{ border: `1px solid ${theme.gold}33` }} />}
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: theme.ink }}>{flipMatch.name}</p>
+                    <p className="text-xs" style={{ color: theme.wine }}>{flipMatch.price} ₾</p>
+                  </div>
+                  <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#22C55E22', color: '#16A34A' }}>✓ ნაპოვნია</span>
+                </div>
+              )}
+              {flipCode.length >= 4 && !flipMatch && (
+                <p className="mt-2 text-xs text-center" style={{ color: '#EF4444' }}>
+                  {L('catalog_flip_not_found', 'კოდი ვერ მოიძებნა — სცადე კიდევ')}
+                </p>
+              )}
+              {/* Cart shortcut */}
+              {cart && cart.count > 0 && (
+                <button onClick={() => { setOpen(false); setTimeout(() => { if (cart.setOpen) cart.setOpen(true); }, 320); }}
+                  id="flip-add-btn"
+                  className="mt-2 w-full py-2.5 rounded-full text-sm font-medium tracking-wide transition hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                  style={{ background: theme.ink, color: theme.cream }}>
+                  <Ic name="shopping-bag" className="w-4 h-4" />
+                  {L('catalog_flip_view_cart', 'კალათის ნახვა')} ({cart.count})
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pb-6">
-              {filtered.map(p => (
-                <CatalogProductCard
-                  key={p.id}
-                  product={p}
-                  onCardClick={() => { setQuickview(p); setQuickviewQty(1); }}
-                  onQuickAdd={(e) => handleQuickAdd(p, e)}
-                  pulse={recentAddId === p.id}
-                  labels={labels}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          /* ── პროდუქტების გრიდი (არსებული) ── */
+          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
+            {filtered.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="text-5xl mb-4 opacity-30">🌸</div>
+                <p className="text-base mb-3" style={{ color: theme.ink + 'AA' }}>
+                  {L('catalog_modal_empty', 'ვერ მოვძებნე პროდუქტი')}
+                </p>
+                <button onClick={reset}
+                  className="text-xs underline transition hover:no-underline" style={{ color: theme.wine }}>
+                  {L('catalog_modal_reset_filters', 'ფილტრის გასუფთავება')}
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pb-6">
+                {filtered.map(p => (
+                  <CatalogProductCard
+                    key={p.id}
+                    product={p}
+                    onCardClick={() => { setQuickview(p); setQuickviewQty(1); }}
+                    onQuickAdd={(e) => handleQuickAdd(p, e)}
+                    pulse={recentAddId === p.id}
+                    labels={labels}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Bottom sticky CTA bar — switches between "Go to cart" and "Close" */}
         {/* Contact rep — floating avatar with online dot (Alibaba-style), opens chat window */}
@@ -6715,12 +6861,12 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} })
   );
 }
 
-function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], companyVideos = [], labels = {}, cart }) {
+function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], companyVideos = [], labels = {}, cart, initialCatalog = false }) {
   // i18n-style label helper — Sheet override wins, hardcoded fallback otherwise
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
-  const [catalogOpen, setCatalogOpen] = useState(false); // Shoppable Catalog drawer
+  const [catalogOpen, setCatalogOpen] = useState(!!initialCatalog); // Shoppable Catalog drawer — auto-open if ?catalog=1
   const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
   const [showAllStories, setShowAllStories] = useState(false); // "ნახე მეტი" — show all customer videos
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
