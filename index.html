@@ -25,7 +25,7 @@
 <!-- Favicon — FARMASI brand icon -->
 <link rel="icon" type="image/png" href="/farmasi-icon.png" />
 <link rel="shortcut icon" type="image/png" href="/farmasi-icon.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="/farmasi-icon.png" />
+<link rel="apple-touch-icon" href="/farmasi-icon.png" />
 
 <!-- PWA — installable web app -->
 <link rel="manifest" href="/manifest.json" />
@@ -38,11 +38,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Georgian:wght@400;500;600;700;800;900&family=FiraGO:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet" />
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
 <style>
   * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   html { scroll-behavior: smooth; }
@@ -226,43 +228,6 @@ const theme = {
   ink:   '#0F0F0F',     // near-black text
   mist:  '#F4F4F5',     // very light gray
 };
-
-function normalizeSearchValue(value) {
-  return String(value || '')
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[.,/#!$%^&*;:{}=\-_`~()"'’“”[\]\\|<>?]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function productMatchesSearch(product, rawQuery) {
-  const q = normalizeSearchValue(rawQuery);
-  if (!q) return true;
-
-  const codeQuery = q.replace(/\D/g, '');
-  const searchableCodes = [
-    product.id, product.sku, product.code, product.product_id, product.productId
-  ].map(v => String(v || '').replace(/\D/g, '')).filter(Boolean);
-
-  if (codeQuery && searchableCodes.some(code => code.includes(codeQuery))) return true;
-
-  const text = normalizeSearchValue([
-    product.name,
-    product.fullName,
-    product.cat,
-    product.category,
-    product.id,
-    product.sku,
-    product.code,
-    product.product_id,
-    product.productId,
-    product.tag,
-    product.description
-  ].join(' '));
-
-  return text.includes(q);
-}
 
 const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
 const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
@@ -1062,16 +1027,6 @@ function apiUpload(params) {
   });
 }
 
-async function waitForUploadResult(pid, uploadId, attempts = 12) {
-  for (let i = 0; i < attempts; i++) {
-    await new Promise(resolve => setTimeout(resolve, 900));
-    const result = await api({ action: 'get_upload_result', pid, upload_id: uploadId, _ts: Date.now() });
-    if (result && result.video_url) return result.video_url;
-    if (result && result.ok === false) throw new Error(result.error || 'Upload result error');
-  }
-  throw new Error('ვიდეო აიტვირთა, მაგრამ URL ჯერ ვერ მივიღე. სცადე გვერდის გადატვირთვა.');
-}
-
 // Extract URL identifiers:
 //   /?pid=153205         → pid lookup
 //   /?pid=153205&edit=1  → pid + edit mode
@@ -1095,6 +1050,8 @@ function getUrlParams() {
     token: params.get('token'),
     logout: params.get('logout') === '1',
     order: params.get('order'), // Order invoice page: ?order=ORD-XXX
+    rate: params.get('rate'), // Rating page: ?rate=ORD-XXX
+    confirm: params.get('confirm'), // Delivery confirm page: ?confirm=ORD-XXX
   };
 }
 
@@ -1202,7 +1159,8 @@ function trySsoLogin() {
 
 // Fly-to-cart animation — visual feedback when product added to cart
 function flyToCart(productId) {
-  const cartIcon = document.getElementById('cart-icon');
+  // Prefer the catalog's floating cart when the catalog drawer is open; else the main cart icon
+  const cartIcon = document.getElementById('catalog-floating-cart') || document.getElementById('cart-icon');
   if (!cartIcon) return;
   
   const card = productId ? document.querySelector('[data-pid="' + productId + '"]') : null;
@@ -1284,6 +1242,8 @@ function App() {
   // via the 30-day session token on the ?pid=X&edit=1 redirect that follows.
 
   const [view, setView] = useState(
+    urlParams.confirm ? 'confirm' :
+    urlParams.rate ? 'rate' :
     urlParams.order ? 'order' :
     (urlParams.pid || urlParams.slug) ? 'loading' :
     'login'
@@ -1292,6 +1252,7 @@ function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [problems, setProblems] = useState(PROBLEMS); // hardcoded fallback, will be replaced from Sheet
+  const [companyVideos, setCompanyVideos] = useState([]); // admin-uploaded videos shown on every rep's page
   const [dynamicProducts, setDynamicProducts] = useState([]); // from Products sheet, filtered by problem in PublicPage
   const [labels, setLabels] = useState({}); // i18n-style label overrides from Labels sheet; empty = use hardcoded defaults
   const [loadError, setLoadError] = useState('');
@@ -1304,9 +1265,8 @@ function App() {
 
   // ════════════════════════════════════════════════════════════════════════
   // ─── Profile-saved snapshot (lifted to App level) ───
-  // Tracks last successfully-saved required fields from the backend.
-  // If a returning rep already has all required fields saved, public-page UI
-  // unlocks immediately; incomplete profiles remain locked until Save succeeds.
+  // Tracks last successfully-saved required fields. Stays empty until backend
+  // confirms a save, then updates via setSavedSnapshot (passed to Dashboard).
   // Used to:
   //   1) Hide "საჯარო ფეიჯი" tab in ViewSwitcher until profile is saved
   //   2) Show locked/unlocked share-block in Dashboard
@@ -1316,7 +1276,16 @@ function App() {
     name: '', city: '', phone: '', facebook: '', referralLink: '', personalId: '',
   });
 
-  // TRUE when the representative has all required profile data saved.
+  const profileSnapshotFromRep = (source = {}) => ({
+    name: source.name || '',
+    city: source.city || '',
+    phone: source.phone || '',
+    facebook: source.facebook || '',
+    referralLink: source.referralLink || source.referral_link || '',
+    personalId: source.personalId || source.personal_id || '',
+  });
+
+  // TRUE only after the representative has saved the required profile data.
   // Used to show/hide both:
   //   1) the top "საჯარო ფეიჯი" tab
   //   2) the Dashboard "შენი ლენდინგ ფეიჯი" card
@@ -1492,17 +1461,7 @@ function App() {
       personalId: rep?.personal_id || '',
       title: rep?.title || '',
     });
-    // Initialize saved-snapshot from login response (last-saved values from backend).
-    // Complete existing profiles unlock public-page UI immediately; incomplete
-    // profiles stay locked until the rep fills required fields and saves.
-    setSavedSnapshot({
-      name: rep?.name || '',
-      city: rep?.city || '',
-      phone: rep?.phone || '',
-      facebook: rep?.facebook || '',
-      referralLink: rep?.referral_link || '',
-      personalId: rep?.personal_id || '',
-    });
+    setSavedSnapshot(profileSnapshotFromRep(rep || {}));
     setView('dashboard');
     const newUrl = `?pid=${pid}&edit=1`;
     window.history.replaceState({}, document.title, newUrl);
@@ -1558,6 +1517,15 @@ function App() {
       })
       .catch(() => {/* silent fallback to hardcoded PROBLEMS */});
 
+    // Company-wide videos (admin-uploaded, shown on every rep's public page)
+    api({ action: 'get_company_videos' })
+      .then(data => {
+        if (data.ok && Array.isArray(data.videos)) {
+          setCompanyVideos(data.videos);
+        }
+      })
+      .catch(() => {/* silent — feature optional */});
+
     // Same dual-load for dynamic products
     try {
       const cached = localStorage.getItem('farmasi_products_cache');
@@ -1576,9 +1544,16 @@ function App() {
       })
       .catch(() => {/* silent — non-hair-loss problems will just not show product showcase */});
 
-    // Load UI labels fresh from Sheet. Do not hydrate from old localStorage cache,
-    // because copy edits should appear immediately after the Labels sheet changes.
-    api({ action: 'get_labels', _ts: Date.now() })
+    // Dual-load for UI labels — Sheet-driven text overrides (empty = use hardcoded defaults)
+    try {
+      const cached = localStorage.getItem('farmasi_labels_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') setLabels(parsed);
+      }
+    } catch {}
+
+    api({ action: 'get_labels' })
       .then(data => {
         if (data.ok && data.labels && typeof data.labels === 'object') {
           setLabels(data.labels);
@@ -1644,16 +1619,7 @@ function App() {
             personalId: data.rep.personal_id || '',
             title: data.rep.title || '',
           });
-          // Initialize saved-snapshot from server (these are the last-saved values).
-          // Used to drive the "საჯარო ფეიჯი" tab visibility and Dashboard share block.
-          setSavedSnapshot({
-            name: data.rep.name || '',
-            city: data.rep.city || '',
-            phone: data.rep.phone || '',
-            facebook: data.rep.facebook || '',
-            referralLink: data.rep.referral_link || '',
-            personalId: data.rep.personal_id || '',
-          });
+          setSavedSnapshot(profileSnapshotFromRep(data.rep || {}));
           // Decide view: edit mode → dashboard, ?problem=X → public with that problem expanded, otherwise → public
           if (urlParams.edit) {
             setView('dashboard');
@@ -1718,14 +1684,22 @@ function App() {
 
         return (
           <>
-            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
+            {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate && !urlParams.confirm)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
             {view === 'loading' && <LoadingScreen labels={labels} />}
             {view === 'notfound' && <NotFoundScreen labels={labels} />}
             {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
-            {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => setView('public')} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
-            {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+            {view === 'dashboard' && <Dashboard rep={rep} setRep={setRep} repCode={repCode} onPreview={() => {
+              try {
+                const _s = (rep.slug || '').trim();
+                if (_s) window.history.replaceState({}, '', '/' + _s);
+              } catch (_) {}
+              setView('public');
+            }} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
+            {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} companyVideos={companyVideos} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
             {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
+            {view === 'rate' && <RatingPage orderId={urlParams.rate} labels={labels} />}
+            {view === 'confirm' && <ConfirmDeliveryPage orderId={urlParams.confirm} labels={labels} />}
           </>
         );
       })()}
@@ -2545,7 +2519,11 @@ function MyOrdersSection({ repCode, labels = {} }) {
   };
 
   const changeStatus = (orderId, status) => {
+    // Optimistic local update for instant UI feedback
     saveStatuses({ ...localStatuses, [orderId]: status });
+    // Notify backend → triggers SMS to customer (delivery link on 'shipped', etc.)
+    api({ action: 'updateOrderStatus', order_id: orderId, status: status, rep_pid: repCode })
+      .catch(() => {});
   };
 
   const loadOrders = () => {
@@ -2672,7 +2650,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
           <div className="space-y-3" style={{ maxHeight: 620, overflowY: 'auto', paddingRight: 4 }}>
             {shownOrders.length === 0 ? (
               <div className="text-center py-8 rounded-2xl" style={{ background: theme.cream, border: `1px dashed ${theme.gold}44` }}>
-                <p className="text-sm" style={{ color: theme.ink + '99' }}>ამ ფილტრით შეკვეთა ვერ მოიძებნა</p>
+                <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('orders_no_results', 'ამ ფილტრით შეკვეთა ვერ მოიძებნა')}</p>
               </div>
             ) : shownOrders.map((o, idx) => {
               const originalIndex = orders.indexOf(o);
@@ -2716,13 +2694,13 @@ function MyOrdersSection({ repCode, labels = {} }) {
                     <div className="px-3.5 pb-3.5 border-t" style={{ borderColor: theme.gold + '22' }}>
                       <div className="grid md:grid-cols-2 gap-3 py-3 text-xs" style={{ color: theme.ink + 'AA' }}>
                         <div className="rounded-xl p-3" style={{ background: theme.cream }}>
-                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>კლიენტი</p>
+                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>{L('orders_client', 'კლიენტი')}</p>
                           <p>{getCustomer(o)}</p>
                           <p>{o.customer_phone || o.phone || 'ტელეფონი არ ჩანს'}</p>
                           {(o.customer_city || o.city || o.address) && <p className="mt-1">📍 {[o.customer_city || o.city, o.address].filter(Boolean).join(', ')}</p>}
                         </div>
                         <div className="rounded-xl p-3" style={{ background: theme.cream }}>
-                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>შეკვეთა</p>
+                          <p className="font-semibold mb-1" style={{ color: theme.ink }}>{L('orders_order', 'შეკვეთა')}</p>
                           <p>ID: #{orderId}</p>
                           <p>თანხა: {getTotal(o).toFixed(2)} ₾</p>
                           {o.payment_method && <p>გადახდა: {o.payment_method}</p>}
@@ -2731,7 +2709,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
 
                       {items.length > 0 && (
                         <div className="rounded-xl p-3 mb-3" style={{ background: '#fff', border: `1px solid ${theme.gold}22` }}>
-                          <p className="text-xs font-semibold mb-2" style={{ color: theme.ink }}>პროდუქტები</p>
+                          <p className="text-xs font-semibold mb-2" style={{ color: theme.ink }}>{L('orders_products', 'პროდუქტები')}</p>
                           <div className="space-y-2">
                             {items.map((item, i) => (
                               <div key={i} className="flex items-center justify-between gap-3 text-xs">
@@ -2757,8 +2735,8 @@ function MyOrdersSection({ repCode, labels = {} }) {
 
                       <div className="flex flex-wrap gap-2">
                         {whatsappUrl && <a href={whatsappUrl} target="_blank" rel="noopener" className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#DCFCE7', color: '#16A34A' }}>WhatsApp</a>}
-                        {phone && <a href={`tel:${phone}`} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#EFF6FF', color: '#2563EB' }}>დარეკვა</a>}
-                        <button type="button" onClick={() => openInvoice(o, originalIndex)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.wine, color: '#fff' }}>ინვოისი</button>
+                        {phone && <a href={`tel:${phone}`} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: '#EFF6FF', color: '#2563EB' }}>{L('orders_call', 'დარეკვა')}</a>}
+                        <button type="button" onClick={() => openInvoice(o, originalIndex)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.wine, color: '#fff' }}>{L('orders_invoice', 'ინვოისი')}</button>
                         <button type="button" onClick={() => navigator.clipboard?.writeText(orderId)} className="px-3 py-2 rounded-full text-xs font-medium" style={{ background: theme.cream, color: theme.ink, border: `1px solid ${theme.gold}33` }}>Copy ID</button>
                       </div>
                     </div>
@@ -2781,34 +2759,69 @@ function MyOrdersSection({ repCode, labels = {} }) {
 }
 
 function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels = {}, savedSnapshot, setSavedSnapshot, isProfileSaved }) {
+
   // Helper to get label with fallback — edit Sheet "Labels" tab to override
   const L = (key, fallback) => labels[key] || fallback;
+
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
-  const PUBLIC_URL = `${window.location.origin}/${rep?.slug || ''}`;
+
+  // Fallback slug logic
+  const pathSlug = window.location.pathname
+    .replace(/^\/+|\/+$/g, '')
+    .trim();
+
+  const safeSlug = String(
+    rep?.slug ||
+    pathSlug ||
+    ''
+  ).trim();
+
+  // Final public URL
+  const PUBLIC_URL = safeSlug
+    ? `${window.location.origin}/${safeSlug}`
+    : window.location.origin;
+
+  // Guide URL
   const GUIDE_URL = 'https://my.farmasi.ge/guide.html';
+
+  // Validation
   const hasSavedData = Boolean(
-  rep &&
-  rep.name?.trim() &&
-  rep.phone?.trim() &&
-  rep.slug?.trim()
-);
+    rep &&
+    rep.name?.trim() &&
+    rep.phone?.trim()
+  );
 
-const copyGuideUrl = () => {
-  try {
-    navigator.clipboard?.writeText(GUIDE_URL);
-    setGuideCopied(true);
-    setTimeout(() => setGuideCopied(false), 2000);
-  } catch {}
-};
+  // Copy public URL
+  const copyPublicUrl = () => {
+    try {
+      navigator.clipboard?.writeText(PUBLIC_URL);
+      setCopied(true);
 
-const copyPublicUrl = () => {
-  try {
-    navigator.clipboard?.writeText(PUBLIC_URL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  } catch {}
-};
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Copy guide URL
+  const copyGuideUrl = () => {
+    try {
+      navigator.clipboard?.writeText(GUIDE_URL);
+      setGuideCopied(true);
+
+      setTimeout(() => {
+        setGuideCopied(false);
+      }, 2000);
+
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const [saving, setSaving] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -2834,40 +2847,6 @@ const copyPublicUrl = () => {
     if (!savedSnapshot.referralLink || !savedSnapshot.referralLink.trim()) missing.push('რეფერალური ლინკი');
     if (!savedSnapshot.personalId || String(savedSnapshot.personalId).trim().length !== 11) missing.push('პირადი ნომერი');
     return missing;
-  })();
-
-  const profileCompletion = (() => {
-    const nameParts = (rep.name || '').trim().split(/\s+/).filter(Boolean);
-    const completeBankAccount = (rep.bankAccounts || []).some(acc =>
-      (acc.bank || '').trim() && (acc.recipient || '').trim() && (acc.account || '').trim()
-    );
-    const fields = [
-      { label: 'პროფილის ფოტო', done: !!rep.photo },
-      { label: 'სახელი', done: !!nameParts[0] },
-      { label: 'გვარი', done: nameParts.length >= 2 },
-      { label: 'ქალაქი', done: !!(rep.city || '').trim() },
-      { label: 'მოკლე ბიო', done: !!(rep.bio || '').trim() },
-      { label: 'ტელეფონის ნომერი', done: !!(rep.phone || '').trim() },
-      { label: 'WhatsApp', done: !!(rep.whatsapp || '').trim() },
-      { label: 'Facebook ლინკი', done: !!(rep.facebook || '').trim() },
-      { label: 'Instagram ლინკი', done: !!(rep.instagram || '').trim() },
-      { label: 'TikTok ლინკი', done: !!(rep.tiktok || '').trim() },
-      { label: 'YouTube ლინკი', done: !!(rep.youtube || '').trim() },
-      { label: 'Telegram ლინკი', done: !!(rep.telegram || '').trim() },
-      { label: 'პერსონალური ლინკი', done: !!(rep.slug || '').trim() },
-      { label: 'რეფერალური ლინკი', done: !!(rep.referralLink || '').trim() },
-      { label: 'საბანკო რეკვიზიტები', done: completeBankAccount },
-      { label: 'პირადი ნომერი', done: String(rep.personalId || '').trim().length === 11 },
-      { label: 'ვიდეო მიმართვა', done: !!(rep.videoUrl || '').trim() },
-      { label: 'მომხმარებლის ვიდეო-რეცენზია', done: (rep.customerVideos || []).length > 0 },
-    ];
-    const doneCount = fields.filter(f => f.done).length;
-    return {
-      total: fields.length,
-      done: doneCount,
-      percent: Math.round((doneCount / fields.length) * 100),
-      missing: fields.filter(f => !f.done).map(f => f.label),
-    };
   })();
 
   // ─── Authenticated API wrappers ───
@@ -3199,78 +3178,85 @@ const copyPublicUrl = () => {
   };
 
   const onVideoFile = async (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const f = e.target.files?.[0];
+  if (!f) return;
 
-    // Type check
-    if (!f.type.startsWith('video/')) {
-      setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
-      setTimeout(() => setSaveError(''), 4000);
+  if (!f.type.startsWith('video/')) {
+    setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
+    setTimeout(() => setSaveError(''), 4000);
+    return;
+  }
+
+  setUploadingVideo(true);
+  setVideoUploadProgress(1);
+  setSaveError('');
+
+  try {
+    const init = await editApi({
+      action: 'bunny_create_video',
+      pid: repCode,
+      filename: f.name,
+      filesize: f.size,
+    });
+
+    if (!init.ok || !init.videoId) {
+      setSaveError(init.error || 'Bunny-ზე ვიდეოს შექმნა ვერ მოხერხდა');
       return;
     }
 
-    // Size limit: 5MB (Apps Script payload limit)
-    if (f.size > 5 * 1024 * 1024) {
-      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB. მოკლედ ჩაჭერი ან ხარისხი დააწიე.`);
-      setTimeout(() => setSaveError(''), 6000);
-      return;
+    setVideoUploadProgress(5);
+
+    await new Promise((resolve, reject) => {
+      const upload = new tus.Upload(f, {
+        endpoint: 'https://video.bunnycdn.com/tusupload',
+        retryDelays: [0, 3000, 6000],
+        headers: {
+          'AuthorizationSignature': init.tusHeaders.AuthorizationSignature,
+          'AuthorizationExpire': init.tusHeaders.AuthorizationExpire,
+          'VideoId': init.videoId,
+          'LibraryId': String(init.libraryId),
+        },
+        metadata: {
+          filetype: f.type,
+          title: f.name,
+        },
+        onProgress(bytesUploaded, bytesTotal) {
+          const pct = Math.round((bytesUploaded / bytesTotal) * 85) + 10;
+          setVideoUploadProgress(pct);
+        },
+        onSuccess() { resolve(); },
+        onError(err) { reject(err); },
+      });
+      upload.start();
+    });
+
+    setVideoUploadProgress(95);
+
+    const save = await editApi({
+      action: 'bunny_save_video',
+      pid: repCode,
+      video_id: init.videoId,
+      library_id: init.libraryId,
+    });
+
+    if (save.ok) {
+      const streamUrl = `https://iframe.mediadelivery.net/embed/${init.libraryId}/${init.videoId}`;
+      setRep(r => ({ ...r, videoUrl: streamUrl }));
+      setVideoUploadProgress(100);
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 3000);
+    } else {
+      setSaveError(save.error || 'შენახვა ვერ მოხერხდა');
     }
 
-    setUploadingVideo(true);
-    setVideoUploadProgress(0);
-    setSaveError('');
-
-    try {
-      // Read as base64 (with progress simulation since FileReader is sync-ish)
-      const reader = new FileReader();
-      reader.onprogress = (ev) => {
-        if (ev.lengthComputable) {
-          setVideoUploadProgress(Math.round((ev.loaded / ev.total) * 50)); // 0-50% for read
-        }
-      };
-      const base64Data = await new Promise((resolve, reject) => {
-        reader.onload = () => { setVideoUploadProgress(50); resolve(reader.result); };
-        reader.onerror = reject;
-        reader.readAsDataURL(f);
-      });
-
-      setVideoUploadProgress(60); // 60% — uploading to Drive
-
-      const result = await editApiUpload({
-        action: 'upload_video',
-        pid: repCode,
-        video_data: base64Data,
-        video_filename: f.name,
-      });
-
-      setVideoUploadProgress(95);
-
-      if (result.ok && result.video_url) {
-        setRep(r => ({ ...r, videoUrl: result.video_url }));
-        setVideoUploadProgress(100);
-        setSavedToast(true);
-        setTimeout(() => setSavedToast(false), 3000);
-      } else if (result._silent) {
-        // Cross-origin couldn't read response — re-fetch rep data
-        const refresh = await api({ action: 'get_rep', pid: repCode });
-        if (refresh.ok && refresh.rep.video_url) {
-          setRep(r => ({ ...r, videoUrl: refresh.rep.video_url }));
-          setVideoUploadProgress(100);
-          setSavedToast(true);
-          setTimeout(() => setSavedToast(false), 3000);
-        }
-      } else {
-        setSaveError(result.error || 'ვიდეოს ატვირთვა ვერ მოხერხდა');
-      }
-    } catch (err) {
-      setSaveError('ვიდეოს ატვირთვის შეცდომა: ' + err.message);
-    } finally {
-      setUploadingVideo(false);
-      setTimeout(() => setVideoUploadProgress(0), 1500);
-      // Reset file input so same file can be selected again
-      if (videoFileRef.current) videoFileRef.current.value = '';
-    }
-  };
+  } catch (err) {
+    setSaveError('შეცდომა: ' + (err.message || err));
+  } finally {
+    setUploadingVideo(false);
+    setTimeout(() => setVideoUploadProgress(0), 1500);
+    if (videoFileRef.current) videoFileRef.current.value = '';
+  }
+};
 
   // ─── Customer Videos (testimonial gallery at bottom of public page) ───
   const customerVideoFileRef = useRef(null);
@@ -3304,8 +3290,8 @@ const copyPublicUrl = () => {
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
-    if ((rep.customerVideos || []).length >= 6) {
-      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+    if ((rep.customerVideos || []).length >= 24) {
+      setSaveError('მაქსიმუმ 24 ვიდეო — წაშალე ერთი დასამატებლად');
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
@@ -3321,68 +3307,96 @@ const copyPublicUrl = () => {
     const f = e.target.files?.[0];
     if (!f) return;
     if (!f.type.startsWith('video/')) {
-      setSaveError('ფაილი უნდა იყოს ვიდეო');
+      setSaveError('ფაილი უნდა იყოს ვიდეო (MP4, WebM, MOV)');
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
-    if (f.size > 5 * 1024 * 1024) {
-      setSaveError(`ვიდეო ძალიან დიდია — ${(f.size / 1024 / 1024).toFixed(1)} MB. მაქსიმუმ 5 MB.`);
-      setTimeout(() => setSaveError(''), 5000);
-      return;
-    }
-    if ((rep.customerVideos || []).length >= 6) {
-      setSaveError('მაქსიმუმ 6 ვიდეო — წაშალე ერთი დასამატებლად');
+    if ((rep.customerVideos || []).length >= 24) {
+      setSaveError('მაქსიმუმ 24 ვიდეო — წაშალე ერთი დასამატებლად');
       setTimeout(() => setSaveError(''), 4000);
       return;
     }
 
     setUploadingCustomerVideo(true);
-    setCustomerUploadProgress(0);
+    setCustomerUploadProgress(1);
     setSaveError('');
 
     try {
-      const reader = new FileReader();
-      reader.onprogress = (ev) => {
-        if (ev.lengthComputable) setCustomerUploadProgress(Math.round((ev.loaded / ev.total) * 50));
-      };
-      const base64Data = await new Promise((resolve, reject) => {
-        reader.onload = () => { setCustomerUploadProgress(50); resolve(reader.result); };
-        reader.onerror = reject;
-        reader.readAsDataURL(f);
-      });
-
-      setCustomerUploadProgress(70);
-
-      const uploadId = 'customer_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-      const result = await editApiUpload({
-        action: 'upload_video',
+      // 1. Bunny-ზე ვიდეოს შექმნა + TUS credentials
+      const init = await editApi({
+        action: 'bunny_create_customer_video',
         pid: repCode,
-        slot: 'customer',  // tells Apps Script to NOT update video_url field
-        upload_id: uploadId,
-        video_data: base64Data,
-        video_filename: f.name,
+        filename: f.name,
+        filesize: f.size,
       });
 
-      setCustomerUploadProgress(90);
-
-      let returnedUrl = '';
-      if (result.ok && result.video_url) {
-        returnedUrl = result.video_url;
-      } else if (result._silent) {
-        returnedUrl = await waitForUploadResult(repCode, uploadId);
-      } else {
-        setSaveError(result.error || 'ატვირთვა ვერ მოხერხდა');
+      if (!init.ok || !init.videoId) {
+        setSaveError(init.error || 'Bunny-ზე ვიდეოს შექმნა ვერ მოხერხდა');
         return;
       }
 
-      const newItem = { url: returnedUrl, caption: newCustomerCaption.trim(), problem: newCustomerProblem || '' };
+      setCustomerUploadProgress(5);
+
+      // 2. TUS ატვირთვა პირდაპირ Bunny-ზე
+      await new Promise((resolve, reject) => {
+        const upload = new tus.Upload(f, {
+          endpoint: 'https://video.bunnycdn.com/tusupload',
+          retryDelays: [0, 3000, 6000],
+          headers: {
+            'AuthorizationSignature': init.tusHeaders.AuthorizationSignature,
+            'AuthorizationExpire': init.tusHeaders.AuthorizationExpire,
+            'VideoId': init.videoId,
+            'LibraryId': String(init.libraryId),
+          },
+          metadata: {
+            filetype: f.type,
+            title: f.name,
+          },
+          onProgress(bytesUploaded, bytesTotal) {
+            const pct = Math.round((bytesUploaded / bytesTotal) * 85) + 10;
+            setCustomerUploadProgress(pct);
+          },
+          onSuccess() { resolve(); },
+          onError(err) { reject(err); },
+        });
+        upload.start();
+      });
+
+      setCustomerUploadProgress(95);
+
+      // ვიდეოს ორიენტაცია — წავიკითხოთ რეალური ზომა ფაილიდან
+      let orientation = 'horizontal';
+      try {
+        orientation = await new Promise((resolve) => {
+          const v = document.createElement('video');
+          v.preload = 'metadata';
+          v.onloadedmetadata = () => {
+            const o = v.videoHeight > v.videoWidth ? 'vertical' : 'horizontal';
+            URL.revokeObjectURL(v.src);
+            resolve(o);
+          };
+          v.onerror = () => resolve('horizontal');
+          v.src = URL.createObjectURL(f);
+        });
+      } catch (_) { orientation = 'horizontal'; }
+
+      // 3. Bunny embed URL-ის ჩამატება customer_videos სიაში
+      const embedUrl = `https://iframe.mediadelivery.net/embed/${init.libraryId}/${init.videoId}`;
+      const newItem = {
+        url: embedUrl,
+        caption: newCustomerCaption.trim(),
+        problem: newCustomerProblem || '',
+        videoId: init.videoId,  // შენახვა წაშლის დროს
+        orientation: orientation,  // vertical / horizontal
+      };
       const updated = [...(rep.customerVideos || []), newItem];
       setNewCustomerCaption('');
       setNewCustomerProblem('');
       setCustomerUploadProgress(100);
       await persistCustomerVideos(updated);
+
     } catch (err) {
-      setSaveError('ატვირთვის შეცდომა: ' + err.message);
+      setSaveError('ატვირთვის შეცდომა: ' + (err.message || err));
     } finally {
       setUploadingCustomerVideo(false);
       setTimeout(() => setCustomerUploadProgress(0), 1500);
@@ -3391,6 +3405,19 @@ const copyPublicUrl = () => {
   };
 
   const removeCustomerVideo = async (index) => {
+    const video = (rep.customerVideos || [])[index];
+    // Bunny-ზე ატვირთული ვიდეოა — წავშალოთ
+    if (video?.videoId) {
+      try {
+        await editApi({
+          action: 'bunny_delete_customer_video',
+          pid: repCode,
+          video_id: video.videoId,
+        });
+      } catch (_) {
+        // წაშლა Bunny-ზე ვერ მოხდა, მაგრამ სიაში მაინც ამოვიღებთ
+      }
+    }
     const updated = (rep.customerVideos || []).filter((_, i) => i !== index);
     await persistCustomerVideos(updated);
   };
@@ -3565,45 +3592,6 @@ const copyPublicUrl = () => {
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
-        <Card>
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
-                {L('profile_completion_eyebrow', 'პროფილის შევსება')}
-              </p>
-              <p className="font-display text-lg" style={{ color: theme.ink }}>
-                {profileCompletion.percent}% {L('profile_completion_title', 'მზადაა')}
-              </p>
-            </div>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: `conic-gradient(${theme.wine} ${profileCompletion.percent * 3.6}deg, ${theme.blush} 0deg)`, color: theme.ink }}>
-              <div className="w-11 h-11 rounded-full flex items-center justify-center text-xs font-semibold"
-                style={{ background: theme.cream }}>
-                {profileCompletion.percent}%
-              </div>
-            </div>
-          </div>
-          <div className="h-2 rounded-full overflow-hidden mb-3" style={{ background: theme.blush }}>
-            <div className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${profileCompletion.percent}%`, background: theme.wine }} />
-          </div>
-          <p className="text-sm leading-relaxed" style={{ color: theme.ink + '99' }}>
-            {profileCompletion.percent === 100
-              ? L('profile_completion_done', 'ყველა სავალდებულო ველი შევსებულია. შენი საჯარო ფეიჯი უფრო სანდო და მიმზიდველია მომხმარებლისთვის.')
-              : L('profile_completion_hint', 'შეავსე დარჩენილი ველები, რომ შენი საჯარო ფეიჯი მომხმარებლისთვის უფრო სანდო და მიმზიდველი გახდეს.')}
-          </p>
-          {profileCompletion.missing.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {profileCompletion.missing.map(field => (
-                <span key={field} className="text-xs px-3 py-1 rounded-full"
-                  style={{ background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
-                  {field}
-                </span>
-              ))}
-            </div>
-          )}
-        </Card>
-
         {hasSavedData && (
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
@@ -3629,13 +3617,13 @@ const copyPublicUrl = () => {
                 <button onClick={() => { setSlugDraft(slug); setEditingSlug(true); setSlugError(''); }}
                   className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition hover:scale-105"
                   style={{ background: theme.ink + '22', color: theme.ink }}
-                  title="slug-ის შეცვლა">
+                  title={L('dash_slug_edit', 'slug-ის შეცვლა')}>
                   <Ic name="edit-3" className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={copyUrl}
                   className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
                   style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
-                  {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დააკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+                  {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_copied', 'დააკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> {L('dash_copy', 'კოპი')}</>}
                 </button>
               </div>
               <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
@@ -3645,7 +3633,7 @@ const copyPublicUrl = () => {
           ) : (
             // ─── EDIT mode: input + regenerate + save/cancel ───
             <div className="p-3 rounded-xl" style={{ background: theme.cream, border: `1.5px solid ${theme.wine}55` }}>
-              <p className="text-[10px] tracking-widest uppercase mb-2" style={{ color: theme.gold }}>slug-ის შეცვლა</p>
+              <p className="text-[10px] tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{L('dash_slug_change_label', 'slug-ის შეცვლა')}</p>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-mono" style={{ color: theme.ink + '99' }}>{window.location.host}/</span>
                 <input type="text" value={slugDraft}
@@ -3678,7 +3666,7 @@ const copyPublicUrl = () => {
                 <button onClick={applySlugEdit}
                   className="px-4 py-2 rounded-lg flex items-center gap-1.5 text-[11px] tracking-wide transition hover:scale-105"
                   style={{ background: theme.wine, color: theme.cream }}>
-                  <Ic name="check" className="w-3 h-3" /> შენახვა
+                  <Ic name="check" className="w-3 h-3" /> {L('dash_save_done', 'შენახვა')}
                 </button>
               </div>
             </div>
@@ -3722,8 +3710,8 @@ const copyPublicUrl = () => {
         <Card>
           <div className="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>🌐 საჯარო ფეიჯი</p>
-              <p className="font-display text-lg" style={{ color: theme.ink }}>შენი პერსონალური ლინკი</p>
+              <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{L('dash_public_eyebrow', '🌐 საჯარო ფეიჯი')}</p>
+              <p className="font-display text-lg" style={{ color: theme.ink }}>{L('dash_your_link', 'შენი პერსონალური ლინკი')}</p>
             </div>
             <a href={PUBLIC_URL} target="_blank" rel="noopener noreferrer"
               className="text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
@@ -3741,7 +3729,7 @@ const copyPublicUrl = () => {
             <button onClick={copyPublicUrl}
               className="px-3 py-2 rounded-lg flex items-center gap-1.5 text-xs tracking-wide transition"
               style={{ background: copied ? theme.gold : theme.wine, color: theme.cream }}>
-              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> დაკოპირდა</> : <><Ic name="copy" className="w-3.5 h-3.5" /> კოპი</>}
+              {copied ? <><Ic name="check" className="w-3.5 h-3.5" /> {L('dash_copied_link', 'დაკოპირდა')}</> : <><Ic name="copy" className="w-3.5 h-3.5" /> {L('dash_copy', 'კოპი')}</>}
             </button>
           </div>
           <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
@@ -3754,7 +3742,7 @@ const copyPublicUrl = () => {
           <Card>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>📊 ანალიტიკა</p>
+                <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>{L('dash_analytics', '📊 ანალიტიკა')}</p>
                 <p className="font-display text-lg" style={{ color: theme.ink }}>{L('visits_title', 'შენი გვერდის ვიზიტები')}</p>
               </div>
             </div>
@@ -4181,7 +4169,13 @@ const copyPublicUrl = () => {
                 const q = (pickerSearchQuery || '').trim().toLowerCase();
                 const filtered = availableProducts.filter(p => {
                   if (pickerCategoryFilter !== 'all' && String(p.cat || '').trim() !== pickerCategoryFilter) return false;
-                  if (!productMatchesSearch(p, pickerSearchQuery)) return false;
+                  if (q) {
+                    const matches = String(p.name || '').toLowerCase().includes(q)
+                                 || String(p.cat || '').toLowerCase().includes(q)
+                                 || String(p.id || '').toLowerCase().includes(q)
+                                 || String(p.tag || '').toLowerCase().includes(q);
+                    if (!matches) return false;
+                  }
                   return true;
                 });
                 // Apply sort
@@ -4258,7 +4252,10 @@ const copyPublicUrl = () => {
                         // Smart empty state: check if search matches already-selected product
                         let alreadySelectedMatch = null;
                         if (q && Array.isArray(myProducts)) {
-                          alreadySelectedMatch = myProducts.find(mp => productMatchesSearch(mp, pickerSearchQuery));
+                          alreadySelectedMatch = myProducts.find(mp =>
+                            String(mp.id || '').toLowerCase().includes(q) ||
+                            String(mp.name || '').toLowerCase().includes(q)
+                          );
                         }
                         let message;
                         if (alreadySelectedMatch) {
@@ -4418,7 +4415,7 @@ const copyPublicUrl = () => {
           <div className="mt-4">
             <label className="block text-xs uppercase tracking-widest mb-1.5" style={{ color: theme.ink + 'AA' }}>{L('profile_bio_label', 'მოკლე ბიო')}</label>
             <textarea value={rep.bio} onChange={upd('bio')} rows={3} maxLength={200}
-              placeholder={L('profile_bio_placeholder', 'რას გთავაზობ? რატომ შენ?')}
+              placeholder={L('profile_bio_placeholder', 'რას გთავაზობ? რატომ შენ? (ცარიელი თუ დატოვე — გამოჩნდება FARMASI-ს საერთო ტექსტი)')}
               className="w-full px-3 py-2.5 rounded-xl outline-none text-sm resize-none"
               style={{ background: theme.cream, border: `1.5px solid ${theme.gold}33`, color: theme.ink }} />
             <p className="text-[10px] mt-1 text-right" style={{ color: theme.ink + '66' }}>{rep.bio.length}/200</p>
@@ -4478,7 +4475,7 @@ const copyPublicUrl = () => {
               ) : (
                 <>
                   <Ic name="upload" className="w-4 h-4" />
-                  {L('profile_video_upload_button', 'ატვირთე ვიდეო ფაილი (MP4, max 5 MB)')}
+                  ატვირთე ვიდეო Bunny-ზე (MP4/WebM, მაქს. 2 GB)
                 </>
               )}
             </button>
@@ -4491,7 +4488,7 @@ const copyPublicUrl = () => {
             <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime,video/*"
               onChange={onVideoFile} className="hidden" />
             <p className="text-[10px] mt-2 leading-relaxed text-center" style={{ color: theme.ink + '77' }}>
-              💡 {L('profile_video_save_hint', 'TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე')}
+              💡 TikTok/Instagram-დან ვიდეო ჩამოტვირთე "Save"-ით → ატვირთე აქ → სუფთა ვიდეო, ტექსტის გარეშე
             </p>
           </div>
 
@@ -4503,7 +4500,7 @@ const copyPublicUrl = () => {
           </div>
 
           {/* SECONDARY: URL paste */}
-          <Input icon="link" label={L('profile_paste_link', 'ჩასვი ვიდეოს ლინკი')} value={rep.videoUrl}
+          <Input icon="link" label={L('profile_paste_link', 'ჩასვი ლინკი (გამოჩნდება მეტადატით)')} value={rep.videoUrl}
             onChange={upd('videoUrl')}
             placeholder="https://instagram.com/reel/... ან https://youtu.be/..." />
           {rep.videoUrl && (
@@ -4528,7 +4525,7 @@ const copyPublicUrl = () => {
             </div>
           )}
           <p className="text-[10px] mt-3 leading-relaxed" style={{ color: theme.ink + '77' }}>
-            {L('profile_supported_platforms', 'მხარდაჭერილია: YouTube, Instagram, TikTok, Facebook, Vimeo და MP4 ლინკი')}
+            {L('profile_supported_platforms', 'მხარდაჭერილია: YouTube · Instagram (Reels/Posts) · TikTok · Facebook (Watch/Reels) · Vimeo · MP4 პირდაპირი ლინკი')}
           </p>
         </Card>
 
@@ -4664,7 +4661,7 @@ const copyPublicUrl = () => {
         <Card>
           <SectionLabel n="05" t={L('profile_section_5', 'კმაყოფილი მომხმარებლები')} />
           <p className="text-xs mb-4 leading-relaxed" style={{ color: theme.ink + '99' }}>
-            დაამატე მომხმარებლების ვიდეო-რეცენზიები (მაქს. 6) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. იგივე წესები: ფაილი 5 MB-მდე, ან ნებისმიერი ვიდეო-პლატფორმის ლინკი.
+            დაამატე მომხმარებლების ვიდეო-რეცენზიები ან პროდუქციის ვიდეოები (მაქს. 24) — გამოჩნდება landing-ის ბოლოში როგორც სოციალური დადასტურება. ფაილი ნებისმიერი ზომის (Bunny Stream-ით), ან ნებისმიერი ვიდეო-პლატფორმის ლინკი. caption-ში მიუთითე პროდუქტის სახელი ან მომხმარებლის შთაბეჭდილება.
           </p>
 
           {/* Existing customer videos list */}
@@ -4713,10 +4710,10 @@ const copyPublicUrl = () => {
           )}
 
           {/* Add new — only show if under limit */}
-          {(rep.customerVideos || []).length < 6 ? (
+          {(rep.customerVideos || []).length < 24 ? (
             <div className="rounded-2xl p-3" style={{ background: theme.cream + '88', border: `1px dashed ${theme.gold}44` }}>
               <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.ink + '99' }}>
-                {L('profile_add_new', 'დაამატე ახალი')} ({(rep.customerVideos || []).length}/6)
+                {L('profile_add_new', 'დაამატე ახალი')} ({(rep.customerVideos || []).length}/24)
               </p>
 
               <input type="text" value={newCustomerCaption}
@@ -4742,7 +4739,7 @@ const copyPublicUrl = () => {
                 {uploadingCustomerVideo ? (
                   <><Ic name="loader" className="w-4 h-4 animate-spin" /> ვტვირთავ... {customerUploadProgress}%</>
                 ) : (
-                  <><Ic name="upload" className="w-4 h-4" /> ფაილის ატვირთვა</>
+                  <><Ic name="upload" className="w-4 h-4" /> ფაილის ატვირთვა (MP4/WebM, მაქს. 2 GB)</>
                 )}
               </button>
               {uploadingCustomerVideo && customerUploadProgress > 0 && (
@@ -4795,7 +4792,7 @@ const copyPublicUrl = () => {
           <button onClick={saveProfile} disabled={saving}
             className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
             style={{ background: theme.wine, color: theme.cream }}>
-            {saving ? 'ვინახავ...' : <><Ic name="save" className="w-4 h-4" /> შენახვა</>}
+            {saving ? 'ვინახავ...' : <><Ic name="save" className="w-4 h-4" /> {L('dash_save', 'შენახვა')}</>}
           </button>
           <button onClick={handlePreview} disabled={saving}
             className="py-4 rounded-xl flex items-center justify-center gap-2 font-display text-base transition hover:scale-[1.01] disabled:opacity-50"
@@ -4935,7 +4932,7 @@ function parseVideoUrl(url) {
     const tMatch = u.match(/[?&]t=(\d+)/);
     const startParam = tMatch ? `&start=${tMatch[1]}` : '';
     return { type: 'youtube', orientation: isShort ? 'vertical' : 'horizontal',
-      embedUrl: `https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1${startParam}` };
+      embedUrl: `https://www.youtube.com/embed/${yt[1]}?rel=0&modestbranding=1${startParam}` };
   }
 
   // Vimeo: vimeo.com/{id}
@@ -4961,6 +4958,19 @@ function parseVideoUrl(url) {
       embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(u)}&show_text=false&width=560` };
   }
 
+// Bunny Stream (iframe.mediadelivery.net)
+const bunnyMatch = u.match(/iframe\.mediadelivery\.net\/embed\/(\d+)\/([a-f0-9-]+)/i)
+  || u.match(/video\.bunnycdn\.com\/play\/(\d+)\/([a-f0-9-]+)/i);
+if (bunnyMatch) {
+  return {
+    type: 'bunny',
+    orientation: 'horizontal',
+    libraryId: bunnyMatch[1],
+    videoId: bunnyMatch[2],
+    embedUrl: `https://iframe.mediadelivery.net/embed/${bunnyMatch[1]}/${bunnyMatch[2]}?autoplay=true&loop=false&muted=false&preload=true`,
+  };
+}
+
   // Direct video file (mp4, webm, mov, m4v)
   if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(u)) return { type: 'direct', orientation: 'vertical', url: u };
 
@@ -4979,6 +4989,31 @@ function VideoIntro({ url }) {
   const parsed = parseVideoUrl(url);
   if (!parsed) return null;
 
+if (parsed.type === 'bunny') {
+  return (
+    <div className="relative w-full h-full" style={{ background: '#000' }}>
+      <iframe
+        src={parsed.embedUrl}
+        title="FARMASI ვიდეო"
+        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+        allowFullScreen
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }}
+      />
+      <div style={{
+        position: 'absolute', bottom: 16, right: 16,
+        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+        borderRadius: 999, padding: '4px 10px',
+        display: 'flex', alignItems: 'center', gap: 6,
+        pointerEvents: 'none', zIndex: 10,
+      }}>
+        <span style={{ color: '#fff', fontSize: 10, fontFamily: 'sans-serif', letterSpacing: '0.12em', opacity: 0.9 }}>
+          🌸 FARMASI
+        </span>
+      </div>
+    </div>
+  );
+}
+
   if (parsed.type === 'direct') {
     return (
       <video src={parsed.url} controls playsInline
@@ -4995,7 +5030,7 @@ function VideoIntro({ url }) {
     instagram: { top: '-12%', height: '155%' },  // hide top username bar + bottom caption/likes
     tiktok:    { top: '-6%',  height: '125%' },  // hide bottom info strip + watermark
     facebook:  { top: '-4%',  height: '115%' },  // minor trim
-    drive:     { top: '0',    height: '100%' },
+    drive:     { top: '-7%',  height: '116%' },  // hide Drive file title bar
     youtube:   { top: '0',    height: '100%' },  // already minimal with rel=0
     vimeo:     { top: '0',    height: '100%' },
   };
@@ -5016,6 +5051,345 @@ function VideoIntro({ url }) {
         border: 0,
         background: theme.ink,
       }} />
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIRM DELIVERY PAGE — customer confirms they received the order
+// Accessed via my.farmasi.ge/?confirm=ORD-XXX  (SMS link on 'shipped' status)
+// Calls confirmOrderDelivery → triggers rating SMS.
+// ════════════════════════════════════════════════════════════════════════════
+
+function ConfirmDeliveryPage({ orderId, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [confirming, setConfirming] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  const confirm = async () => {
+    if (!orderId) { setError(L('confirm_no_id', 'შეკვეთის ID არ მითითებულია')); return; }
+    setConfirming(true);
+    setError('');
+    try {
+      let res = await api({ action: 'confirmOrderDelivery', order_id: orderId });
+      if (res && (res.ok || res.success)) {
+        setDone(true);
+      } else {
+        setError((res && res.error) || L('confirm_error', 'დადასტურება ვერ მოხერხდა'));
+      }
+    } catch (e) {
+      setError(L('confirm_error', 'დადასტურება ვერ მოხერხდა'));
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen px-5 py-10 sm:py-16 grain flex items-center" style={{ background: theme.cream }}>
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+
+      <div className="relative max-w-md mx-auto w-full">
+        <div className="text-center mb-8">
+          <img src="/farmasi-logo.png" alt="FARMASI" className="mx-auto mb-5"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }}
+            onError={(e) => { e.target.style.display = 'none'; }} />
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-2" style={{ color: theme.gold }}>
+            🚚 {L('confirm_eyebrow', 'მიწოდების დადასტურება')}
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+            {done ? L('confirm_thanks_title', 'მადლობა!') : L('confirm_title', 'მიიღე შეკვეთა?')}
+          </h1>
+        </div>
+
+        <div className="rounded-3xl p-8 text-center shadow-2xl"
+          style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+          {done ? (
+            <>
+              <div className="text-6xl mb-4">✅</div>
+              <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'CC' }}>
+                {L('confirm_thanks_msg', 'მიწოდება დადასტურდა. მალე მოგივა SMS, სადაც შეგიძლია შეაფასო შენი შეკვეთა. გმადლობთ! 🌸')}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="text-5xl mb-4">📦</div>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: theme.ink + 'CC' }}>
+                {L('confirm_body', 'დაადასტურე, რომ შენი FARMASI შეკვეთა მიიღე. ამის შემდეგ შეგიძლია შეაფასო შენი გამოცდილება.')}
+              </p>
+              {error && <p className="text-xs mb-4" style={{ color: '#DC2626' }}>{error}</p>}
+              <button onClick={confirm} disabled={confirming}
+                className="w-full py-4 rounded-full font-medium text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}AA` }}>
+                {confirming ? (
+                  <><Ic name="loader" className="w-4 h-4 animate-spin" /> {L('confirm_submitting', 'მუშავდება...')}</>
+                ) : (
+                  <><Ic name="check" className="w-4 h-4" /> {L('confirm_button', 'დიახ, მივიღე')}</>
+                )}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RATING PAGE — Customer leaves a star rating + comment, opened via SMS link
+// Accessed via my.farmasi.ge/?rate=ORD-XXX-XXX
+// Loads order via get_order, submits via submit_rating → Reviews sheet.
+// ════════════════════════════════════════════════════════════════════════════
+
+function RatingPage({ orderId, labels = {} }) {
+  const L = (key, fallback) => labels[key] || fallback;
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [stars, setStars] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [text, setText] = useState('');
+  const [productRatings, setProductRatings] = useState({}); // { product_id: stars }
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  // Parsed order items
+  const orderItems = (() => {
+    if (!order) return [];
+    let its = order.items;
+    if (typeof its === 'string') { try { its = JSON.parse(its); } catch { its = []; } }
+    return Array.isArray(its) ? its : [];
+  })();
+
+  useEffect(() => {
+    if (!orderId) {
+      setError(L('rate_no_id', 'შეკვეთის ID არ მითითებულია'));
+      setLoading(false);
+      return;
+    }
+    api({ action: 'get_order', order_id: orderId })
+      .then(res => {
+        if (res.ok && res.order) {
+          setOrder(res.order);
+          // If already rated, reflect it
+          if (res.order.customer_rating) {
+            setStars(Number(res.order.customer_rating) || 0);
+            setText(res.order.rating_text || '');
+            setDone(true);
+          }
+        } else {
+          setError(res.error || L('rate_order_not_found', 'შეკვეთა ვერ მოიძებნა'));
+        }
+      })
+      .catch(e => setError(L('rate_load_error', 'შეცდომა: ') + e.message))
+      .finally(() => setLoading(false));
+  }, [orderId]);
+
+  const submit = async () => {
+    if (!stars) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const payload = {
+        order_id: orderId,
+        rep_pid: order?.rep_pid || '',
+        rating: stars,
+        rating_text: text.trim(),
+        customer_name: order?.customer_name || ''
+      };
+      let res = await api({ action: 'submit_rating', ...payload });
+      // Fallback: backend may use camelCase action name
+      if (!res.ok && /unknown|invalid.*action|action/i.test(res.error || '')) {
+        res = await api({ action: 'submitRating', ...payload });
+      }
+      if (res.ok) {
+        // Submit per-product ratings (fire-and-forget; order rating is the critical one)
+        const rated = Object.entries(productRatings).filter(([, v]) => v > 0);
+        for (const [pid, pstars] of rated) {
+          const it = orderItems.find(x => String(x.product_id) === String(pid));
+          const pPayload = {
+            order_id: orderId,
+            product_id: pid,
+            product_name: it?.name || '',
+            rating: pstars,
+            customer_name: order?.customer_name || ''
+          };
+          try {
+            let pr = await api({ action: 'submit_product_rating', ...pPayload });
+            if (!pr.ok && /unknown|invalid.*action|action/i.test(pr.error || '')) {
+              await api({ action: 'submitProductRating', ...pPayload });
+            }
+          } catch (_) { /* non-blocking */ }
+        }
+        setDone(true);
+      } else {
+        setError(res.error || L('rate_submit_error', 'შეფასების გაგზავნა ვერ მოხერხდა'));
+      }
+    } catch (e) {
+      setError(L('rate_submit_error', 'შეფასების გაგზავნა ვერ მოხერხდა'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full border-4 animate-spin" style={{ borderColor: theme.gold + '33', borderTopColor: theme.wine }} />
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('rate_loading', 'იტვირთება...')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !order) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: theme.cream }}>
+        <div className="text-center max-w-sm">
+          <div className="text-6xl mb-4">🔍</div>
+          <h2 className="font-display text-2xl mb-3" style={{ color: theme.ink }}>{L('rate_not_found_title', 'შეკვეთა ვერ მოიძებნა')}</h2>
+          <p className="text-sm" style={{ color: theme.ink + '99' }}>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const starWord = ['', L('rate_word_1', 'ცუდი'), L('rate_word_2', 'საშუალო'), L('rate_word_3', 'კარგი'), L('rate_word_4', 'ძალიან კარგი'), L('rate_word_5', 'შესანიშნავი')];
+  const active = hover || stars;
+
+  return (
+    <div className="min-h-screen px-5 py-10 sm:py-16 grain flex items-center" style={{ background: theme.cream }}>
+      {/* Background glow */}
+      <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-15 blur-3xl pointer-events-none"
+        style={{ background: `radial-gradient(circle, ${theme.gold}, transparent 70%)` }} />
+
+      <div className="relative max-w-md mx-auto w-full">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <img src="/farmasi-logo.png" alt="FARMASI"
+            className="mx-auto mb-5"
+            style={{ height: 40, width: 'auto', objectFit: 'contain' }}
+            onError={(e) => { e.target.style.display = 'none'; }} />
+          <p className="text-[10px] tracking-[0.4em] uppercase mb-2" style={{ color: theme.gold }}>
+            ✦ {L('rate_eyebrow', 'შენი აზრი მნიშვნელოვანია')} ✦
+          </p>
+          <h1 className="font-display text-3xl sm:text-4xl" style={{ color: theme.ink }}>
+            {done ? L('rate_thanks_title', 'გმადლობთ!') : L('rate_title', 'შეაფასე შენი შეკვეთა')}
+          </h1>
+        </div>
+
+        {done ? (
+          /* Success state */
+          <div className="rounded-3xl p-8 text-center shadow-2xl anim-fadeup"
+            style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+            <div className="text-6xl mb-4">💕</div>
+            <div className="flex justify-center mb-4">
+              {[1,2,3,4,5].map(i => (
+                <Ic key={i} name="star" className="w-7 h-7"
+                  style={{ color: i <= stars ? '#F5A623' : theme.ink + '22',
+                           fill: i <= stars ? '#F5A623' : 'none' }} />
+              ))}
+            </div>
+            <p className="text-sm leading-relaxed" style={{ color: theme.ink + 'CC' }}>
+              {L('rate_thanks_msg', 'შენი შეფასება მიღებულია. დიდი მადლობა, რომ დაგვეხმარე უკეთესები გავხდეთ! 🌸')}
+            </p>
+          </div>
+        ) : (
+          /* Rating form */
+          <div className="rounded-3xl p-7 sm:p-8 shadow-2xl"
+            style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
+
+            {/* Stars */}
+            <div className="flex flex-col items-center mb-6">
+              <div className="flex gap-2 mb-3">
+                {[1,2,3,4,5].map(i => (
+                  <button key={i}
+                    onClick={() => setStars(i)}
+                    onMouseEnter={() => setHover(i)}
+                    onMouseLeave={() => setHover(0)}
+                    className="transition hover:scale-110 active:scale-95"
+                    style={{ lineHeight: 0 }}
+                    aria-label={`${i} ${L('rate_stars_aria', 'ვარსკვლავი')}`}>
+                    <Ic name="star" className="w-10 h-10"
+                      style={{ color: i <= active ? '#F5A623' : theme.ink + '1A',
+                               fill: i <= active ? '#F5A623' : 'none' }} />
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm font-medium h-5" style={{ color: theme.wine }}>
+                {starWord[active] || ''}
+              </p>
+            </div>
+
+            {/* Comment */}
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={4}
+              maxLength={500}
+              placeholder={L('rate_comment_placeholder', 'მოგვიყევი შენი გამოცდილების შესახებ (არასავალდებულო)')}
+              className="w-full rounded-2xl px-4 py-3 text-sm resize-none focus:outline-none transition"
+              style={{ background: theme.cream, border: `1px solid ${theme.gold}33`, color: theme.ink }}
+            />
+
+            {/* Per-product ratings */}
+            {orderItems.length > 0 && (
+              <div className="mt-6">
+                <p className="text-[10px] tracking-[0.3em] uppercase mb-3 text-center" style={{ color: theme.gold }}>
+                  {L('rate_products_title', 'შეაფასე პროდუქტები')}
+                </p>
+                <div className="space-y-2">
+                  {orderItems.map((it, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-2.5 rounded-2xl"
+                      style={{ background: theme.cream, border: `1px solid ${theme.gold}22` }}>
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                        style={{ background: theme.blush + '66' }}>
+                        {it.image ? (
+                          <img src={it.image} alt="" className="w-full h-full object-contain p-1" onError={(e) => { e.target.style.display = 'none'; }} />
+                        ) : <span className="text-lg opacity-40">💎</span>}
+                      </div>
+                      <p className="text-xs flex-1 leading-snug clamp-2" style={{ color: theme.ink }}>{it.name}</p>
+                      <div className="flex gap-0.5 flex-shrink-0">
+                        {[1,2,3,4,5].map(s => (
+                          <button key={s}
+                            onClick={() => setProductRatings(pr => ({ ...pr, [it.product_id]: s }))}
+                            className="transition hover:scale-110 active:scale-90" style={{ lineHeight: 0 }}
+                            aria-label={`${s}`}>
+                            <Ic name="star" className="w-4 h-4"
+                              style={{ color: s <= (productRatings[it.product_id] || 0) ? '#F5A623' : theme.ink + '1A',
+                                       fill: s <= (productRatings[it.product_id] || 0) ? '#F5A623' : 'none' }} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <p className="text-xs mt-3 text-center" style={{ color: '#DC2626' }}>{error}</p>
+            )}
+
+            {/* Submit */}
+            <button
+              onClick={submit}
+              disabled={!stars || submitting}
+              className="w-full mt-5 py-4 rounded-full font-medium text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}AA` }}>
+              {submitting ? (
+                <><Ic name="loader" className="w-4 h-4 animate-spin" /> {L('rate_submitting', 'იგზავნება...')}</>
+              ) : (
+                <><Ic name="heart" className="w-4 h-4" /> {L('rate_submit', 'შეფასების გაგზავნა')}</>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -5438,9 +5812,9 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
 
   return (
     <>
-      {/* Floating cart button — fixed top-right, visible always */}
+      {/* Floating cart button — fixed bottom-right, visible always (TEMU-style) */}
       <button id="cart-icon" onClick={() => setOpen(true)} aria-label={L('cart_button_aria', 'კალათა')}
-        className="fixed top-4 right-4 z-40 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+        className="fixed bottom-5 right-5 z-40 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
         style={{ background: theme.ink, color: theme.cream, width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Ic name="shopping-bag" className="w-6 h-6" />
         {count > 0 && (
@@ -5721,7 +6095,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
 //   No backend changes — just renders + filters + cart integration.
 //   Pattern mirrors the existing Cart drawer for visual consistency.
 // ═══════════════════════════════════════════════════════════
-function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
+function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -5760,33 +6134,26 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
     }
   }, [open]);
 
-  const uniqueProducts = useMemo(() => {
-    const seen = new Set();
-    return (products || []).filter(p => {
-      const key = String(p.id || p.code || p.sku || p.product_id || p.productId || '').trim();
-      if (!key) return true;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [products]);
-
   // Build category list with counts
   const categories = useMemo(() => {
     const counts = new Map();
-    uniqueProducts.forEach(p => {
+    (products || []).forEach(p => {
       const c = String(p.cat || '').trim();
       if (!c) return;
       counts.set(c, (counts.get(c) || 0) + 1);
     });
     return Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0], 'ka'));
-  }, [uniqueProducts]);
+  }, [products]);
 
   // Filtered + sorted list
   const filtered = useMemo(() => {
-    let list = uniqueProducts.filter(p => {
+    const q = (searchQuery || '').trim().toLowerCase();
+    let list = (products || []).filter(p => {
       if (categoryFilter !== 'all' && String(p.cat || '').trim() !== categoryFilter) return false;
-      if (!productMatchesSearch(p, searchQuery)) return false;
+      if (q) {
+        const txt = (String(p.name || '') + ' ' + String(p.cat || '') + ' ' + String(p.id || '') + ' ' + String(p.tag || '')).toLowerCase();
+        if (!txt.includes(q)) return false;
+      }
       return true;
     });
     if (sortBy === 'name') {
@@ -5797,12 +6164,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
       list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
     }
     return list;
-  }, [uniqueProducts, searchQuery, categoryFilter, sortBy]);
-
-  const filteredKey = useMemo(() => {
-    const ids = filtered.slice(0, 24).map(p => String(p.id || p.code || p.sku || p.product_id || p.name || '')).join('|');
-    return `${normalizeSearchValue(searchQuery)}|${categoryFilter}|${sortBy}|${filtered.length}|${ids}`;
-  }, [filtered, searchQuery, categoryFilter, sortBy]);
+  }, [products, searchQuery, categoryFilter, sortBy]);
 
   const handleQuickAdd = (product, e) => {
     if (e) e.stopPropagation();
@@ -5869,19 +6231,13 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
           {/* Drag handle (mobile affordance) */}
           <div className="mx-auto mb-3 rounded-full" style={{ width: 48, height: 4, background: theme.ink + '22' }} />
 
-          {/* Title + close */}
+          {/* Compact header — just count + close, saves vertical space */}
           <div className="flex items-center justify-between mb-3">
-            <div className="min-w-0">
-              <p className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.gold }}>
-                ✦ {L('catalog_modal_eyebrow', 'სრული კატალოგი')} ✦
-              </p>
-              <h2 className="font-display text-2xl sm:text-3xl mt-0.5 leading-tight" style={{ color: theme.ink }}>
-                {L('catalog_modal_title', 'პროდუქტები')}
-                <span className="text-xs sm:text-sm font-sans ml-2 opacity-50">({filtered.length})</span>
-              </h2>
-            </div>
+            <p className="text-[11px] tracking-[0.3em] uppercase" style={{ color: theme.gold }}>
+              ✦ {L('catalog_modal_eyebrow', 'სრული კატალოგი')} · {filtered.length}
+            </p>
             <button onClick={() => setOpen(false)} aria-label={L('catalog_modal_close_aria', 'დახურვა')}
-              className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110"
+              className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition hover:scale-110"
               style={{ background: theme.ink + '11', color: theme.ink }}>
               <Ic name="x" className="w-5 h-5" />
             </button>
@@ -5915,7 +6271,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
                 style={categoryFilter === 'all'
                   ? { background: theme.wine, color: theme.cream }
                   : { background: theme.ivory, color: theme.ink + 'AA', border: `1px solid ${theme.gold}33` }}>
-                {L('catalog_modal_cat_all', 'ყველა')} ({uniqueProducts.length})
+                {L('catalog_modal_cat_all', 'ყველა')} ({(products || []).length})
               </button>
               {categories.map(([cat, count]) => (
                 <button key={cat} onClick={() => setCategoryFilter(cat)}
@@ -5951,7 +6307,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
         </div>
 
         {/* Scrollable grid */}
-        <div key={filteredKey} className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
           {filtered.length === 0 ? (
             <div className="text-center py-20">
               <div className="text-5xl mb-4 opacity-30">🌸</div>
@@ -5980,6 +6336,49 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {} }) {
         </div>
 
         {/* Bottom sticky CTA bar — switches between "Go to cart" and "Close" */}
+        {/* Contact rep — floating avatar with online dot (Alibaba-style), opens chat window */}
+        {onContactRep && (
+          <button onClick={onContactRep}
+            aria-label={L('catalog_contact_aria', 'დაკავშირება წარმომადგენელთან')}
+            className="absolute bottom-24 left-4 sm:left-6 z-[60] rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform"
+            style={{ width: 60, height: 60, display: 'block', padding: 0, border: 'none' }}>
+            <span className="block w-full h-full rounded-full overflow-hidden" style={{ border: `3px solid ${theme.cream}`, background: theme.cream }}>
+              {rep.photo ? (
+                <img src={rep.photo} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="w-full h-full flex items-center justify-center" style={{ background: theme.wine, color: theme.cream }}>
+                  <Ic name="message-square" className="w-6 h-6" />
+                </span>
+              )}
+            </span>
+            {/* online green dot */}
+            <span className="absolute bottom-0.5 right-0.5 rounded-full"
+              style={{ width: 15, height: 15, background: '#22C55E', border: `2.5px solid ${theme.cream}` }} />
+          </button>
+        )}
+
+        {/* TEMU-style floating cart — always visible inside catalog, jumps on add */}
+        {cart && (
+          <button
+            onClick={() => {
+              if (!cart.count) return;
+              setOpen(false);
+              setTimeout(() => { if (cart.setOpen) cart.setOpen(true); }, 320);
+            }}
+            id="catalog-floating-cart"
+            aria-label={L('cart_button_aria', 'კალათა')}
+            className="absolute bottom-24 right-4 sm:right-6 z-[60] rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
+            style={{ background: cart.count ? theme.wine : theme.ink, color: theme.cream, width: 60, height: 60, opacity: cart.count ? 1 : 0.55 }}>
+            <Ic name="shopping-bag" className="w-6 h-6" />
+            {cart.count > 0 && (
+              <span className="absolute -top-1 -right-1 rounded-full font-bold flex items-center justify-center"
+                style={{ background: theme.ink, color: theme.cream, minWidth: 26, height: 26, fontSize: 13, padding: '0 6px', border: `2px solid ${theme.cream}` }}>
+                {cart.count}
+              </span>
+            )}
+          </button>
+        )}
+
         <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-t flex items-center gap-2"
           style={{
             borderColor: theme.gold + '22',
@@ -6153,7 +6552,6 @@ function TestProductsGallery({ labels = {} }) {
 function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const hasImage = !!product.image;
-  const productCode = String(product.sku || product.code || product.product_id || product.productId || product.id || '').trim();
   return (
     <div onClick={onCardClick}
       className="relative rounded-2xl overflow-hidden cursor-pointer transition hover:shadow-xl group flex flex-col"
@@ -6187,13 +6585,23 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
             {product.cat}
           </p>
         )}
-        <p className="text-xs sm:text-sm font-medium leading-snug mb-2 clamp-2 flex-1" style={{ color: theme.ink, minHeight: '2.5em' }}>
+        <p className="text-xs sm:text-sm font-medium leading-snug mb-1.5 clamp-2 flex-1" style={{ color: theme.ink, minHeight: '2.5em' }}>
           {product.name}
         </p>
-        {productCode && (
-          <p className="text-[10px] font-mono mb-2 truncate" style={{ color: theme.ink + '77' }}>
-            კოდი: {productCode}
-          </p>
+        {/* Rating stars — only real ratings; hidden if product has none */}
+        {product.rating > 0 && (
+          <div className="flex items-center gap-1 mb-1.5">
+            <span className="flex items-center">
+              {[1,2,3,4,5].map(i => (
+                <Ic key={i} name="star" className="w-3 h-3"
+                  style={{ color: i <= Math.round(product.rating) ? '#F5A623' : theme.ink + '22',
+                           fill: i <= Math.round(product.rating) ? '#F5A623' : 'none' }} />
+              ))}
+            </span>
+            {product.reviewCount > 0 && (
+              <span className="text-[10px]" style={{ color: theme.ink + '77' }}>({product.reviewCount})</span>
+            )}
+          </div>
         )}
         <div className="flex items-center justify-between gap-2 mt-auto">
           <p className="font-display text-base sm:text-lg" style={{ color: theme.wine }}>
@@ -6204,7 +6612,7 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
             aria-label={L('catalog_modal_add_aria', 'კალათაში დამატება')}
             className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition active:scale-90 ${pulse ? 'anim-pulse-add' : 'hover:scale-110'}`}
             style={{ background: pulse ? '#10b981' : theme.wine, color: theme.cream, boxShadow: `0 4px 12px -2px ${pulse ? '#10b98166' : theme.wine + '66'}` }}>
-            {pulse ? <Ic name="check" className="w-4 h-4" /> : <Ic name="plus" className="w-5 h-5" />}
+            {pulse ? <Ic name="check" className="w-4 h-4" /> : <Ic name="shopping-cart" className="w-4 h-4" />}
           </button>
         </div>
       </div>
@@ -6216,7 +6624,6 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
 function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
   const subtotal = Math.round((Number(product.price) || 0) * qty * 100) / 100;
-  const productCode = String(product.sku || product.code || product.product_id || product.productId || product.id || '').trim();
   return (
     <>
       {/* Modal backdrop */}
@@ -6264,11 +6671,6 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} })
             <h3 className="font-display text-2xl leading-tight mb-2" style={{ color: theme.ink }}>
               {product.name}
             </h3>
-            {productCode && (
-              <p className="text-xs font-mono mb-3" style={{ color: theme.ink + '77' }}>
-                კოდი: {productCode}
-              </p>
-            )}
             {product.description && (
               <p className="text-sm leading-relaxed mb-4" style={{ color: theme.ink + '99' }}>
                 {product.description}
@@ -6313,13 +6715,14 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} })
   );
 }
 
-function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], labels = {}, cart }) {
+function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], companyVideos = [], labels = {}, cart }) {
   // i18n-style label helper — Sheet override wins, hardcoded fallback otherwise
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(false); // Shoppable Catalog drawer
   const [videoToPlay, setVideoToPlay] = useState(null); // URL of video to show in lightbox modal
+  const [showAllStories, setShowAllStories] = useState(false); // "ნახე მეტი" — show all customer videos
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -6348,7 +6751,112 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
   const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
-  const goCatalog = () => window.open(CATALOG_URL, '_blank');
+  const goCatalog = () => window.open(t('catalog_url', CATALOG_URL), '_blank');
+  const renderCustomerStories = (videos, problem) => {
+    const validVideos = (videos || []).filter(v => v && v.url && parseVideoUrl(v.url));
+    if (validVideos.length === 0) return null;
+    const accent = (problem && problem.accent) || theme.wine;
+    const STORIES_PREVIEW = 6;
+    const visibleVideos = showAllStories ? validVideos : validVideos.slice(0, STORIES_PREVIEW);
+    const hasMore = validVideos.length > STORIES_PREVIEW;
+    const title = problem
+      ? `"${problem.label}" — ${t('act7_subtitle_suffix', 'მათივე სიტყვებით')}`
+      : t('act7_subtitle_all', 'კმაყოფილი მომხმარებლების გამოცდილება');
+    return (
+      <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-24"
+        style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
+        <div className="absolute -top-20 left-1/4 w-[500px] h-[400px] rounded-full opacity-15 blur-3xl pointer-events-none"
+          style={{ background: theme.blush }} />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
+            <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>VII.</span>
+            <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
+            <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+              {t('act7_chapter', 'ისტორიები')}
+            </span>
+          </div>
+          <div className="text-center mb-12 reveal-up">
+            <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
+              {t('act7_eyebrow', '✦ მათ გაიარეს იგივე')}
+            </p>
+            <h2 className="font-display leading-[0.95] mb-4"
+              style={{ fontSize: 'clamp(2.25rem, 6vw, 4rem)', color: theme.ink, letterSpacing: '-0.02em' }}>
+              {t('act7_headline_left', 'ნამდვილი')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act7_headline_right', 'ისტორიები')}</span>
+            </h2>
+            <p className="font-display-lat italic max-w-md mx-auto text-base sm:text-lg" style={{ color: theme.ink + 'AA' }}>
+              {title}
+            </p>
+          </div>
+          <div className={`grid gap-3 sm:gap-6 ${
+            visibleVideos.length === 1 ? 'grid-cols-1 max-w-[240px] mx-auto' :
+            visibleVideos.length === 2 ? 'grid-cols-2 max-w-md mx-auto' :
+            'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+          }`}>
+            {visibleVideos.map((v, idx) => {
+              const parsed = parseVideoUrl(v.url);
+              return (
+                <div key={idx} className="group reveal-up" style={{ animationDelay: `${idx * 100}ms` }}>
+                  <button onClick={() => setVideoToPlay({ url: v.url, orientation: v.orientation })}
+                    className="relative w-full aspect-[4/5] rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block"
+                    style={{
+                      background: `linear-gradient(135deg, ${accent}, ${theme.ink})`,
+                      boxShadow: `0 20px 50px -10px ${accent}44`,
+                      border: `2px solid ${theme.cream}`
+                    }}>
+                    <div className="absolute inset-0 opacity-25"
+                      style={{ background: `radial-gradient(circle at 30% 20%, ${theme.gold}, transparent 50%), radial-gradient(circle at 70% 80%, ${theme.rose}, transparent 50%)` }} />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-full animate-ping"
+                          style={{ background: theme.cream + '44', animationDuration: '2.5s' }} />
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition group-hover:scale-110"
+                          style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
+                          <Ic name="play" className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: accent, marginLeft: '4px' }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium"
+                      style={{ background: 'rgba(255,255,255,0.18)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
+                      {parsed.type}
+                    </div>
+                    {v._company && (
+                      <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium flex items-center gap-1"
+                        style={{ background: theme.gold, color: theme.ink }}>
+                        <Ic name="badge-check" className="w-3 h-3" /> FARMASI
+                      </div>
+                    )}
+                      <div className="absolute bottom-0 left-0 right-0 p-4"
+                        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
+                        <p className="text-sm italic text-center font-display-lat" style={{ color: theme.cream }}>
+                          "{v.caption}"
+                        </p>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {hasMore && (
+            <div className="text-center mt-10 reveal-up">
+              <button onClick={() => setShowAllStories(s => !s)}
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-medium transition hover:scale-105"
+                style={{
+                  background: 'transparent',
+                  border: `1.5px solid ${accent}66`,
+                  color: accent
+                }}>
+                {showAllStories
+                  ? t('act7_show_less', 'ნაკლების ჩვენება')
+                  : `${t('act7_show_more', 'ნახე ყველა')} (${validVideos.length})`}
+                <Ic name={showAllStories ? 'chevron-up' : 'chevron-down'} className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+    );
+  };
 
   // Sync with initialProblem changes (e.g. URL deep-link)
   useEffect(() => {
@@ -6517,11 +7025,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 </p>
               </div>
 
-              {/* Bio quote */}
-              {rep.bio && (
+              {/* Bio quote — წარმომადგენლის bio, ან საერთო კომპანიის ტექსტი (default) */}
+              {(rep.bio || t('hero_bio', '')) && (
                 <blockquote className="font-display-lat text-base sm:text-lg leading-relaxed italic max-w-xl pt-2"
                   style={{ color: theme.ink + 'BB' }}>
-                  "{rep.bio}"
+                  "{rep.bio || t('hero_bio', '')}"
                 </blockquote>
               )}
 
@@ -6620,7 +7128,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
                 {/* Floating video play button */}
                 {rep.videoUrl && parseVideoUrl(rep.videoUrl) && (
-                  <button onClick={() => setVideoToPlay(rep.videoUrl)}
+                  <button onClick={() => setVideoToPlay({ url: rep.videoUrl })}
                     className="absolute -bottom-8 -right-4 sm:-right-8 w-28 h-28 rounded-full flex flex-col items-center justify-center gap-1.5 transition hover:scale-110 group"
                     style={{
                       background: theme.cream,
@@ -6848,9 +7356,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
                 <div className="inline-flex flex-col items-center gap-3" style={{ color: theme.ink + '66' }}>
                   <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: selectedProblem.accent }}>
                     {(() => {
-                      const hasVideos = (rep.customerVideos || []).filter(v =>
-                        !v.problem || v.problem === selectedProblem.id
-                      ).length > 0;
+                      const hasVideos = [
+                        ...(rep.customerVideos || []),
+                        ...(companyVideos || [])
+                      ].filter(v => v.problem === selectedProblem.id).length > 0;
                       return hasVideos
                         ? t('act3_scroll_prompt_with_videos', 'ნახე ვინ გაიარა ეს გზა')
                         : t('act3_scroll_prompt_no_videos', 'ნახე რამ უშველათ');
@@ -7130,110 +7639,10 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
             </section>
           )}
 
-          {/* ╔═══════════════════════════════════════════════════════════════╗ */}
-          {/* ║ ACT VII — CUSTOMER STORIES (after empathy + education)         ║ */}
-          {/* ║ Trust is built through stories, after real value delivered.   ║ */}
-          {/* ╚═══════════════════════════════════════════════════════════════╝ */}
-          {(() => {
-            const allVideos = rep.customerVideos || [];
-            const filteredVideos = allVideos.filter(v => !v.problem || v.problem === selectedProblem.id);
-            if (filteredVideos.length === 0) return null;
-            return (
-              <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-24"
-                style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
-                {/* Atmospheric glow */}
-                <div className="absolute -top-20 left-1/4 w-[500px] h-[400px] rounded-full opacity-15 blur-3xl pointer-events-none"
-                  style={{ background: theme.blush }} />
-
-                <div className="relative max-w-6xl mx-auto">
-                  {/* Editorial chapter marker — VII. ისტორიები */}
-                  <div className="flex items-center gap-4 mb-12 reveal-up max-w-2xl mx-auto">
-                    <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>VII.</span>
-                    <div className="h-px flex-1" style={{ background: theme.ink + '22' }} />
-                    <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
-                      {t('act7_chapter', 'ისტორიები')}
-                    </span>
-                  </div>
-
-                  <div className="text-center mb-12 reveal-up">
-                    <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium" style={{ color: theme.gold }}>
-                      {t('act7_eyebrow', '✦ მათ გაიარეს იგივე')}
-                    </p>
-                    <h2 className="font-display leading-[0.95] mb-4"
-                      style={{
-                        fontSize: 'clamp(2.25rem, 6vw, 4rem)',
-                        color: theme.ink,
-                        letterSpacing: '-0.02em'
-                      }}>
-                      {t('act7_headline_left', 'ნამდვილი')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act7_headline_right', 'ისტორიები')}</span>
-                    </h2>
-                    <p className="font-display-lat italic max-w-md mx-auto text-base sm:text-lg" style={{ color: theme.ink + 'AA' }}>
-                      "{selectedProblem.label}" — {t('act7_subtitle_suffix', 'მათივე სიტყვებით')}
-                    </p>
-                  </div>
-
-                  <div className={`grid gap-5 sm:gap-6 ${
-                    filteredVideos.length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-                    filteredVideos.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
-                    'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-                  }`}>
-                    {filteredVideos.map((v, idx) => {
-                      const parsed = parseVideoUrl(v.url);
-                      if (!parsed) return null;
-                      const isVertical = parsed.orientation === 'vertical';
-                      return (
-                        <div key={idx} className="group reveal-up" style={{ animationDelay: `${idx * 100}ms` }}>
-                          <button onClick={() => setVideoToPlay(v.url)}
-                            className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
-                            style={{
-                              background: `linear-gradient(135deg, ${selectedProblem.accent || theme.wine}, ${theme.ink})`,
-                              boxShadow: `0 20px 50px -10px ${selectedProblem.accent || theme.wine}44`,
-                              border: `2px solid ${theme.cream}`
-                            }}>
-                            <div className="absolute inset-0 opacity-25"
-                              style={{ background: `radial-gradient(circle at 30% 20%, ${theme.gold}, transparent 50%), radial-gradient(circle at 70% 80%, ${theme.rose}, transparent 50%)` }} />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="relative">
-                                <div className="absolute inset-0 rounded-full animate-ping"
-                                  style={{ background: theme.cream + '44', animationDuration: '2.5s' }} />
-                                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
-                                  style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
-                                  <Ic name="play" className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: selectedProblem.accent || theme.wine, marginLeft: '4px' }} />
-                                </div>
-                              </div>
-                            </div>
-                            <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium"
-                              style={{ background: 'rgba(255,255,255,0.18)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
-                              {parsed.type}
-                            </div>
-                            {v.caption && (
-                              <div className="absolute bottom-0 left-0 right-0 p-4"
-                                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
-                                <p className="text-sm italic text-center font-display-lat" style={{ color: theme.cream }}>
-                                  "{v.caption}"
-                                </p>
-                              </div>
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Soft transition prompt to products */}
-                  <div className="text-center mt-14 reveal-up">
-                    <div className="inline-flex flex-col items-center gap-3" style={{ color: theme.ink + '66' }}>
-                      <p className="text-[10px] tracking-[0.4em] uppercase font-medium" style={{ color: theme.gold }}>
-                        {t('act7_scroll_prompt', 'ნახე რა გამოიყენეს')}
-                      </p>
-                      <div className="w-px h-12 animate-pulse"
-                        style={{ background: `linear-gradient(to bottom, ${theme.gold}88, transparent)` }} />
-                    </div>
-                  </div>
-                </div>
-              </section>
-            );
-          })()}
+              {renderCustomerStories([
+                ...(rep.customerVideos || []).filter(v => v.problem === selectedProblem.id),
+                ...(companyVideos || []).filter(v => v.problem === selectedProblem.id).map(v => ({ ...v, _company: true }))
+              ], selectedProblem)}
 
           {/* ╔═══════════════════════════════════════════════════════════════╗ */}
           {/* ║ ACT VIII — THE RITUAL (products, finally)                      ║ */}
@@ -7267,63 +7676,13 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         </section>
       )}
 
-      {!selectedProblem && (rep.customerVideos || []).filter(v => parseVideoUrl(v.url)).length > 0 && (
-        <section className="relative overflow-hidden px-5 sm:px-12 py-16 sm:py-20"
-          style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-10">
-              <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
-                {t('act7_eyebrow', '✦ მათ გაიარეს იგივე')}
-              </p>
-              <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
-                {t('act7_headline_left', 'ნამდვილი')} <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('act7_headline_right', 'ისტორიები')}</span>
-              </h2>
-              <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
-                {t('customer_stories_public_subtitle', 'კმაყოფილი მომხმარებლების ვიდეო-რეცენზიები')}
-              </p>
-            </div>
-            <div className={`grid gap-5 sm:gap-6 ${
-              (rep.customerVideos || []).length === 1 ? 'grid-cols-1 max-w-md mx-auto' :
-              (rep.customerVideos || []).length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
-              'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-            }`}>
-              {(rep.customerVideos || []).filter(v => parseVideoUrl(v.url)).map((v, idx) => {
-                const parsed = parseVideoUrl(v.url);
-                const isVertical = parsed.orientation === 'vertical';
-                return (
-                  <div key={idx} className="group">
-                    <button onClick={() => setVideoToPlay(v.url)}
-                      className={`relative w-full ${isVertical ? 'aspect-[9/16]' : 'aspect-video'} rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block`}
-                      style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.ink})`, boxShadow: `0 20px 50px -10px ${theme.wine}44`, border: `2px solid ${theme.cream}` }}>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition group-hover:scale-110"
-                          style={{ background: theme.cream, boxShadow: `0 8px 24px ${theme.ink}55` }}>
-                          <Ic name="play" className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: theme.wine, marginLeft: '4px' }} />
-                        </div>
-                      </div>
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] tracking-widest uppercase font-medium"
-                        style={{ background: 'rgba(255,255,255,0.18)', color: theme.cream, backdropFilter: 'blur(8px)' }}>
-                        {parsed.type}
-                      </div>
-                      {v.caption && (
-                        <div className="absolute bottom-0 left-0 right-0 p-4"
-                          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)' }}>
-                          <p className="text-sm italic text-center font-display-lat" style={{ color: theme.cream }}>
-                            "{v.caption}"
-                          </p>
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
+      {!selectedProblem && renderCustomerStories([
+        ...(rep.customerVideos || []),
+        ...(companyVideos || []).map(v => ({ ...v, _company: true }))
+      ], null)}
 
-      {/* ═══ REP'S CURATED PICKS — Personal favorite products ═══ */}
-      {repPicks.length > 0 && (
+      {/* ═══ REP'S CURATED PICKS — Personal favorite products (only on general page, not problem page) ═══ */}
+      {!selectedProblem && repPicks.length > 0 && (
         <section className="px-5 py-16 sm:py-20" style={{ background: theme.cream }}>
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-10">
@@ -7666,7 +8025,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
       {rep.whatsapp && (
         <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`}
           target="_blank" rel="noreferrer"
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
+          className="fixed bottom-24 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
           style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.6)' }}>
           <SocialIcon name="whatsapp" className="w-5 h-5" />
           <span className="text-sm font-medium">{t('floating_whatsapp_label', 'WhatsApp')}</span>
@@ -7675,7 +8034,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {/* Floating scroll-to-top button — appears after scrolling 600px */}
       <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className={`fixed bottom-20 sm:bottom-20 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+        className={`fixed bottom-40 sm:bottom-40 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
         style={{
           background: theme.cream,
           color: theme.ink,
@@ -7713,9 +8072,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
 
       {/* Video lightbox modal — opens when ANY video play button is clicked (rep greeting OR customer video) */}
       {videoToPlay && (() => {
-        const parsed = parseVideoUrl(videoToPlay);
+        const _vurl = typeof videoToPlay === 'string' ? videoToPlay : videoToPlay.url;
+        const _vorient = typeof videoToPlay === 'object' ? videoToPlay.orientation : null;
+        const parsed = parseVideoUrl(_vurl);
         if (!parsed) return null;
-        const isVertical = parsed.orientation === 'vertical';
+        const isVertical = (_vorient || parsed.orientation) === 'vertical';
         return (
           <div onClick={() => setVideoToPlay(null)}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 anim-fadeup"
@@ -7725,10 +8086,44 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
               style={{ background: theme.cream, color: theme.ink }}>
               <Ic name="x" className="w-5 h-5" />
             </button>
+            <button
+  onClick={async (e) => {
+    e.stopPropagation();
+    // ლამაზი slug-ლინკი (ტელეფონის ნომრის გარეშე); fallback — pid
+    const _origin = window.location.origin;
+    const _slug = (rep.slug || '').trim();
+    const shareUrl = _slug
+      ? `${_origin}/${_slug}`
+      : (() => { const u = new URL(window.location.href); u.searchParams.delete('edit'); return u.toString(); })();
+    if (navigator.share) {
+      await navigator.share({
+        title: rep.name + ' — FARMASI',
+        text: `${rep.name || ''} — გაეცანი ჩემს FARMASI პორტფოლიოს 🌸`.trim(),
+        url: shareUrl,
+      }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(shareUrl).catch(() => {});
+      const el = document.getElementById('_share_toast');
+      if (el) { el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 2000); }
+    }
+  }}
+  className="absolute top-5 right-16 w-10 h-10 rounded-full flex items-center justify-center transition hover:scale-110 z-10"
+  style={{ background: theme.cream, color: theme.ink }}
+>
+  <Ic name="share-2" className="w-4 h-4" />
+</button>
+<div id="_share_toast" style={{
+  position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+  background: '#1a1a1a', color: '#fff', borderRadius: 999,
+  padding: '8px 18px', fontSize: 12, opacity: 0,
+  transition: 'opacity 0.3s', pointerEvents: 'none', zIndex: 100,
+}}>
+  ✓ ლინკი დაკოპირდა
+</div>
             <div onClick={(e) => e.stopPropagation()}
-              className={`relative ${isVertical ? 'h-[70vh] max-h-[620px] sm:h-[58vh] sm:max-h-[560px] aspect-[9/16]' : 'w-[92vw] max-w-4xl aspect-video'} rounded-2xl overflow-hidden`}
+              className={`relative ${isVertical ? 'h-[85vh] aspect-[9/16]' : 'w-[92vw] max-w-5xl aspect-video'} rounded-3xl overflow-hidden`}
               style={{ background: theme.ink, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
-              <VideoIntro url={videoToPlay} />
+              <VideoIntro url={_vurl} />
             </div>
           </div>
         );
@@ -7744,6 +8139,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
         products={dynamicProducts}
         cart={cart}
         labels={labels}
+        rep={rep}
+        onContactRep={() => {
+          setCatalogOpen(false);
+          setTimeout(() => setChatOpen(true), 320);
+        }}
       />
 
       {/* Pick product modal — opens elegant detail view when clicking on rep's curated picks */}
@@ -7900,7 +8300,7 @@ function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, rep = {}, t = (k,
 
         {/* Footnote */}
         <p className="text-center text-xs mt-8 max-w-md mx-auto" style={{ color: theme.ink + '77' }}>
-          🌱 ყოველი რიტუალის უკან ნამდვილი ისტორიაა — დააკლიკე და ნახე
+          {t('act2_footer_note', '🌱 ყოველი რიტუალის უკან ნამდვილი ისტორიაა — დააკლიკე და ნახე')}
         </p>
       </div>
 
@@ -7909,7 +8309,7 @@ function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, rep = {}, t = (k,
   );
 }
 
-function PainBridge({ rep, problem, onProceed, onBack }) {
+function PainBridge({ rep, problem, onProceed, onBack, t = (k, fb) => fb }) {
   if (!problem || !problem.bridge) return null;
   const b = problem.bridge;
 
@@ -7928,7 +8328,7 @@ function PainBridge({ rep, problem, onProceed, onBack }) {
         style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
         <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase transition hover:gap-3"
           style={{ color: theme.ink }}>
-          <Ic name="arrow-left" className="w-4 h-4" /> უკან
+          <Ic name="arrow-left" className="w-4 h-4" /> {t('back', 'უკან')}
         </button>
       </div>
 
@@ -8011,7 +8411,7 @@ function PainBridge({ rep, problem, onProceed, onBack }) {
             <Ic name="arrow-right" className="w-4 h-4" />
           </button>
           <p className="text-xs mt-5" style={{ color: theme.ink + '77' }}>
-            არანაირი ვალდებულება — მხოლოდ შენი რიტუალის ჩვენება
+            {t('bridge_no_obligation', 'არანაირი ვალდებულება — მხოლოდ შენი რიტუალის ჩვენება')}
           </p>
         </div>
       </div>
@@ -8065,7 +8465,7 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k
           'sm:grid-cols-2 lg:grid-cols-3'
         }`}>
           {products.map((p, idx) => (
-            <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent}
+            <ProblemProductCard key={p.id} product={p} index={idx} accent={p.accent || problem.accent} t={t}
               onClick={() => setSelectedProduct(p)}
               onAddToCart={cart ? (prod) => { flyToCart(prod.id); cart.addItem({ product_id: prod.id, name: prod.name, price: prod.price, image: prod.image, quantity: 1 }); } : null} />
           ))}
@@ -8413,7 +8813,7 @@ function ProductImage({ src, alt, className, style, onError }) {
 }
 
 // Single product card for ProblemProductShowcase — with 3D tilt
-function ProblemProductCard({ product, index, accent, onClick, onAddToCart }) {
+function ProblemProductCard({ product, index, accent, onClick, onAddToCart, t = (k, fb) => fb }) {
   const tiltRef = useRef(null);
 
   const containerRef = useRef(null);
@@ -8469,7 +8869,7 @@ function ProblemProductCard({ product, index, accent, onClick, onAddToCart }) {
                   <Ic name="image" className="w-8 h-8" style={{ color: theme.cream }} />
                 </div>
                 <p className="text-[10px] tracking-widest uppercase" style={{ color: theme.cream + '88' }}>
-                  ფოტო მალე
+                  {t('card_photo_soon', 'ფოტო მალე')}
                 </p>
               </div>
             )}
@@ -8644,8 +9044,8 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
       return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
           <div className="text-center">
-            <p style={{ marginBottom: '20px', color: '#333' }}>პროდუქტი ვერ იტვირთა</p>
-            <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+            <p style={{ marginBottom: '20px', color: '#333' }}>{t('prod_load_error', 'პროდუქტი ვერ იტვირთა')}</p>
+            <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>{t('back', 'უკან')}</button>
           </div>
         </div>
       );
@@ -8653,6 +9053,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
 
     const t = (key, fallback = '') => (labels && labels[key]) || fallback;
     const [chatOpen, setChatOpen] = useState(false);
+    const [ratingInfoOpen, setRatingInfoOpen] = useState(false);
     const [qty, setQty] = useState(1);
     // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
     const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
@@ -8681,7 +9082,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
         <div className="sticky top-0 z-30 backdrop-blur-md px-5 py-3 flex items-center justify-between"
           style={{ background: theme.cream + 'EE', borderBottom: `1px solid ${theme.gold}22` }}>
           <button onClick={onBack} className="flex items-center gap-2 text-xs tracking-widest uppercase" style={{ color: theme.ink }}>
-            <Ic name="arrow-left" className="w-4 h-4" /> უკან
+            <Ic name="arrow-left" className="w-4 h-4" /> {t('back', 'უკან')}
           </button>
           <span className="font-mono text-[10px]" style={{ color: theme.gold }}>#{product.id}</span>
           <button onClick={shareWA} className="flex items-center gap-1 text-xs" style={{ color: theme.wine }}>
@@ -8741,7 +9142,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
               {/* Rating + SKU */}
               <div className="flex items-center gap-3 mb-5 flex-wrap">
                 {product.rating && (
-                  <div className="flex items-center gap-1.5">
+                  <button onClick={() => setRatingInfoOpen(true)}
+                    className="flex items-center gap-1.5 transition hover:opacity-70"
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                     <div className="flex">
                       {[1,2,3,4,5].map(i => (
                         <Ic key={i} name="star" className="w-3.5 h-3.5"
@@ -8751,7 +9154,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                     </div>
                     <span className="text-xs font-mono" style={{ color: theme.ink }}>{product.rating}</span>
                     {product.reviewCount && <span className="text-xs" style={{ color: theme.ink + '77' }}>({product.reviewCount} შეფასება)</span>}
-                  </div>
+                  </button>
                 )}
                 {product.sku && (
                   <>
@@ -8817,7 +9220,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                   <Ic name="badge-check" className="w-3.5 h-3.5" style={{ color: theme.gold }} /> ოფიციალური FARMASI
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Ic name="truck" className="w-3.5 h-3.5" style={{ color: theme.gold }} /> სწრაფი მიწოდება
+                  <Ic name="truck" className="w-3.5 h-3.5" style={{ color: theme.gold }} /> {t('prod_fast_delivery', 'სწრაფი მიწოდება')}
                 </span>
               </div>
             </div>
@@ -8870,7 +9273,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                 <button onClick={goShop}
                   className="mt-6 py-4 px-8 rounded-2xl inline-flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
                   style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
-                  <Ic name="arrow-down" className="w-4 h-4" /> ნახე გადაწყვეტა
+                  <Ic name="arrow-down" className="w-4 h-4" /> {t('prod_see_solution', 'ნახე გადაწყვეტა')}
                 </button>
               </div>
             </div>
@@ -8932,13 +9335,13 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
               <div className="text-center mb-10">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-[10px] tracking-widest uppercase"
                   style={{ background: theme.wine + '11', color: theme.wine, border: `1px solid ${theme.wine}33` }}>
-                  <Ic name="check-circle" className="w-3 h-3" /> ნამდვილი შედეგები
+                  <Ic name="check-circle" className="w-3 h-3" /> {t('prod_real_results', 'ნამდვილი შედეგები')}
                 </div>
                 <h2 className="font-display text-3xl sm:text-4xl mb-3" style={{ color: theme.ink }}>
                   შედეგები რომ <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>{t('prod_speak_label', 'ლაპარაკობენ')}</span>
                 </h2>
                 <p className="text-base max-w-xl mx-auto" style={{ color: theme.ink + '99' }}>
-                  რეალური მომხმარებლების ფოტოები — გამოყენების ციკლის შემდეგ
+                  {t('prod_real_photos', 'რეალური მომხმარებლების ფოტოები — გამოყენების ციკლის შემდეგ')}
                 </p>
               </div>
 
@@ -9188,7 +9591,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                 {/* Three cinematic acts */}
                 <div className="space-y-24 sm:space-y-32">
                   {product.ritual.items.map((item, i) => (
-                    <CinematicAct key={i} item={item} index={i} reverse={i % 2 === 1} onShop={goShop} />
+                    <CinematicAct key={i} item={item} index={i} reverse={i % 2 === 1} onShop={goShop} t={t} />
                   ))}
                 </div>
 
@@ -9252,7 +9655,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
 
                         <div className="flex items-center gap-4 mt-5 text-[10px] tracking-widest uppercase opacity-60 flex-wrap">
                           <span className="flex items-center gap-1.5">
-                            <Ic name="truck" className="w-3 h-3" /> უფასო მიწოდება
+                            <Ic name="truck" className="w-3 h-3" /> {t('prod_free_delivery', 'უფასო მიწოდება')}
                           </span>
                           <span>·</span>
                           <span className="flex items-center gap-1.5">
@@ -9310,7 +9713,9 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                   </h2>
                 </div>
                 {product.rating && (
-                  <div className="flex items-center gap-3">
+                  <button onClick={() => setRatingInfoOpen(true)}
+                    className="flex items-center gap-3 transition hover:opacity-70"
+                    style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                     <div className="flex">
                       {[1,2,3,4,5].map(i => (
                         <Ic key={i} name="star" className="w-5 h-5"
@@ -9322,7 +9727,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                       <span className="font-display text-2xl" style={{ color: theme.ink }}>{product.rating}</span>
                       <span className="text-xs ml-2" style={{ color: theme.ink + '77' }}>{product.reviewCount} შეფასებიდან</span>
                     </div>
-                  </div>
+                  </button>
                 )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -9462,7 +9867,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
         <section className="px-5 py-12" style={{ background: theme.ivory }}>
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-8">
-              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>✦ სწრაფი შედეგი</p>
+              <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_fast_result', '✦ სწრაფი შედეგი')}</p>
               <h2 className="font-display text-2xl sm:text-3xl mb-3" style={{ color: theme.ink }}>
                 მთლიანი <span className="font-display-lat italic font-normal" style={{ color: theme.wine }}>Vitalizing</span> რიტუალი
               </h2>
@@ -9479,7 +9884,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
                   target="_blank" rel="noreferrer"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
                   style={{ background: theme.wine, color: theme.cream, boxShadow: `0 10px 30px -8px ${theme.wine}88` }}>
-                  <SocialIcon name="whatsapp" className="w-4 h-4" /> მთლიანი რიტუალი — დამიკავშირდი
+                  <SocialIcon name="whatsapp" className="w-4 h-4" /> {t('prod_whatsapp_cta', 'მთლიანი რიტუალი — დამიკავშირდი')}
                 </a>
                 <p className="text-[11px] mt-3 opacity-60" style={{ color: theme.ink }}>
                   გავუგზავნი ინდივიდუალურ რეცეპტს შენი ვითარებიდან გამომდინარე
@@ -9493,7 +9898,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
         <footer className="px-5 py-10 text-center" style={{ background: theme.ink, color: theme.cream }}>
           <p className="font-display text-xl mb-1">{rep.name}</p>
           <p className="text-xs tracking-widest uppercase opacity-60 mb-4">FARMASI · Tantalize Cosmetics</p>
-          <p className="text-xs opacity-50">© FARMASI Georgia ოფიციალური წარმომადგენელი</p>
+          <p className="text-xs opacity-50">{t('prod_footer_copyright', '© FARMASI Georgia ოფიციალური წარმომადგენელი')}</p>
           <p className="font-mono text-[10px] opacity-40 mt-1">{productUrl}</p>
         </footer>
 
@@ -9516,6 +9921,46 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
 
         {chatOpen && <ChatModal rep={rep} product={product} onClose={() => setChatOpen(false)} />}
 
+        {/* Rating info modal — explains how the star rating works (TEMU-style) */}
+        {ratingInfoOpen && (
+          <>
+            <div onClick={() => setRatingInfoOpen(false)}
+              className="fixed inset-0 z-[80] anim-fadeup"
+              style={{ background: 'rgba(15,15,15,0.6)', backdropFilter: 'blur(4px)' }} />
+            <div className="fixed inset-0 z-[90] flex items-center justify-center p-5 pointer-events-none">
+              <div className="relative w-full max-w-sm rounded-3xl p-7 pointer-events-auto anim-fadeup"
+                style={{ background: theme.cream, boxShadow: '0 30px 80px -10px rgba(15,15,15,0.5)' }}>
+                <button onClick={() => setRatingInfoOpen(false)} aria-label={t('rate_info_close', 'დახურვა')}
+                  className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition hover:scale-110"
+                  style={{ background: theme.ink + '11', color: theme.ink }}>
+                  <Ic name="x" className="w-4 h-4" />
+                </button>
+
+                <div className="flex justify-center mb-4">
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map(i => (
+                      <Ic key={i} name="star" className="w-6 h-6" style={{ color: '#F5A623', fill: '#F5A623' }} />
+                    ))}
+                  </div>
+                </div>
+
+                <h3 className="font-display text-xl text-center mb-3" style={{ color: theme.ink }}>
+                  {t('rate_info_title', 'როგორ ფორმირდება შეფასება')}
+                </h3>
+                <p className="text-sm leading-relaxed text-center" style={{ color: theme.ink + 'CC' }}>
+                  {t('rate_info_body', 'ვარსკვლავებით შეფასებები ეფუძნება მხოლოდ რეალურ შესყიდვებს. პროდუქტის საბოლოო რეიტინგი ყველა ნამდვილი შეფასების საშუალო მაჩვენებელია. შეფასების დატოვება შეუძლია მხოლოდ მომხმარებელს, რომელმაც პროდუქტი შეიძინა და მიიღო.')}
+                </p>
+
+                <button onClick={() => setRatingInfoOpen(false)}
+                  className="w-full mt-6 py-3.5 rounded-full font-medium text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: theme.wine, color: theme.cream }}>
+                  {t('rate_info_ok', 'გასაგებია')}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Floating cart button + drawer */}
         {cart && <Cart repPid={repCode} repName={rep.name} {...cart} labels={labels} />}
       </div>
@@ -9525,8 +9970,8 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
         <div className="text-center">
-          <p style={{ marginBottom: '20px', color: '#333' }}>რაღაც არ ჯდა</p>
-          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
+          <p style={{ marginBottom: '20px', color: '#333' }}>{t('prod_something_wrong', 'რაღაც არ ჯდა')}</p>
+          <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>{t('back', 'უკან')}</button>
         </div>
       </div>
     );
@@ -9541,7 +9986,7 @@ function BrandVideo({ videoId, thumbnail }) {
       onClick={() => setPlaying(true)}>
       {playing ? (
         <iframe
-          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
           title="FARMASI"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -9620,7 +10065,7 @@ function ProductVideo({ video }) {
 }
 
 // CINEMATIC ACT — masterclass-style dark luxury showcase
-function CinematicAct({ item, index, reverse, onShop }) {
+function CinematicAct({ item, index, reverse, onShop, t = (k, fb) => fb }) {
   const tiltRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -9750,7 +10195,7 @@ function CinematicAct({ item, index, reverse, onShop }) {
           {/* CTA + price row */}
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>ფასი</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase mb-1" style={{ color: '#B8924E' }}>{t('cinematic_price', 'ფასი')}</p>
               <p className="font-display" style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', color: '#F8F6F1' }}>
                 {item.price} ₾
               </p>
