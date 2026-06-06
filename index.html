@@ -677,6 +677,7 @@ function isValidSlug(slug) {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) && slug.length >= 3 && slug.length <= 30;
 }
 const FARMASI_ICON_DATA_URL = document.getElementById("farmasi-icon-data") ? document.getElementById("farmasi-icon-data").src : "";
+const FARMASI_LOGO_DATA_URL = document.getElementById("farmasi-logo-data") ? document.getElementById("farmasi-logo-data").src : "";
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) return resolve();
@@ -1499,7 +1500,7 @@ function LoadingScreen({ labels = {} }) {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: 18
     }}>
-    <img src="" id="farmasi-logo-img" alt="FARMASI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+    <img src={FARMASI_LOGO_DATA_URL} id="farmasi-logo-img" alt="FARMASI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
     </div>
     </div>
     {}
