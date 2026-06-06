@@ -3917,7 +3917,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     {uploadingPhoto ? 'ვტვირთავ' : (rep.photo ? 'შეცვლა' : 'ატვირთე')}
     </div>
     </button>
-    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPhoto} />
     <div className="flex-1 min-w-0">
     <Input icon="user"
     label={L('profile_name_label', 'სახელი და გვარი')}
@@ -3985,7 +3985,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     style={{ width: `${videoUploadProgress}%`, background: theme.wine }} />
     </div>
     )}
-    <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={handleVideoUpload} />
+    <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={onVideoFile} />
     <div className="flex items-center gap-3 my-4">
     <div className="flex-1 h-px" style={{ background: theme.gold + '22' }} />
     <span className="text-[10px] uppercase tracking-widest" style={{ color: theme.ink + '77' }}>{L('profile_or', 'ან')}</span>
@@ -4226,11 +4226,11 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     style={{ width: `${customerUploadProgress}%`, background: theme.wine }} />
     </div>
     )}
-    <input ref={customerVideoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={handleCustomerVideoUpload} />
+    <input ref={customerVideoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" onChange={onCustomerVideoFile} />
     <Input icon="link" label={L('profile_customer_paste_link', 'ან ჩასვი ვიდეო ლინკი')} value={newCustomerUrl}
     onChange={(e) => setNewCustomerUrl(e.target.value)}
     placeholder="https://youtu.be/... ან https://instagram.com/reel/..." />
-    <button onClick={addCustomerVideoUrl}
+    <button onClick={addCustomerVideoFromUrl}
     className="w-full mt-2 py-2.5 rounded-xl text-sm font-medium transition hover:scale-[1.01]"
     style={{ background: theme.wine, color: theme.cream }}>
     <Ic name="plus" className="w-4 h-4 inline" /> {L('profile_add_link', 'დაამატე ლინკით')}
@@ -5160,12 +5160,12 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     {}
     {open && (
     <div onClick={close}
-    className="fixed inset-0 z-50 anim-fadeup"
+    className="fixed inset-0 z-[70] anim-fadeup"
     style={{ background: 'rgba(35,23,18,0.55)', backdropFilter: 'blur(4px)' }} />
     )}
     {}
     {open && (
-    <div className="fixed top-0 right-0 bottom-0 z-50 overflow-y-auto"
+    <div className="fixed top-0 right-0 bottom-0 z-[71] overflow-y-auto"
     style={{ background: theme.cream, width: '100%', maxWidth: 480, boxShadow: '-20px 0 60px -20px rgba(35,23,18,0.4)' }}>
     {}
     <div className="sticky top-0 z-10 px-5 py-4 flex items-center justify-between"
@@ -5696,15 +5696,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     </p>
     )}
     {}
-    {cart && cart.count > 0 && (
-    <button onClick={() => { setOpen(false); setTimeout(() => { if (cart.setOpen) cart.setOpen(true); }, 320); }}
-    id="flip-add-btn"
-    className="mt-2 w-full py-2.5 rounded-full text-sm font-medium tracking-wide transition hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
-    style={{ background: theme.ink, color: theme.cream }}>
-    <Ic name="shopping-bag" className="w-4 h-4" />
-    {L('catalog_flip_view_cart', 'კალათის ნახვა')} ({cart.count})
-    </button>
-    )}
+    <div id="flip-add-btn" className="w-0 h-0" />
     </div>
     </div>
     ) : (
@@ -5793,10 +5785,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     </button>
     {}
     {cart && cart.count > 0 ? (
-    <button onClick={() => {
-    setOpen(false);
-    setTimeout(() => { if (cart.setOpen) cart.setOpen(true); }, 320);
-    }}
+    <button onClick={() => { if (cart.setOpen) cart.setOpen(true); }}
     className="flex-1 py-3 px-4 rounded-full font-medium text-xs sm:text-sm tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
     style={{ background: theme.wine, color: theme.cream, boxShadow: `0 8px 20px -6px ${theme.wine}AA` }}>
     <Ic name="shopping-bag" className="w-4 h-4" />
