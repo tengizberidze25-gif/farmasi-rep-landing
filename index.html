@@ -7147,11 +7147,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </div>
     <button onClick={() => setCatalogOpen(true)}
-    className="inline-flex items-center gap-3 py-4 px-8 sm:px-10 rounded-full font-medium text-sm sm:text-base tracking-wider uppercase transition hover:scale-[1.03]"
-    style={{ background: theme.ink, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.ink}AA` }}>
+    className="group inline-flex items-center gap-3 py-4 px-8 sm:px-10 rounded-full font-medium text-sm sm:text-base tracking-wider uppercase transition-all duration-300 hover:scale-[1.04] active:scale-95"
+    style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.rose})`, color: theme.cream, boxShadow: `0 18px 45px -12px ${theme.wine}99` }}>
     <Ic name="shopping-bag" className="w-5 h-5" />
     {t('catalog_cta', 'დაათვალიერე და შეუკვეთე')}
-    <Ic name="arrow-right" className="w-4 h-4 opacity-70" />
+    <Ic name="arrow-right" className="w-4 h-4 opacity-80 transition-transform group-hover:translate-x-1" />
     </button>
     <p className="text-xs mt-5 opacity-60" style={{ color: theme.ink }}>
     {t('catalog_hint', '620+ პროდუქტი · ფასები · აღწერა · ფოტოები')}
@@ -7266,26 +7266,26 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </footer>
     <button onClick={() => setChatOpen(true)}
-    className={`fixed bottom-5 left-5 z-40 flex items-center justify-center gap-2 px-5 py-3 sm:gap-0 sm:px-0 sm:py-0 sm:w-12 sm:h-12 rounded-full transition-all duration-500 hover:scale-105 active:scale-95 anim-chat-glow ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+    className="fixed bottom-5 left-5 z-40 flex items-center justify-center gap-2 px-4 py-3 sm:px-5 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 anim-chat-glow shadow-2xl"
     style={{ background: theme.ink, color: theme.cream }}
     title={t('chat_button_tooltip', 'მესიჯი')}>
-    <Ic name="message-square" className="w-5 h-5" />
-    <span className="text-sm font-medium tracking-wide sm:hidden">
+    <Ic name="message-square" className="w-5 h-5 flex-shrink-0" />
+    <span className="text-sm font-medium tracking-wide">
     {t('chat_button_label', 'უფასო კონსულტაცია')}
     </span>
     </button>
     {rep.whatsapp && (
     <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}`}
     target="_blank" rel="noreferrer"
-    className="fixed bottom-24 right-5 z-40 flex items-center gap-2 px-4 py-3 rounded-full transition hover:scale-105 anim-float"
+    aria-label="WhatsApp"
+    className="fixed bottom-[5.5rem] right-5 z-40 w-14 h-14 flex items-center justify-center rounded-full transition hover:scale-110 active:scale-95 anim-float"
     style={{ background: '#25D366', color: '#fff', boxShadow: '0 10px 30px -8px rgba(37,211,102,0.6)' }}>
-    <SocialIcon name="whatsapp" className="w-5 h-5" />
-    <span className="text-sm font-medium">{t('floating_whatsapp_label', 'WhatsApp')}</span>
+    <SocialIcon name="whatsapp" className="w-7 h-7" />
     </a>
     )}
     {}
     <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-    className={`fixed bottom-40 sm:bottom-40 right-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+    className={`fixed bottom-20 left-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
     style={{
     background: theme.cream,
     color: theme.ink,
