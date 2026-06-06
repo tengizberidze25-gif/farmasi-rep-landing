@@ -5632,60 +5632,67 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     <p className="text-[11px] tracking-widest uppercase text-center mb-2" style={{ color: theme.gold }}>
     ✦ {L('catalog_flip_hint', 'კატალოგში ნახე კოდი და ჩაწერე')}
     </p>
-    <div className="flex gap-2">
-    <div className="relative flex-1">
+    {}
+    {flipSearchQuery.trim().length >= 1 && (() => {
+    const q = flipSearchQuery.trim().toLowerCase();
+    const matches = (products || []).filter(p => {
+    const code = String(p.id || p.product_id || p.code || '').toLowerCase();
+    const name = String(p.name || '').toLowerCase();
+    return code.includes(q) || name.includes(q);
+    }).slice(0, 6);
+    if (matches.length === 0) return (
+    <p className="mb-2 text-xs text-center" style={{ color: '#EF4444' }}>
+    {L('catalog_flip_not_found', 'ვერ მოიძებნა — სცადე კოდი ან სახელი')}
+    </p>
+    );
+    return (
+    <div className="mb-2 space-y-1 max-h-52 overflow-y-auto">
+    {matches.map(p => (
+    <button key={p.id} onClick={() => {
+    if (!cart) return;
+    flyToCart('flip-add-btn');
+    cart.addItem({ product_id: p.id, name: p.name, price: p.price, image: p.image, quantity: 1 });
+    setFlipSearchQuery('');
+    setFlipAdded(true);
+    setTimeout(() => setFlipAdded(false), 1500);
+    }}
+    className="w-full flex items-center gap-3 p-2 rounded-xl transition hover:scale-[1.01] active:scale-95 text-left"
+    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+    {p.image
+    ? <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" style={{ border: `1px solid ${theme.gold}33` }} />
+    : <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center" style={{ background: theme.mist }}><Ic name="image" className="w-4 h-4" style={{ color: theme.gold }} /></div>}
+    <div className="min-w-0 flex-1">
+    <p className="text-xs font-medium truncate" style={{ color: theme.ink }}>{p.name}</p>
+    <p className="text-[10px] font-mono" style={{ color: theme.ink + '88' }}>#{p.id || p.product_id || p.code} · <span style={{ color: theme.wine }}>{p.price} ₾</span></p>
+    </div>
+    <span className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: theme.wine, color: theme.cream }}>
+    <Ic name="plus" className="w-4 h-4" />
+    </span>
+    </button>
+    ))}
+    </div>
+    );
+    })()}
+    {}
+    <div className="relative">
+    <Ic name="search" className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: theme.ink + '66' }} />
     <input
     type="text"
-    inputMode="numeric"
-    value={flipCode}
-    onChange={e => {
-    const v = e.target.value.replace(/\D/g, '');
-    setFlipCode(v);
-    setFlipAdded(false);
-    if (v.length >= 4) {
-    const m = (products || []).find(p => String(p.id) === v || String(p.product_id) === v || String(p.code) === v);
-    setFlipMatch(m || null);
-    } else {
-    setFlipMatch(null);
-    }
-    }}
-    placeholder={L('catalog_flip_code_placeholder', 'პროდუქტის კოდი...')}
-    className="w-full px-4 py-3 text-sm rounded-full outline-none font-mono"
-    style={{ background: theme.ivory, border: `1.5px solid ${flipMatch ? '#22C55E' : theme.gold + '44'}`, color: theme.ink }}
+    value={flipSearchQuery}
+    onChange={e => setFlipSearchQuery(e.target.value)}
+    placeholder={L('catalog_flip_search_placeholder', 'ჩაწერე კოდი ან სახელი...')}
+    className="w-full pl-11 pr-10 py-3 text-sm rounded-full outline-none"
+    style={{ background: theme.ivory, border: `1.5px solid ${flipSearchQuery ? theme.wine : theme.gold + '44'}`, color: theme.ink }}
     />
-    </div>
-    <button
-    disabled={!flipMatch || flipAdded}
-    onClick={() => {
-    if (!flipMatch || !cart) return;
-    flyToCart('flip-add-btn');
-    cart.addItem({ product_id: flipMatch.id, name: flipMatch.name, price: flipMatch.price, image: flipMatch.image, quantity: 1 });
-    setFlipAdded(true);
-    setFlipCode('');
-    setFlipMatch(null);
-    setTimeout(() => setFlipAdded(false), 2000);
-    }}
-    className="flex-shrink-0 px-5 py-3 rounded-full font-medium text-sm tracking-wide transition hover:scale-[1.03] active:scale-95"
-    style={flipMatch && !flipAdded
-    ? { background: theme.wine, color: theme.cream, boxShadow: `0 6px 16px -4px ${theme.wine}88` }
-    : { background: theme.ink + '22', color: theme.ink + '66', cursor: 'not-allowed' }}>
-    {flipAdded ? '✓' : L('catalog_flip_add_btn', 'კალათაში')}
+    {flipSearchQuery && (
+    <button onClick={() => setFlipSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full hover:bg-black/10" style={{ color: theme.ink + '66' }}>
+    <Ic name="x" className="w-4 h-4" />
     </button>
-    </div>
-    {}
-    {flipMatch && (
-    <div className="mt-2 flex items-center gap-2 px-1">
-    {flipMatch.image && <img src={flipMatch.image} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" style={{ border: `1px solid ${theme.gold}33` }} />}
-    <div className="min-w-0">
-    <p className="text-xs font-medium truncate" style={{ color: theme.ink }}>{flipMatch.name}</p>
-    <p className="text-xs" style={{ color: theme.wine }}>{flipMatch.price} ₾</p>
-    </div>
-    <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#22C55E22', color: '#16A34A' }}>✓ ნაპოვნია</span>
-    </div>
     )}
-    {flipCode.length >= 4 && !flipMatch && (
-    <p className="mt-2 text-xs text-center" style={{ color: '#EF4444' }}>
-    {L('catalog_flip_not_found', 'კოდი ვერ მოიძებნა — სცადე კიდევ')}
+    </div>
+    {flipAdded && (
+    <p className="mt-2 text-xs text-center font-medium" style={{ color: '#16A34A' }}>
+    ✓ {L('catalog_flip_added', 'დაემატა კალათაში!')}
     </p>
     )}
     {}
