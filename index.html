@@ -5405,7 +5405,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     </>
   );
 }
-function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep }) {
+function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep, initialSearch = '' }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [catalogTab, setCatalogTab] = useState('flip'); // 'flip' | 'shop'
   const [flipCode, setFlipCode] = useState(''); 
@@ -5418,6 +5418,13 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
   const [quickview, setQuickview] = useState(null);
   const [quickviewQty, setQuickviewQty] = useState(1);
   const [recentAddId, setRecentAddId] = useState(null); 
+  // AI-დან გადმოცემული ძებნა — გახსნისას shop ტაბი + ძებნა
+  React.useEffect(() => {
+    if (open && initialSearch) {
+      setCatalogTab('shop');
+      setSearchQuery(initialSearch);
+    }
+  }, [open, initialSearch]);
   useEffect(() => {
     if (!open) {
     setQuickview(null);
@@ -6077,6 +6084,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(!!initialCatalog); 
+  const [catalogSearch, setCatalogSearch] = useState(''); // AI-დან გადმოცემული საწყისი ძებნა
   const [videoToPlay, setVideoToPlay] = useState(null); 
   const [showAllStories, setShowAllStories] = useState(false); // "ნახე მეტი" — show all customer videos
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
@@ -7297,7 +7305,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </button>
     {chatOpen && <ChatModal rep={rep} onClose={() => setChatOpen(false)} t={t} />}
     {}
-    <AiAssistant rep={rep} repCode={repCode} dynamicProducts={dynamicProducts} cart={cart} labels={labels} />
+    <AiAssistant rep={rep} repCode={repCode} dynamicProducts={dynamicProducts} cart={cart} labels={labels}
+    onOpenCatalog={(term) => { setCatalogSearch(term || ''); setCatalogOpen(true); }} />
     {}
     {photoZoom && rep.photo && (
     <div onClick={() => setPhotoZoom(false)}
@@ -7383,6 +7392,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     <ShoppableCatalog
     open={catalogOpen}
     setOpen={setCatalogOpen}
+    initialSearch={catalogSearch}
     products={dynamicProducts}
     cart={cart}
     labels={labels}
@@ -9304,7 +9314,7 @@ function FaqItem({ q, a, mono }) {
 //  ცალკე მცურავი ჭილაკი. იყენებს api({action:'ai_chat'}) backend-ს.
 //  [PRODUCT:id] ნიშანს პროდუქტის ბარათად აქცევს კალათში დამატებით.
 // ════════════════════════════════════════════════════════════════
-function AiAssistant({ rep, repCode, dynamicProducts = [], cart, labels = {} }) {
+function AiAssistant({ rep, repCode, dynamicProducts = [], cart, labels = {}, onOpenCatalog }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]); // {role, content}
@@ -9361,7 +9371,7 @@ function AiAssistant({ rep, repCode, dynamicProducts = [], cart, labels = {} }) 
   // [PRODUCT:id] ნიშნების პოვნა და პროდუქტის ბარათად ქცევა
   const renderAssistantMessage = (content) => {
     const parts = [];
-    const regex = /\[PRODUCT:([^\]]+)\]/g;
+    const regex = /\[(PRODUCT|SEARCH):([^\]]+)\]/g;
     let lastIndex = 0;
     let match;
     let key = 0;
@@ -9371,8 +9381,24 @@ function AiAssistant({ rep, repCode, dynamicProducts = [], cart, labels = {} }) 
         const txt = content.slice(lastIndex, match.index).trim();
         if (txt) parts.push(<p key={'t' + key} className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: theme.ink }}>{txt}</p>);
       }
-      // პროდუქტის ბარათი
-      const pid = match[1].trim();
+      const tagType = match[1];
+      const tagValue = match[2].trim();
+      // [SEARCH:term] — კატალოგში გადამისამართების ღილაკი
+      if (tagType === 'SEARCH') {
+        parts.push(
+          <button key={'s' + key} onClick={() => { if (onOpenCatalog) onOpenCatalog(tagValue); setOpen(false); }}
+            className="w-full flex items-center justify-center gap-2 my-2 py-3 rounded-xl text-sm font-medium transition hover:scale-[1.02] active:scale-95"
+            style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.rose})`, color: theme.cream }}>
+            <Ic name="grid" className="w-4 h-4" />
+            {L('ai_see_all_in_catalog', 'ნახე ყველა')} "{tagValue}" {L('ai_in_catalog', 'კატალოგში')}
+          </button>
+        );
+        lastIndex = regex.lastIndex;
+        key++;
+        continue;
+      }
+      // [PRODUCT:id] — პროდუქტის ბარათი
+      const pid = tagValue;
       const product = dynamicProducts.find(p =>
         String(p.id) === pid || String(p.product_id) === pid || String(p.code) === pid);
       if (product) {
