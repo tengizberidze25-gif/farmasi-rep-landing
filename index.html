@@ -9418,7 +9418,9 @@ function AiAssistant({ rep, repCode, dynamicProducts = [], cart, labels = {} }) 
           className="fixed bottom-36 right-5 z-40 flex items-center gap-2 pl-3 pr-4 py-3 rounded-full transition hover:scale-105 active:scale-95 shadow-2xl"
           style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.rose})`, color: theme.cream }}
           aria-label={L('ai_button_label', 'AI ასისტენტი')}>
-          <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.25)' }}>✨</span>
+          {rep && rep.photo
+            ? <img src={rep.photo} alt="" className="w-7 h-7 rounded-full object-cover" style={{ border: '1.5px solid rgba(255,255,255,0.6)' }} />
+            : <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.25)' }}>✨</span>}
           <span className="text-sm font-medium tracking-wide">{L('ai_button_label', 'AI ასისტენტი')}</span>
         </button>
       )}
@@ -9433,7 +9435,9 @@ function AiAssistant({ rep, repCode, dynamicProducts = [], cart, labels = {} }) 
             {/* Header */}
             <div className="flex-shrink-0 px-5 py-4 flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.rose})` }}>
               <div className="flex items-center gap-3">
-                <span className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ background: 'rgba(255,255,255,0.25)' }}>✨</span>
+                {rep && rep.photo
+                  ? <img src={rep.photo} alt="" className="w-10 h-10 rounded-full object-cover" style={{ border: '2px solid rgba(255,255,255,0.6)' }} />
+                  : <span className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ background: 'rgba(255,255,255,0.25)' }}>✨</span>}
                 <div>
                   <p className="text-sm font-semibold" style={{ color: theme.cream }}>{L('ai_header_title', 'AI სილამაზის ასისტენტი')}</p>
                   <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.85)' }}>{repName || 'FARMASI'}</p>
