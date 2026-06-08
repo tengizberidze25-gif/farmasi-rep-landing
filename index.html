@@ -1298,27 +1298,7 @@ function App() {
     const cached = localStorage.getItem('farmasi_products_cache');
     if (cached) {
     const parsed = JSON.parse(cached);
-    if (Array.isArray(parsed)) {
-    setDynamicProducts(parsed);
-    // ⚡ სწრაფი ?add= — თუ პროდუქტი cache-შია, მაშინვე დაამატე (Apps Script-ს არ ელოდება)
-    const addParamFast = urlParams.add ? String(urlParams.add).trim() : null;
-    if (addParamFast) {
-    const foundFast = parsed.find(p =>
-    String(p.id) === addParamFast || String(p.product_id) === addParamFast || String(p.code) === addParamFast
-    );
-    if (foundFast) {
-    cartAddItem(foundFast);
-    setCartOpen(true);
-    window.__farmasiAddedFromCache = addParamFast;
-    try {
-    const cp = new URLSearchParams(window.location.search);
-    cp.delete('add');
-    const ns = cp.toString();
-    window.history.replaceState({}, '', window.location.pathname + (ns ? '?' + ns : '') + window.location.hash);
-    } catch {}
-    }
-    }
-    }
+    if (Array.isArray(parsed)) setDynamicProducts(parsed);
     }
     } catch {}
     api({ action: 'get_products' })
@@ -1327,7 +1307,7 @@ function App() {
     setDynamicProducts(data.products);
     try { localStorage.setItem('farmasi_products_cache', JSON.stringify(data.products)); } catch {}
     const addParam = urlParams.add ? String(urlParams.add).trim() : null;
-    if (addParam && window.__farmasiAddedFromCache !== addParam) {
+    if (addParam) {
     const found = data.products.find(p =>
     String(p.id) === addParam || String(p.product_id) === addParam || String(p.code) === addParam
     );
