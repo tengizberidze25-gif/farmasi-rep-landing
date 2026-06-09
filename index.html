@@ -1234,9 +1234,49 @@ const [cartItems, setCartItems] = useState(() => {
     return merged;
   };
 
+  const mergeCartSnapshots = (firstItems, secondItems) => {
+    const merged = [];
+
+    [...(Array.isArray(firstItems) ? firstItems : []), ...(Array.isArray(secondItems) ? secondItems : [])]
+      .filter(Boolean)
+      .forEach((item) => {
+        const itemKey = getCartItemKey(item);
+        const existingIndex = merged.findIndex((it) => getCartItemKey(it) === itemKey);
+
+        if (existingIndex >= 0) {
+          const oldQty = Number(merged[existingIndex].quantity || 1);
+          const newQty = Number(item.quantity || 1);
+
+          merged[existingIndex] = {
+            ...merged[existingIndex],
+            ...item,
+            quantity: Math.max(oldQty, newQty)
+          };
+        } else {
+          merged.push({
+            ...item,
+            quantity: Number(item.quantity || 1)
+          });
+        }
+      });
+
+    return merged;
+  };
+
   const cartAddItem = (product) => {
     setCartOpen(true);
-    setCartItems((items) => mergeCartItems(items, product));
+    setCartItems((items) => {
+      let storedItems = [];
+
+      try {
+        const stored = cartStorageKey ? localStorage.getItem(cartStorageKey) : null;
+        storedItems = stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        storedItems = [];
+      }
+
+      return mergeCartItems(mergeCartSnapshots(storedItems, items), product);
+    });
   };
   const cartUpdateQty = (productId, qty) => {
     if (qty <= 0) {
