@@ -1191,10 +1191,53 @@ function App() {
     }
     try {
     const stored = localStorage.getItem(cartStorageKey);
-    setCartItems(stored ? JSON.parse(stored) : []);
+      const parsed = stored ? JSON.parse(stored) : [];
+      setCartItems((items) => mergeCartItems(items, parsed));
     } catch { setCartItems([]); }
   }, [cartStorageKey]);
+  const getCartItemKey = (item) =>
+    String(
+      item?.product_id ||
+      item?.id ||
+      item?.sku ||
+      item?.code ||
+      item?.name ||
+      item?.title ||
+      ''
+    );
+
+  const mergeCartItems = (currentItems, incomingItems) => {
+    const list = Array.isArray(incomingItems) ? incomingItems : [incomingItems];
+    const merged = [...(Array.isArray(currentItems) ? currentItems : [])];
+
+    list.filter(Boolean).forEach((product) => {
+      const productKey = getCartItemKey(product);
+      const existingIndex = merged.findIndex((it) => getCartItemKey(it) === productKey);
+
+      if (existingIndex >= 0) {
+        const oldQty = Number(merged[existingIndex].quantity || 1);
+        const addQty = Number(product.quantity || 1);
+
+        merged[existingIndex] = {
+          ...merged[existingIndex],
+          ...product,
+          quantity: oldQty + addQty
+        };
+      } else {
+        merged.push({
+          ...product,
+          quantity: Number(product.quantity || 1)
+        });
+      }
+    });
+
+    return merged;
+  };
+
   const cartAddItem = (product) => {
+    setCartItems((items) => mergeCartItems(items, product));
+    setCartOpen(true);
+    return;
     setCartItems(items => {
     const existing = items.find(it => it.product_id === product.product_id);
     if (existing) {
