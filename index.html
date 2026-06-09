@@ -9796,5 +9796,33 @@ document.addEventListener('DOMContentLoaded', function() {
   if (logoSrc && logoImg) logoImg.src = logoSrc.src;
 });
 </script>
+<script id="codex-wheel-scroll-fix">
+  (function () {
+    window.addEventListener('wheel', function (event) {
+      if (!event || !event.deltaY) return;
+
+      var startY = window.scrollY || document.documentElement.scrollTop || 0;
+      var activeModal = document.querySelector('[role="dialog"], dialog[open], .modal.show, .fixed.top-0.right-0.bottom-0');
+
+      window.setTimeout(function () {
+        var currentY = window.scrollY || document.documentElement.scrollTop || 0;
+        var pageCanScroll = document.documentElement.scrollHeight > window.innerHeight + 2;
+
+        if (!pageCanScroll || Math.abs(currentY - startY) > 1) return;
+
+        if (activeModal && activeModal.contains(event.target)) {
+          activeModal.scrollTop += event.deltaY;
+          return;
+        }
+
+        window.scrollBy({
+          top: event.deltaY,
+          left: 0,
+          behavior: 'auto'
+        });
+      }, 0);
+    }, { capture: true, passive: true });
+  })();
+</script>
 </body>
 </html>
