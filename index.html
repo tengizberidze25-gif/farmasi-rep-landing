@@ -1236,17 +1236,7 @@ function App() {
 
   const cartAddItem = (product) => {
     setCartOpen(true);
-    setCartItems((items) => {
-      let storedItems = [];
-      try {
-        const stored = cartStorageKey ? localStorage.getItem(cartStorageKey) : null;
-        storedItems = stored ? JSON.parse(stored) : [];
-      } catch (e) {
-        storedItems = [];
-      }
-
-      return mergeCartItems(mergeCartItems(storedItems, items), product);
-    });
+    setCartItems((items) => mergeCartItems(items, product));
   };
   const cartUpdateQty = (productId, qty) => {
     if (qty <= 0) {
