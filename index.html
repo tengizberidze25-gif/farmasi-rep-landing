@@ -9832,5 +9832,231 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true);
   })();
 </script>
+<script id="codex-cart-merge-speed-fix">
+  (function () {
+    var cartClickInProgress = false;
+    var savedCatalogState = null;
+    var savedCartState = null;
+
+    function safeJsonParse(value) {
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function cartishKey(key) {
+      return /cart|basket|bag|order|კალათ/i.test(String(key || ''));
+    }
+
+    function cartishValue(value) {
+      return /cart|basket|bag|order|product|quantity|price|sku|კალათ|პროდუქტ/i.test(String(value || '').slice(0, 1500));
+    }
+
+    function getStorages() {
+      return [window.localStorage, window.sessionStorage].filter(Boolean);
+    }
+
+    function readCartState() {
+      var state = [];
+
+      getStorages().forEach(function (storage) {
+        for (var i = 0; i < storage.length; i += 1) {
+          var key = storage.key(i);
+          var value = storage.getItem(key);
+
+          if (!cartishKey(key) && !cartishValue(value)) continue;
+
+          state.push({
+            storage: storage === window.localStorage ? 'localStorage' : 'sessionStorage',
+            key: key,
+            value: value,
+            json: safeJsonParse(value)
+          });
+        }
+      });
+
+      return state;
+    }
+
+    function itemIdentity(item) {
+      if (!item || typeof item !== 'object') return JSON.stringify(item);
+
+      return String(
+        item.id ||
+        item.productId ||
+        item.product_id ||
+        item.sku ||
+        item.code ||
+        item.name ||
+        item.title ||
+        item.slug ||
+        JSON.stringify(item)
+      );
+    }
+
+    function mergeArrays(previous, current) {
+      var map = new Map();
+
+      previous.concat(current).forEach(function (item) {
+        var id = itemIdentity(item);
+        var existing = map.get(id);
+
+        if (existing && item && typeof item === 'object' && existing && typeof existing === 'object') {
+          var quantity = Number(existing.quantity || existing.qty || existing.count || 0) +
+            Number(item.quantity || item.qty || item.count || 0);
+
+          map.set(id, Object.assign({}, existing, item, quantity > 0 ? { quantity: quantity } : {}));
+        } else {
+          map.set(id, item);
+        }
+      });
+
+      return Array.from(map.values());
+    }
+
+    function mergeCartData(previous, current) {
+      if (Array.isArray(previous) && Array.isArray(current)) {
+        return mergeArrays(previous, current);
+      }
+
+      if (previous && current && typeof previous === 'object' && typeof current === 'object') {
+        var merged = Object.assign({}, previous, current);
+
+        ['items', 'cart', 'products', 'basket', 'orderItems'].forEach(function (key) {
+          if (Array.isArray(previous[key]) && Array.isArray(current[key])) {
+            merged[key] = mergeArrays(previous[key], current[key]);
+          } else if (Array.isArray(previous[key]) && !current[key]) {
+            merged[key] = previous[key];
+          }
+        });
+
+        return merged;
+      }
+
+      return current || previous;
+    }
+
+    function writeMergedCartState(previousState) {
+      if (!previousState || !previousState.length) return;
+
+      previousState.forEach(function (previousEntry) {
+        var storage = previousEntry.storage === 'localStorage' ? window.localStorage : window.sessionStorage;
+        var currentValue = storage.getItem(previousEntry.key);
+        var currentJson = safeJsonParse(currentValue);
+
+        if (previousEntry.json !== null && currentJson !== null) {
+          storage.setItem(previousEntry.key, JSON.stringify(mergeCartData(previousEntry.json, currentJson)));
+        } else if (previousEntry.value && !currentValue) {
+          storage.setItem(previousEntry.key, previousEntry.value);
+        }
+      });
+
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('cart:updated'));
+      window.dispatchEvent(new CustomEvent('cart-updated'));
+    }
+
+    function findCatalog(element) {
+      return element && element.closest && element.closest(
+        '[class*="catalog" i], [id*="catalog" i], [class*="modal" i], [id*="modal" i], dialog, details, iframe'
+      );
+    }
+
+    function isCartTrigger(element) {
+      if (!element || !element.closest) return false;
+
+      var button = element.closest('button, a, [role="button"], [onclick], [class*="cart" i], [id*="cart" i], [class*="basket" i], [id*="basket" i]');
+      if (!button) return false;
+
+      var marker = [
+        button.id || '',
+        button.className || '',
+        button.getAttribute('aria-label') || '',
+        button.getAttribute('title') || '',
+        button.getAttribute('data-action') || '',
+        button.getAttribute('onclick') || '',
+        button.textContent || ''
+      ].join(' ').toLowerCase();
+
+      return /cart|basket|bag|add|კალათ|დამატ/.test(marker);
+    }
+
+    function captureCatalogState(element) {
+      var catalog = findCatalog(element);
+
+      return {
+        catalog: catalog,
+        catalogScrollTop: catalog ? catalog.scrollTop : 0,
+        pageX: window.scrollX,
+        pageY: window.scrollY,
+        hash: window.location.hash
+      };
+    }
+
+    function restoreCatalogState() {
+      if (!savedCatalogState) return;
+
+      var catalog = savedCatalogState.catalog;
+      if (catalog) {
+        if (catalog.tagName && catalog.tagName.toLowerCase() === 'details') {
+          catalog.open = true;
+        }
+
+        if (catalog.tagName && catalog.tagName.toLowerCase() === 'dialog' && !catalog.open && catalog.showModal) {
+          catalog.showModal();
+        }
+
+        catalog.classList.add('show', 'open', 'active');
+        catalog.removeAttribute('hidden');
+        catalog.setAttribute('aria-hidden', 'false');
+        catalog.scrollTop = savedCatalogState.catalogScrollTop;
+      }
+
+      if (window.location.hash !== savedCatalogState.hash && history.replaceState) {
+        history.replaceState(null, document.title, window.location.pathname + window.location.search + savedCatalogState.hash);
+      }
+
+      window.scrollTo(savedCatalogState.pageX, savedCatalogState.pageY);
+    }
+
+    document.addEventListener('click', function (event) {
+      if (!isCartTrigger(event.target)) return;
+
+      cartClickInProgress = true;
+      savedCartState = readCartState();
+      savedCatalogState = captureCatalogState(event.target);
+
+      writeMergedCartState(savedCartState);
+      restoreCatalogState();
+
+      [50, 150, 300, 600, 1000, 2000, 4000, 8000].forEach(function (delay) {
+        window.setTimeout(function () {
+          writeMergedCartState(savedCartState);
+          restoreCatalogState();
+
+          if (delay === 8000) {
+            cartClickInProgress = false;
+          }
+        }, delay);
+      });
+    }, true);
+
+    var originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (cartClickInProgress && cartishKey(key)) {
+        var previous = safeJsonParse(this.getItem(key));
+        var current = safeJsonParse(value);
+
+        if (previous !== null && current !== null) {
+          value = JSON.stringify(mergeCartData(previous, current));
+        }
+      }
+
+      return originalSetItem.call(this, key, value);
+    };
+  })();
+</script>
 </body>
 </html>
