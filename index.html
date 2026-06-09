@@ -1165,7 +1165,7 @@ function App() {
     String(savedSnapshot.personalId).trim().length === 11
   );
   const cartStorageKey = repCode ? `farmasi_cart_${repCode}` : null;
-const [cartItems, setCartItemsRaw] = useState(() => {
+const [cartItems, setCartItems] = useState(() => {
     if (typeof window === 'undefined' || !cartStorageKey) return [];
     try {
     const stored = localStorage.getItem(cartStorageKey);
@@ -9795,28 +9795,6 @@ document.addEventListener('DOMContentLoaded', function() {
   var logoImg = document.getElementById('farmasi-logo-img');
   if (logoSrc && logoImg) logoImg.src = logoSrc.src;
 });
-const setCartItems = (next) => {
-  setCartItemsRaw((prev) => {
-    const current = Array.isArray(prev) ? prev : [];
-    const resolved = typeof next === 'function' ? next(current) : next;
-
-    if (!Array.isArray(resolved)) return resolved;
-
-    const isClearAction = resolved.length === 0;
-    const isRemoveAction = resolved.length < current.length && resolved.every((newItem) =>
-      current.some((oldItem) => getCartItemKey(oldItem) === getCartItemKey(newItem))
-    );
-    const isQtyUpdateAction = resolved.length === current.length && resolved.every((newItem) =>
-      current.some((oldItem) => getCartItemKey(oldItem) === getCartItemKey(newItem))
-    );
-
-    if (isClearAction || isRemoveAction || isQtyUpdateAction) {
-      return resolved;
-    }
-
-    return mergeCartItems(current, resolved);
-  });
-};
 </script>
 <script id="codex-wheel-scroll-fix">
   (function () {
