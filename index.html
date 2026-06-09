@@ -9810,7 +9810,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!pageCanScroll || Math.abs(currentY - startY) > 1) return;
 
-        var scrollAmount = event.deltaY * 3;
+        var scrollAmount = event.deltaY * 6;
 
         if (activeModal && activeModal.contains(event.target)) {
           activeModal.scrollTop += scrollAmount;
