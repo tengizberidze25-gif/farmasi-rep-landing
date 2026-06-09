@@ -1179,7 +1179,13 @@ function App() {
     if (cartItems.length === 0) {
     localStorage.removeItem(cartStorageKey);
     } else {
-    localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
+      const storedBeforeSave = localStorage.getItem(cartStorageKey);
+      const storedItemsBeforeSave = storedBeforeSave ? JSON.parse(storedBeforeSave) : [];
+      const mergedItemsBeforeSave = mergeCartItems(storedItemsBeforeSave, cartItems);
+      localStorage.setItem(cartStorageKey, JSON.stringify(mergedItemsBeforeSave));
+      if (mergedItemsBeforeSave.length !== cartItems.length) {
+        setCartItems(mergedItemsBeforeSave);
+      }
     }
     } catch {}
   }, [cartItems, cartStorageKey]);
@@ -1235,8 +1241,8 @@ function App() {
   };
 
   const cartAddItem = (product) => {
-    setCartItems((items) => mergeCartItems(items, product));
     setCartOpen(true);
+    setCartItems((items) => mergeCartItems(items, product));
   };
   const cartUpdateQty = (productId, qty) => {
     if (qty <= 0) {
