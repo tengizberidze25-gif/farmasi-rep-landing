@@ -1165,16 +1165,12 @@ function App() {
     String(savedSnapshot.personalId).trim().length === 11
   );
   const cartStorageKey = repCode ? `farmasi_cart_${repCode}` : null;
-const [cartItems, setCartItems] = useState(() => {
-    if (typeof window === 'undefined' || !cartStorageKey) return [];
-    try {
-    const stored = localStorage.getItem(cartStorageKey);
-    return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
-  });
+const [cartItems, setCartItems] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const cartLoadedKeyRef = useRef(null);
   useEffect(() => {
     if (typeof window === 'undefined' || !cartStorageKey) return;
+    if (cartLoadedKeyRef.current !== cartStorageKey) return; // ამ key-ის კალათა ჯერ არ ჩატვირთულა — შენახულს არ გადავაწეროთ
     try {
     if (cartItems.length === 0) {
     localStorage.removeItem(cartStorageKey);
@@ -1194,6 +1190,7 @@ const [cartItems, setCartItems] = useState(() => {
       const parsed = stored ? JSON.parse(stored) : [];
       setCartItems((items) => mergeCartItems(items, parsed));
     } catch { setCartItems([]); }
+    cartLoadedKeyRef.current = cartStorageKey;
   }, [cartStorageKey]);
   const getCartItemKey = (item) =>
     String(
@@ -1421,27 +1418,21 @@ const [cartItems, setCartItems] = useState(() => {
     }
     })
     .catch(() => {});
-    try {
-    const cached = localStorage.getItem('farmasi_products_cache');
-    if (cached) {
-    const parsed = JSON.parse(cached);
-    if (Array.isArray(parsed)) setDynamicProducts(parsed);
-    }
-    } catch {}
-    api({ action: 'get_products' })
-    .then(data => {
-    if (data.ok && Array.isArray(data.products)) {
-    setDynamicProducts(data.products);
-    try { localStorage.setItem('farmasi_products_cache', JSON.stringify(data.products)); } catch {}
+    const addParamDoneRef = { current: false };
+    const processAddParam = (productsList) => {
+    if (addParamDoneRef.current) return;
     const addParam = urlParams.add ? String(urlParams.add).trim() : null;
-    if (addParam) {
-    const found = data.products.find(p =>
+    if (!addParam || !Array.isArray(productsList)) return;
+    const found = productsList.find(p =>
     String(p.id) === addParam || String(p.product_id) === addParam || String(p.code) === addParam
     );
-    if (found) {
+    if (!found) {
+    console.warn('FARMASI cart: პროდუქტი ვერ მოიძებნა Products სიაში, კოდი: ' + addParam);
+    return;
+    }
+    addParamDoneRef.current = true;
     cartAddItem(found);
     setCartOpen(true);
-    }
     try {
     const cleanParams = new URLSearchParams(window.location.search);
     cleanParams.delete('add');
@@ -1449,10 +1440,39 @@ const [cartItems, setCartItems] = useState(() => {
     const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
     window.history.replaceState({}, '', newUrl);
     } catch {}
+    };
+    try {
+    const cached = localStorage.getItem('farmasi_products_cache');
+    if (cached) {
+    const parsed = JSON.parse(cached);
+    if (Array.isArray(parsed)) {
+    setDynamicProducts(parsed);
+    processAddParam(parsed);
     }
+    }
+    } catch {}
+    api({ action: 'get_products' })
+    .then(data => {
+    if (data.ok && Array.isArray(data.products)) {
+    setDynamicProducts(data.products);
+    try { localStorage.setItem('farmasi_products_cache', JSON.stringify(data.products)); } catch {}
+    processAddParam(data.products);
+    }
+    })
+    .catch(() => {
+    // cold start-ის დაზღვევა — ერთხელ ვცადოთ ხელახლა 3 წამში
+    setTimeout(() => {
+    api({ action: 'get_products' })
+    .then(data => {
+    if (data.ok && Array.isArray(data.products)) {
+    setDynamicProducts(data.products);
+    try { localStorage.setItem('farmasi_products_cache', JSON.stringify(data.products)); } catch {}
+    processAddParam(data.products);
     }
     })
     .catch(() => {});
+    }, 3000);
+    });
     try {
     const cached = localStorage.getItem('farmasi_labels_cache');
     if (cached) {
