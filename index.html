@@ -3678,7 +3678,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     </p>
     </div>
     </div>
-    (myProducts || []).length
+    {(myProducts || []).length === 0 ? (
     <div className="text-center py-8 px-4">
     <p className="text-sm mb-4" style={{ color: theme.ink + '99' }}>
     {L('myprods_empty', 'ჯერ არჩეული პროდუქტი არ გაქვს')}
@@ -3692,7 +3692,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     ) : (
     <>
     <div className="space-y-3">
-    (myProducts || []).map
+    {(myProducts || []).map(p => (
     <div key={p.row} className="rounded-xl p-3 sm:p-4 flex gap-3"
     style={{ background: theme.ivory, border: `1px solid ${theme.gold}33` }}>
     {p.image && (
@@ -9195,8 +9195,8 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: '#FFF9F5' }}>
     <div className="text-center">
-    <p style={{ marginBottom: '20px', color: '#333' }}>{t('prod_something_wrong', 'რაღაც არ ჯდა')}</p>
-    <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>{t('back', 'უკან')}</button>
+    <p style={{ marginBottom: '20px', color: '#333' }}>რაღაც არ ჯდა</p>
+    <button onClick={onBack} style={{ padding: '10px 20px', background: '#8B6F4A', color: '#FFF', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>უკან</button>
     </div>
     </div>
     );
