@@ -2580,6 +2580,97 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const L = (key, fallback) => labels[key] || fallback;
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
+  const [bannerBusy, setBannerBusy] = useState(false);
+  const downloadFbBanner = async () => {
+    if (bannerBusy) return;
+    setBannerBusy(true);
+    try {
+      const W = 1200, H = 630;
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      try {
+        await document.fonts.load('600 64px "Noto Serif Georgian"');
+        await document.fonts.load('500 30px "Noto Serif Georgian"');
+        await document.fonts.load('600 26px "FiraGO"');
+        await document.fonts.load('500 22px "FiraGO"');
+      } catch (e) {}
+      ctx.fillStyle = '#FAEDE3';
+      ctx.fillRect(0, 0, W, H);
+      const blob1 = ctx.createRadialGradient(W*0.78, H*0.18, 60, W*0.78, H*0.18, 460);
+      blob1.addColorStop(0, '#FDF6EF'); blob1.addColorStop(1, 'rgba(253,246,239,0)');
+      ctx.fillStyle = blob1; ctx.beginPath(); ctx.arc(W*0.78, H*0.18, 460, 0, Math.PI*2); ctx.fill();
+      const blob2 = ctx.createRadialGradient(W*0.15, H*0.9, 40, W*0.15, H*0.9, 380);
+      blob2.addColorStop(0, '#F6DFD2'); blob2.addColorStop(1, 'rgba(246,223,210,0)');
+      ctx.fillStyle = blob2; ctx.beginPath(); ctx.arc(W*0.15, H*0.9, 380, 0, Math.PI*2); ctx.fill();
+      const sq = { x: 80, y: 135, s: 360 };
+      ctx.fillStyle = '#FBF3E9';
+      ctx.fillRect(sq.x, sq.y, sq.s, sq.s);
+      ctx.strokeStyle = '#C9A87C'; ctx.lineWidth = 3;
+      ctx.strokeRect(sq.x, sq.y, sq.s, sq.s);
+      const logo = new Image();
+      logo.crossOrigin = 'anonymous';
+      await new Promise((res) => { logo.onload = res; logo.onerror = res; logo.src = '/farmasi-logo.png'; });
+      if (logo.naturalWidth > 0) {
+        const lw = 240; const lh = lw * (logo.naturalHeight / logo.naturalWidth);
+        ctx.drawImage(logo, sq.x + (sq.s - lw)/2, sq.y + (sq.s - lh)/2, lw, lh);
+        const sw = 150; const sh = sw * (logo.naturalHeight / logo.naturalWidth);
+        ctx.drawImage(logo, W - sw - 70, 50, sw, sh);
+      }
+      const tx = 530;
+      ctx.fillStyle = '#8C7A4F';
+      ctx.font = '500 22px "FiraGO", sans-serif';
+      const eyebrow = L('banner_eyebrow', 'ოფიციალური წარმომადგენელი');
+      let ex = tx;
+      for (const ch of eyebrow) { ctx.fillText(ch, ex, 195); ex += ctx.measureText(ch).width + 6; }
+      const bannerName = String(rep?.name || '').trim() || 'FARMASI';
+      ctx.fillStyle = '#231712';
+      let nameSize = 62;
+      ctx.font = '600 ' + nameSize + 'px "Noto Serif Georgian", serif';
+      while (ctx.measureText(bannerName).width > 590 && nameSize > 34) {
+        nameSize -= 2;
+        ctx.font = '600 ' + nameSize + 'px "Noto Serif Georgian", serif';
+      }
+      ctx.fillText(bannerName, tx, 275);
+      ctx.fillStyle = '#3E2F23';
+      ctx.font = '500 30px "Noto Serif Georgian", serif';
+      ctx.fillText(L('banner_tagline_1', 'შენი სილამაზის, ჯანმრთელობის'), tx, 345);
+      ctx.fillText(L('banner_tagline_2', 'და ესთეტიკის გზამკვლევი'), tx, 388);
+      ctx.font = '600 22px "FiraGO", sans-serif';
+      let ax = tx;
+      const bannerParts = [
+        { t: L('banner_word_1', 'სილამაზე'), c: '#B5485D' },
+        { t: '  |  ', c: '#C9A87C' },
+        { t: L('banner_word_2', 'ჯანმრთელობა'), c: '#6F7F4F' },
+        { t: '  |  ', c: '#C9A87C' },
+        { t: L('banner_word_3', 'ესთეტიკა'), c: '#B5485D' },
+      ];
+      bannerParts.forEach(p => { ctx.fillStyle = p.c; ctx.fillText(p.t, ax, 450); ax += ctx.measureText(p.t).width; });
+      const linkText = PUBLIC_URL.replace(/^https?:\/\//, '');
+      ctx.font = '600 26px "FiraGO", sans-serif';
+      const ltw = ctx.measureText(linkText).width;
+      const pillX = tx, pillY = 495, pillH = 56, pillW = ltw + 56;
+      ctx.fillStyle = '#E50571';
+      ctx.beginPath();
+      if (ctx.roundRect) { ctx.roundRect(pillX, pillY, pillW, pillH, 28); } else { ctx.rect(pillX, pillY, pillW, pillH); }
+      ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillText(linkText, pillX + 28, pillY + 37);
+      const fname = 'farmasi-banner-' + (safeSlug || repCode || 'rep') + '.png';
+      await new Promise((res) => canvas.toBlob((b) => {
+        if (b) {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = fname;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+        }
+        res();
+      }, 'image/png'));
+    } catch (e) { console.warn('banner error:', e); }
+    setBannerBusy(false);
+  };
   const pathSlug = window.location.pathname
     .replace(/^\/+|\/+$/g, '')
     .trim();
@@ -3320,6 +3411,14 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     </div>
     <p className="text-[10px] mt-2 leading-relaxed" style={{ color: theme.ink + '88' }}>
     💡 slug ავტომატურად მოგენიჭა — შეგიძლია შეცვალო ან ახალი დაგენერირო
+    </p>
+    <button onClick={downloadFbBanner} disabled={bannerBusy}
+    className="w-full mt-2 px-3 py-2.5 rounded-xl flex items-center justify-center gap-2 text-xs tracking-wide transition hover:scale-[1.01]"
+    style={{ background: theme.blush, color: theme.gold, border: `1px solid ${theme.gold}44`, opacity: bannerBusy ? 0.6 : 1 }}>
+    <Ic name="download" className="w-3.5 h-3.5" /> {bannerBusy ? L('dash_banner_busy', 'მზადდება...') : L('dash_banner_btn', 'FB ბანერის ჩამოტვირთვა (ფოტო-პოსტისთვის)')}
+    </button>
+    <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: theme.ink + '88' }}>
+    📸 {L('dash_banner_hint', 'ატვირთე Facebook-ზე ფოტოდ და შენი ბმული ჩაწერე პოსტის ტექსტში — ბმულის ბარათი და ℹ️ ღილაკი არ გამოჩნდება')}
     </p>
     </>
     ) : (
