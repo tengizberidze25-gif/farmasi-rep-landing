@@ -1128,6 +1128,8 @@ function App() {
   const [problems, setProblems] = useState(PROBLEMS); 
   const [companyVideos, setCompanyVideos] = useState([]); // admin-uploaded videos shown on every rep's page
   const [dynamicProducts, setDynamicProducts] = useState([]); 
+  const dynamicProductsRef = useRef([]);
+  useEffect(() => { dynamicProductsRef.current = dynamicProducts; }, [dynamicProducts]);
   const [labels, setLabels] = useState({}); 
   const [loadError, setLoadError] = useState('');
   const [rep, setRep] = useState({
@@ -1488,6 +1490,34 @@ const [cartItems, setCartItems] = useState([]);
     }
     })
     .catch(() => {});
+    // ⚡ კატალოგიდან მყისიერი დამატება — postMessage, გვერდის გადატვირთვის გარეშე
+    const onCatalogMessage = (event) => {
+    try {
+    const d = event.data;
+    if (!d || d.type !== 'farmasi_add' || !d.code) return;
+    // ack — კატალოგმა იცოდეს, რომ ჩაშენებულია და redirect არ სჭირდება
+    try { if (event.source && event.source.postMessage) event.source.postMessage({ type: 'farmasi_add_ok', code: String(d.code) }, '*'); } catch (e) {}
+    const codeStr = String(d.code).trim();
+    let attempts = 0;
+    const tryAdd = () => {
+    const list = dynamicProductsRef.current || [];
+    const found = list.find(p =>
+    String(p.id) === codeStr || String(p.product_id) === codeStr || String(p.code) === codeStr
+    );
+    if (found) {
+    cartAddItem(found);
+    setCartOpen(true);
+    } else if (attempts++ < 10) {
+    setTimeout(tryAdd, 1000);
+    } else {
+    console.warn('FARMASI cart: postMessage — პროდუქტი ვერ მოიძებნა Products სიაში, კოდი: ' + codeStr);
+    }
+    };
+    tryAdd();
+    } catch (e) {}
+    };
+    window.addEventListener('message', onCatalogMessage);
+    return () => window.removeEventListener('message', onCatalogMessage);
   }, []);
   useEffect(() => {
     if (!urlParams.pid && !urlParams.slug) return;
