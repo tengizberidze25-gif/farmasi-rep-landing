@@ -3280,7 +3280,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
                 <Input label={L('profile_firstname_label', 'სახელი')} value={firstName} onChange={updFirstName} placeholder={L('profile_firstname_placeholder', 'ნინო')} required hasError={validationAttempted && !firstName.trim()} />
                 <Input label={L('profile_lastname_label', 'გვარი')} value={lastName} onChange={updLastName} placeholder={L('profile_lastname_placeholder', 'ცინცაძე')} required hasError={validationAttempted && !lastName.trim()} />
               </div>
-              <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} small required hasError={validationAttempted && !(rep.city || '').trim()} />
+              <Input label={L('profile_city_label', 'ქალაქი')} value={rep.city} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'ქალაქი')} small required hasError={validationAttempted && !(rep.city || '').trim()} />
             </div>
           </div>
           <div className="mt-4">
