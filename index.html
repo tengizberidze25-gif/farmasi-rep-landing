@@ -7457,6 +7457,44 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </section>
     {}
+    {}
+    <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-28" style={{ background: `linear-gradient(160deg, ${theme.blush}, ${theme.cream})` }}>
+    <div className="absolute -top-24 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: theme.rose }} />
+    <div className="absolute -bottom-32 -left-24 w-[420px] h-[420px] rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: theme.gold }} />
+    <div className="relative max-w-3xl mx-auto text-center">
+    <div className="flex items-center justify-center gap-4 mb-8 reveal-up">
+    <span className="font-display-lat italic text-2xl" style={{ color: theme.wine }}>IX.</span>
+    <div className="h-px w-16" style={{ background: theme.ink + '22' }} />
+    <span className="text-[10px] tracking-[0.4em] uppercase" style={{ color: theme.ink + '77' }}>
+    {t('join_chapter', 'შესაძლებლობა')}
+    </span>
+    <div className="h-px w-16" style={{ background: theme.ink + '22' }} />
+    </div>
+    <p className="text-[10px] tracking-[0.4em] uppercase mb-4 font-medium reveal-up" style={{ color: theme.gold }}>
+    {t('join_eyebrow', '✦ გახდი ნაწილი')}
+    </p>
+    <h2 className="font-display leading-[1.05] mb-5 reveal-up" style={{ color: theme.ink, fontSize: 'clamp(1.9rem, 6vw, 3.2rem)' }}>
+    {t('join_title', 'შემოუერთდი ჩემს გუნდს')}
+    </h2>
+    <p className="text-base sm:text-lg mb-3 reveal-up" style={{ color: theme.ink + 'CC', lineHeight: 1.7 }}>
+    {t('join_subtitle', 'დაიწყე საკუთარი FARMASI ბიზნესი დღესვე — მე გვერდში დაგიდგები ყოველ ნაბიჯზე.')}
+    </p>
+    <p className="text-sm mb-10 reveal-up" style={{ color: theme.ink + '99', lineHeight: 1.7 }}>
+    {t('join_benefits', '💎 მოქნილი გრაფიკი · 🌸 ხარისხიანი პროდუქცია · 📈 რეალური შემოსავალი · 🤝 გუნდის მხარდაჭერა')}
+    </p>
+    <button onClick={goShop}
+    className="group inline-flex items-center gap-3 py-4 px-8 sm:px-12 rounded-full font-medium text-sm sm:text-base tracking-wider uppercase transition-all duration-300 hover:scale-[1.04] active:scale-95 reveal-up"
+    style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.rose})`, color: theme.cream, boxShadow: `0 18px 45px -12px ${theme.wine}99` }}>
+    <Ic name="sparkles" className="w-5 h-5" />
+    {t('join_cta', 'დაიწყე დღესვე')}
+    <Ic name="arrow-right" className="w-4 h-4 opacity-80 transition-transform group-hover:translate-x-1" />
+    </button>
+    <p className="text-xs mt-5 opacity-60 reveal-up" style={{ color: theme.ink }}>
+    {t('join_hint', 'უფასო რეგისტრაცია · დაუყოვნებლივ დაიწყე')}
+    </p>
+    </div>
+    </section>
+    {}
     <footer className="relative overflow-hidden" style={{ background: theme.ink, color: theme.cream }}>
     {}
     <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10 blur-3xl"
