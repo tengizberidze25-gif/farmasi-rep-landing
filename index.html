@@ -5480,6 +5480,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     )}
     <div className="flex-1 min-w-0">
     <div className="text-sm font-medium leading-tight mb-1" style={{ color: theme.ink }}>{it.name}</div>
+    <div className="text-[10px] mb-0.5 tabular-nums" style={{ color: theme.ink + '77' }}>{L('cart_code', 'კოდი')}: {it.code || it.product_id}</div>
     <div className="text-xs" style={{ color: theme.wine }}>{it.price} GEL</div>
     <div className="flex items-center gap-2 mt-2">
     <button onClick={() => updateQty(it.product_id, it.quantity - 1)}
