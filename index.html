@@ -4214,6 +4214,8 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     placeholder="01001234567"
     required
     hasError={validationAttempted && (rep.personalId || '').length !== 11} />
+     
+     <Input icon="map-pin" label={L('profile_city_label', 'ქალაქი')} value={rep.city || ''} onChange={upd('city')} placeholder={L('profile_city_placeholder', 'თბილისი')} required hasError={validationAttempted && !(rep.city || '').trim()}/>
     <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: theme.ink + '88' }}>
     💡 {L('profile_personal_id_hint', '11-ნიშნა პირადი ნომერი — სამარშრუტო ბარათის მიხედვით ვამოწმებთ შენს ყოველთვიურ ტიტულს FARMASI-ში.')}
     </p>
