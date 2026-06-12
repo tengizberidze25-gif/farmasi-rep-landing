@@ -2634,6 +2634,27 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [copied, setCopied] = useState(false);
   const [guideCopied, setGuideCopied] = useState(false);
   const [bannerBusy, setBannerBusy] = useState(false);
+  const [teamBusy, setTeamBusy] = useState(false);
+  const openTeamTree = async () => {
+    if (teamBusy) return;
+    setTeamBusy(true);
+    const win = window.open('about:blank', '_blank');
+    try {
+    const token = localStorage.getItem('farmasi_session_' + repCode)
+    || localStorage.getItem('farmasi_otp_session_' + repCode) || '';
+    const res = await api({ action: 'get_tree_sso_link', pid: repCode, token });
+    if (res.ok && res.url) {
+    if (win) win.location.href = res.url; else window.location.href = res.url;
+    } else {
+    if (win) win.close();
+    alert(res.error || L('team_link_error', 'ბმულის გენერაცია ვერ მოხერხდა'));
+    }
+    } catch (e) {
+    if (win) win.close();
+    alert(L('network_error', 'ქსელის შეცდომა — სცადე თავიდან'));
+    }
+    setTeamBusy(false);
+  };
   const downloadFbBanner = async () => {
     if (bannerBusy) return;
     setBannerBusy(true);
@@ -3516,6 +3537,27 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     )}
     </Card>
     )}
+    <Card>
+    <div className="flex items-start justify-between gap-3">
+    <div className="flex-1 min-w-0">
+    <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
+    {L('dash_team_eyebrow', 'შენი ქსელი')}
+    </p>
+    <p className="font-display text-lg" style={{ color: theme.ink }}>
+    {L('dash_team_title', 'ჩემი გუნდი')}
+    </p>
+    <p className="text-xs mt-1" style={{ color: theme.ink + '99' }}>
+    {L('dash_team_desc', 'ნახე შენი სტრუქტურა, PV/GV და გუნდის ზრდა')}
+    </p>
+    </div>
+    <button onClick={openTeamTree} disabled={teamBusy}
+    className="text-xs px-4 py-2 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
+    style={{ background: theme.wine, color: theme.cream, opacity: teamBusy ? 0.6 : 1 }}>
+    <Ic name="git-branch" className="w-3.5 h-3.5" />
+    {teamBusy ? L('dash_team_busy', 'იხსნება...') : L('dash_team_btn', 'გახსნა')}
+    </button>
+    </div>
+    </Card>
     {}
     <Card>
     <div className="flex items-start justify-between gap-3 mb-3">
