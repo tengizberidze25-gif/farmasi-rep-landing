@@ -1930,7 +1930,7 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
           window.open('https://struktura.farmasi.ge', '_blank');
           return;
         }
-        callApi({ action: 'get_sso_url', session_id: sessionId }).then(function(res) {
+        api({ action: 'get_sso_url', session_id: sessionId }).then(function(res) {
           if (res.status === 'ok' && res.url) {
             window.open(res.url, '_blank');
           } else {
