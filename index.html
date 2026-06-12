@@ -1924,10 +1924,21 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
     <button key={it.k} disabled={it.disabled} onClick={() => {
       if (it.disabled) return;
       if (it.k === 'struktura') {
-        // SSO გადამისამართება struktura.farmasi.ge-ზე
-        const pid = repCode || '';
-        if (!pid) return;
-        window.open('https://struktura.farmasi.ge?pid=' + pid, '_blank');
+        // SSO URL Apps Script-იდან ვიღებთ
+        const sessionId = localStorage.getItem('farmasi_otp_session_' + repCode) || '';
+        if (!sessionId) {
+          window.open('https://struktura.farmasi.ge', '_blank');
+          return;
+        }
+        callApi({ action: 'get_sso_url', session_id: sessionId }).then(function(res) {
+          if (res.status === 'ok' && res.url) {
+            window.open(res.url, '_blank');
+          } else {
+            window.open('https://struktura.farmasi.ge', '_blank');
+          }
+        }).catch(function() {
+          window.open('https://struktura.farmasi.ge', '_blank');
+        });
         return;
       }
       setView(it.k);
