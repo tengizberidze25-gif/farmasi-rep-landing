@@ -1914,13 +1914,24 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved }) {
   const items = [
     { k: 'login', l: 'შესვლა' },
     { k: 'dashboard', l: 'პანელი', disabled: !hasRep },
+    { k: 'struktura', l: 'სტრუქტურა', disabled: !hasRep },
     { k: 'public', l: 'საჯარო ფეიჯი', disabled: !hasRep, hidden: !isProfileSaved },
   ].filter(it => !it.hidden);
   return (
     <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 rounded-full backdrop-blur-md text-xs"
     style={{ background: 'rgba(35,23,18,0.85)', border: `1px solid ${theme.gold}33` }}>
     {items.map(it => (
-    <button key={it.k} disabled={it.disabled} onClick={() => !it.disabled && setView(it.k)}
+    <button key={it.k} disabled={it.disabled} onClick={() => {
+      if (it.disabled) return;
+      if (it.k === 'struktura') {
+        // SSO გადამისამართება struktura.farmasi.ge-ზე
+        const pid = repCode || '';
+        if (!pid) return;
+        window.open('https://struktura.farmasi.ge?pid=' + pid, '_blank');
+        return;
+      }
+      setView(it.k);
+    }}
     className="px-3 py-1.5 rounded-full transition-all disabled:opacity-30"
     style={{ background: view === it.k ? theme.cream : 'transparent', color: view === it.k ? theme.ink : theme.cream }}>
     {it.l}
