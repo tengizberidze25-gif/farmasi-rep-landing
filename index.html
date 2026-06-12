@@ -916,6 +916,7 @@ function api(params) {
     document.head.appendChild(script);
   });
 }
+window.api = api;
 async function compressImage(file, maxDimension = 1200, quality = 0.85) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1930,7 +1931,7 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
           window.open('https://struktura.farmasi.ge', '_blank');
           return;
         }
-        api({ action: 'get_sso_url', session_id: sessionId }).then(function(res) {
+        window.api({ action: 'get_sso_url', session_id: sessionId }).then(function(res) {
           if (res.status === 'ok' && res.url) {
             window.open(res.url, '_blank');
           } else {
