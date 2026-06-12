@@ -1620,7 +1620,7 @@ const [cartItems, setCartItems] = useState([]);
     }
     return (
     <>
-    {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate && !urlParams.confirm)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} />}
+    {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate && !urlParams.confirm)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} repCode={repCode} />}
     {view === 'loading' && <LoadingScreen labels={labels} />}
     {view === 'notfound' && <NotFoundScreen labels={labels} />}
     {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
@@ -1909,7 +1909,7 @@ function NotFoundScreen({ labels = {} }) {
     </div>
   );
 }
-function ViewSwitcher({ view, setView, hasRep, isProfileSaved }) {
+function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
   // "საჯარო ფეიჯი" tab is hidden until the rep saves required saved profile fields.
   const items = [
     { k: 'login', l: 'შესვლა' },
