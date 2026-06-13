@@ -1714,15 +1714,33 @@ function ForcePersonalIdScreen({ rep, setRep, repCode, onLogout, labels = {} }) 
     }
     setSaving(true);
     try {
+    // 1) ჯერ ხეში გადავამოწმოთ პირადი ნომერი
+    const chk = await api({ action: 'verify_personal_id', personal_id: pid });
+    if (!chk || !chk.ok) {
+    setErr((chk && chk.error) || L('force_pid_err_verify', 'გადამოწმება ვერ მოხერხდა'));
+    setSaving(false);
+    return;
+    }
+    if (!chk.found) {
+    setErr(chk.message || L('force_pid_not_found',
+    'თქვენი პირადი ნომერი FARMASI-ის ბაზაში ვერ მოიძებნა. გთხოვთ გაიაროთ რეგისტრაცია www.farmasi.ge-ზე, ან დაუკავშირდით სათაო ოფისს: 032 2 560 760'));
+    setSaving(false);
+    return;
+    }
+
+    // 2) ვიპოვეთ — სახელი ხიდან, save_rep-ში სახელსაც ვწერთ
+    const treeName = (chk.name || '').trim();
     const res = await api({
     action: 'save_rep',
     pid: repCode,
     personal_id: pid,
+    name: treeName || undefined,
     });
     if (res && res.ok) {
     setRep(r => ({
     ...r,
     personalId: pid,
+    name: treeName || r.name,
     title: (res.rep && res.rep.title) || '',
     }));
     } else {
