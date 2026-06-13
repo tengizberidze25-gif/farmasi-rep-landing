@@ -1943,20 +1943,20 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
     <button key={it.k} disabled={it.disabled} onClick={() => {
       if (it.disabled) return;
       if (it.k === 'struktura') {
-        // SSO URL Apps Script-იდან ვიღებთ
-        const sessionId = localStorage.getItem('farmasi_otp_session_' + repCode) || '';
-        if (!sessionId) {
-          window.open('https://struktura.farmasi.ge', '_blank');
-          return;
-        }
-        window.api({ action: 'get_sso_url', session_id: sessionId }).then(function(res) {
-          if (res.status === 'ok' && res.url) {
-            window.open(res.url, '_blank');
+        // SSO URL — get_tree_sso_link (პირადი ნომრით ხელმოწერა, იგივე რაც "ჩემი გუნდი")
+        const token = localStorage.getItem('farmasi_session_' + repCode)
+          || localStorage.getItem('farmasi_otp_session_' + repCode) || '';
+        const win = window.open('about:blank', '_blank');
+        window.api({ action: 'get_tree_sso_link', pid: repCode, token: token }).then(function(res) {
+          if (res && res.ok && res.url) {
+            if (win) win.location.href = res.url; else window.open(res.url, '_blank');
           } else {
-            window.open('https://struktura.farmasi.ge', '_blank');
+            if (win) win.close();
+            alert((res && res.error) || 'ბმულის გენერაცია ვერ მოხერხდა');
           }
         }).catch(function() {
-          window.open('https://struktura.farmasi.ge', '_blank');
+          if (win) win.close();
+          alert('ქსელის შეცდომა — სცადე თავიდან');
         });
         return;
       }
