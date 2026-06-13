@@ -1963,7 +1963,9 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
       setView(it.k);
     }}
     className="px-3 py-1.5 rounded-full transition-all disabled:opacity-30"
-    style={{ background: view === it.k ? theme.cream : 'transparent', color: view === it.k ? theme.ink : theme.cream }}>
+    style={{ background: view === it.k ? theme.cream : 'transparent', color: view === it.k ? theme.ink : theme.cream }}
+    onMouseEnter={(e) => { if (!it.disabled && view !== it.k) { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.background = theme.cream + '22'; } }}
+    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = view === it.k ? theme.cream : 'transparent'; }}>
     {it.l}
     </button>
     ))}
