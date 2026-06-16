@@ -1929,7 +1929,7 @@ function NotFoundScreen({ labels = {} }) {
   );
 }
 function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode, personalId }) {
-  const pidReady = !!personalId && String(personalId).replace(/\D/g,'').length === 11;
+  var pidReady = !!personalId && String(personalId).replace(/[^0-9]/g, '').length === 11;
   // "საჯარო ფეიჯი" tab is hidden until the rep saves required saved profile fields.
   const items = [
     { k: 'login', l: 'შესვლა' },
@@ -1948,7 +1948,7 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode, personal
         const token = localStorage.getItem('farmasi_session_' + repCode)
           || localStorage.getItem('farmasi_otp_session_' + repCode) || '';
         const win = window.open('about:blank', '_blank');
-        const treePid = (personalId && String(personalId).replace(/\D/g,'').length === 11) ? personalId : repCode;
+        var treePid = (personalId && String(personalId).replace(/[^0-9]/g, '').length === 11) ? personalId : repCode;
         window.api({ action: 'get_tree_sso_link', pid: treePid, token: token }).then(function(res) {
           if (res && res.ok && res.url) {
             if (win) win.location.href = res.url; else window.open(res.url, '_blank');
@@ -6558,6 +6558,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     "{v.caption}"
     </p>
     </div>
+    )}
     </button>
     </div>
     );
