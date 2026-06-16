@@ -1621,7 +1621,7 @@ const [cartItems, setCartItems] = useState([]);
     }
     return (
     <>
-    {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate && !urlParams.confirm)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} repCode={repCode} />}
+    {(urlParams.edit || (!urlParams.pid && !urlParams.slug && !urlParams.order && !urlParams.rate && !urlParams.confirm)) && view !== 'login' && <ViewSwitcher view={view} setView={setView} hasRep={!!rep.name} isProfileSaved={isProfileSaved} repCode={repCode} personalId={rep.personalId} />}
     {view === 'loading' && <LoadingScreen labels={labels} />}
     {view === 'notfound' && <NotFoundScreen labels={labels} />}
     {view === 'login' && <Login onAuthSuccess={handleOtpLoginSuccess} initialError={loadError} labels={labels} />}
@@ -1928,12 +1928,13 @@ function NotFoundScreen({ labels = {} }) {
     </div>
   );
 }
-function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
+function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode, personalId }) {
+  const pidReady = !!personalId && String(personalId).replace(/\D/g,'').length === 11;
   // "საჯარო ფეიჯი" tab is hidden until the rep saves required saved profile fields.
   const items = [
     { k: 'login', l: 'შესვლა' },
     { k: 'dashboard', l: 'პანელი', disabled: !hasRep },
-    { k: 'struktura', l: 'სტრუქტურა', disabled: !hasRep },
+    { k: 'struktura', l: 'სტრუქტურა', disabled: !hasRep || !pidReady },
     { k: 'public', l: 'საჯარო ფეიჯი', disabled: !hasRep, hidden: !isProfileSaved },
   ].filter(it => !it.hidden);
   return (
@@ -1947,7 +1948,8 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode }) {
         const token = localStorage.getItem('farmasi_session_' + repCode)
           || localStorage.getItem('farmasi_otp_session_' + repCode) || '';
         const win = window.open('about:blank', '_blank');
-        window.api({ action: 'get_tree_sso_link', pid: repCode, token: token }).then(function(res) {
+        const treePid = (personalId && String(personalId).replace(/\D/g,'').length === 11) ? personalId : repCode;
+        window.api({ action: 'get_tree_sso_link', pid: treePid, token: token }).then(function(res) {
           if (res && res.ok && res.url) {
             if (win) win.location.href = res.url; else window.open(res.url, '_blank');
           } else {
