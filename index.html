@@ -41,7 +41,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3/dist/tus.min.js"></script>
@@ -214,7 +214,7 @@
 <div id="root"></div>
 
 <script type="text/babel" data-presets="env,react">
-  const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
 const smsSource = params.get('src');
 const smsPhone = params.get('phone');
 if (smsSource) {
@@ -1944,11 +1944,12 @@ function ViewSwitcher({ view, setView, hasRep, isProfileSaved, repCode, personal
     <button key={it.k} disabled={it.disabled} onClick={() => {
       if (it.disabled) return;
       if (it.k === 'struktura') {
-        // SSO URL — get_tree_sso_link (backend აქცევs repCode→personal_id; იგივე რაც "ჩემი გუნდი")
+        // SSO URL — get_tree_sso_link (პირადი ნომრით ხელმოწერა, იგივე რაც "ჩემი გუნდი")
         const token = localStorage.getItem('farmasi_session_' + repCode)
           || localStorage.getItem('farmasi_otp_session_' + repCode) || '';
         const win = window.open('about:blank', '_blank');
-        window.api({ action: 'get_tree_sso_link', pid: repCode, token: token }).then(function(res) {
+        var treePid = (personalId && String(personalId).replace(/[^0-9]/g, '').length === 11) ? personalId : repCode;
+        window.api({ action: 'get_tree_sso_link', pid: treePid, token: token }).then(function(res) {
           if (res && res.ok && res.url) {
             if (win) win.location.href = res.url; else window.open(res.url, '_blank');
           } else {
@@ -3558,6 +3559,28 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     )}
     </Card>
     )}
+    <Card>
+    <div className="flex items-start justify-between gap-3">
+    <div className="flex-1 min-w-0">
+    <p className="text-xs tracking-widest uppercase mb-1" style={{ color: theme.gold }}>
+    {L('dash_team_eyebrow', 'შენი ქსელი')}
+    </p>
+    <p className="font-display text-lg" style={{ color: theme.ink }}>
+    {L('dash_team_title', 'ჩემი გუნდი')}
+    </p>
+    <p className="text-xs mt-1" style={{ color: theme.ink + '99' }}>
+    {L('dash_team_desc', 'ნახე შენი სტრუქტურა, PV/GV და გუნდის ზრდა')}
+    </p>
+    </div>
+    <button onClick={openTeamTree} disabled={teamBusy}
+    className="text-xs px-4 py-2 rounded-full flex items-center gap-1.5 hover:scale-105 transition flex-shrink-0"
+    style={{ background: theme.wine, color: theme.cream, opacity: teamBusy ? 0.6 : 1 }}>
+    <Ic name="git-branch" className="w-3.5 h-3.5" />
+    {teamBusy ? L('dash_team_busy', 'იხსნება...') : L('dash_team_btn', 'გახსნა')}
+    </button>
+    </div>
+    </Card>
+    {}
     <Card>
     <div className="flex items-start justify-between gap-3 mb-3">
     <div>
