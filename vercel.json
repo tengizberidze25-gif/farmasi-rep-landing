@@ -1,5 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "node scripts/copy-static.mjs",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/:slug([a-z0-9][a-z0-9-]*)/edit",
@@ -8,10 +10,6 @@
     {
       "source": "/:slug([a-z0-9][a-z0-9-]*)",
       "destination": "/api/page?slug=:slug"
-    },
-    {
-      "source": "/",
-      "destination": "/api/page"
     }
   ]
 }
