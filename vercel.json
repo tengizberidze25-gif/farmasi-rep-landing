@@ -2,7 +2,9 @@
   "framework": null,
   "buildCommand": "node scripts/copy-static.mjs",
   "outputDirectory": "dist",
+  "cleanUrls": false,
   "rewrites": [
+    { "source": "/", "destination": "/index.html" },
     { "source": "/:slug", "destination": "/api/page?slug=:slug" }
   ]
 }
