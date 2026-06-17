@@ -213,8 +213,7 @@
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-presets="env,react">
-/** @jsxRuntime classic */
+<script type="text/babel" data-presets="env" data-plugins="transform-react-jsx">
 const params = new URLSearchParams(window.location.search);
 const smsSource = params.get('src');
 const smsPhone = params.get('phone');
