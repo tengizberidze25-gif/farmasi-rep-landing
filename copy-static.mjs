@@ -21,7 +21,6 @@ const skipNames = new Set([
   'node_modules',
   'scripts',
   'src',
-  'index.html',
   'package-lock.json',
   'package.json',
   'tsconfig.json',
