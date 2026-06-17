@@ -44,3 +44,6 @@ for (const entry of await readdir(root, { withFileTypes: true })) {
     await cp(from, to);
   }
 }
+
+console.log('=== COPY-STATIC RUN ===');
+console.log('dist contents:', await readdir(dist));
