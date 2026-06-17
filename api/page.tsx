@@ -20,7 +20,7 @@
 export const config = { runtime: 'edge' };
 
 const APPS_SCRIPT_URL =
-  'https://script.google.com/macros/s/AKfycbzHEfgXXyRUpt7ZHG3ZjxaH_4kr1pR7AaTuzIH9h15GJk5xwwETwzvQT6Ce-d-4Kf5p/exec';
+  'https://script.google.com/macros/s/AKfycby0BJOvqZZz4eK5zHyep36R3vcPvweNk8ob-sOcCEokNoGto9m1BrfBxNlBcBB81pJ5/exec';
 
 const DEFAULT_TITLE = 'FARMASI · წარმომადგენლის Portfolio';
 const DEFAULT_DESC =
