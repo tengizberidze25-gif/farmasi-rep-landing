@@ -1,6 +1,5 @@
-import { cp, mkdir, readdir } from 'node:fs/promises';
 import { extname, join } from 'node:path';
-
+import { cp, mkdir, readdir, rm } from 'node:fs/promises';
 const root = process.cwd();
 const dist = join(root, 'dist');
 const staticExts = new Set([
@@ -26,7 +25,7 @@ const skipNames = new Set([
   'tsconfig.json',
   'vercel.json',
 ]);
-
+await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 
 for (const entry of await readdir(root, { withFileTypes: true })) {
