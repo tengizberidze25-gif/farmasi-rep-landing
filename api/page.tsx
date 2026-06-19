@@ -80,6 +80,16 @@ export default async function handler(req: Request) {
     }
     let html = await htmlRes.text();
 
+    // Allow Bunny Stream video iframe to load on public pages.
+    // index.html's CSP frame-src lists youtube/vimeo/etc. but not Bunny,
+    // so the rep's video gets blocked. Append Bunny domains to frame-src
+    // (only on the proxied public page — index.html itself is untouched).
+    html = html.replace(/frame-src([^;"]*)/i, (m, list) =>
+      list.includes('mediadelivery.net')
+        ? m
+        : `frame-src${list} https://iframe.mediadelivery.net https://*.mediadelivery.net`
+    );
+
     // Per-rep OG image URL (passes slug/pid to /api/og, which handles caching)
     let ogQuery = '';
     if (slug) ogQuery = `?slug=${encodeURIComponent(slug)}`;
