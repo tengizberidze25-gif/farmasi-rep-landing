@@ -32,6 +32,11 @@ export default function handler(req, res) {
   // საჯარო ფეიჯის ლინკი — აქ გადადის ნამდვილი მომხმარებელი
   const publicUrl = slug ? `${SITE}/${encodeURIComponent(slug)}` : SITE;
 
+  // share-ლინკი თვითონ — ფეისბუქმა ამის OG ტეგები (ვიდეო-კადრი) აიღოს,
+  // არა საჯარო ფეიჯისა (რომელიც ბრენდირებულ ბარათს აჩვენებს)
+  const host = (req.headers && req.headers.host) || 'my.farmasi.ge';
+  const shareUrl = `https://${host}${req.url || ''}`;
+
   // Bunny-ს სურათი და ფლეიერი (ვიდეო Bunny-ში public embed-ით უნდა იყოს)
   const thumb  = guid ? `https://${BUNNY_CDN}/${guid}/thumbnail.jpg` : `${SITE}/og-default.jpg`;
   const player = guid ? `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY}/${guid}` : '';
@@ -60,7 +65,7 @@ export default function handler(req, res) {
   <meta property="og:site_name" content="FARMASI Georgia">
   <meta property="og:title" content="${esc(title)}">
   <meta property="og:description" content="${esc(desc)}">
-  <meta property="og:url" content="${esc(publicUrl)}">
+  <meta property="og:url" content="${esc(shareUrl)}">
   <meta property="og:image" content="${esc(thumb)}">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">${videoTags}
@@ -70,8 +75,6 @@ export default function handler(req, res) {
   <meta name="twitter:description" content="${esc(desc)}">
   <meta name="twitter:image" content="${esc(thumb)}">
 
-  <link rel="canonical" href="${esc(publicUrl)}">
-  <meta http-equiv="refresh" content="0; url=${esc(publicUrl)}">
   <script>location.replace(${JSON.stringify(publicUrl)});</script>
 </head>
 <body style="font-family:system-ui,sans-serif;text-align:center;padding:48px;background:#0b0b0f;color:#fff">
