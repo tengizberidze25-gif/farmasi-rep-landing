@@ -37,6 +37,9 @@ export default function handler(req, res) {
   const host = (req.headers && req.headers.host) || 'my.farmasi.ge';
   const shareUrl = `https://${host}${req.url || ''}`;
 
+  // ადამიანი გადადის საჯარო ფეიჯზე ?play=1-ით — ვიდეო თვითონ გაიხსნება
+  const playUrl = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}play=1`;
+
   // Bunny-ს სურათი და ფლეიერი (ვიდეო Bunny-ში public embed-ით უნდა იყოს)
   const thumb  = guid ? `https://${BUNNY_CDN}/${guid}/thumbnail.jpg` : `${SITE}/og-default.jpg`;
   const player = guid ? `https://iframe.mediadelivery.net/embed/${BUNNY_LIBRARY}/${guid}` : '';
@@ -75,11 +78,11 @@ export default function handler(req, res) {
   <meta name="twitter:description" content="${esc(desc)}">
   <meta name="twitter:image" content="${esc(thumb)}">
 
-  <script>location.replace(${JSON.stringify(publicUrl)});</script>
+  <script>location.replace(${JSON.stringify(playUrl)});</script>
 </head>
 <body style="font-family:system-ui,sans-serif;text-align:center;padding:48px;background:#0b0b0f;color:#fff">
   <p>გადამისამართება საჯარო ფეიჯზე…</p>
-  <p><a href="${esc(publicUrl)}" style="color:#ff6b9d">თუ ავტომატურად ვერ გადახვედი, დააჭირე აქ</a></p>
+  <p><a href="${esc(playUrl)}" style="color:#ff6b9d">თუ ავტომატურად ვერ გადახვედი, დააჭირე აქ</a></p>
 </body>
 </html>`;
 
