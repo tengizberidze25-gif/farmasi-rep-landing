@@ -7741,7 +7741,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     e.stopPropagation();
     const _origin = window.location.origin;
     const _slug = (rep.slug || '').trim();
-    const shareUrl = _slug
+    const _m = String(_vurl).match(/mediadelivery\.net\/embed\/\d+\/([a-f0-9-]+)/i);
+    const _guid = _m ? _m[1] : '';
+    const shareUrl = (_guid && _slug)
+    ? `${_origin}/api/share?v=${_guid}&slug=${encodeURIComponent(_slug)}&name=${encodeURIComponent(rep.name || '')}`
+    : _slug
     ? `${_origin}/${_slug}`
     : (() => { const u = new URL(window.location.href); u.searchParams.delete('edit'); return u.toString(); })();
     if (navigator.share) {
