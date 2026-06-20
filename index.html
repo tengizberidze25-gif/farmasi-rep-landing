@@ -6429,6 +6429,15 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [catalogOpen, setCatalogOpen] = useState(!!initialCatalog); 
   const [catalogSearch, setCatalogSearch] = useState(''); // AI-დან გადმოცემული საწყისი ძებნა
   const [videoToPlay, setVideoToPlay] = useState(null); 
+  // Auto-open the video when arriving via a share link with ?play=1
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('play') === '1' && rep && rep.videoUrl && parseVideoUrl(rep.videoUrl)) {
+        setVideoToPlay({ url: rep.videoUrl });
+      }
+    } catch (e) {}
+  }, [rep]);
   const [showAllStories, setShowAllStories] = useState(false); // "ნახე მეტი" — show all customer videos
   const [selectedProblem, setSelectedProblem] = useState(initialProblem || null);
   const [scrollProgress, setScrollProgress] = useState(0);
