@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/:slug([a-z][a-z0-9-]{2,29})/edit",
-      "destination": "/index.html?slug=:slug&edit=1"
+      "destination": "/api/page?slug=:slug&edit=1"
     },
     {
       "source": "/:slug([a-z][a-z0-9-]{2,29})",
-      "destination": "/index.html?slug=:slug"
+      "destination": "/api/page?slug=:slug"
     }
   ],
   "headers": [
