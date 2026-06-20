@@ -6508,7 +6508,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     {visibleVideos.map((v, idx) => {
     const parsed = parseVideoUrl(v.url);
     return (
-    <div key={idx} className="group reveal-up" style={{ animationDelay: `${idx * 100}ms` }}>
+    <div key={idx} className="group reveal-up is-visible" style={{ animationDelay: `${idx * 100}ms` }}>
     <button onClick={() => setVideoToPlay({ url: v.url, orientation: v.orientation })}
     className="relative w-full aspect-[4/5] rounded-3xl overflow-hidden mb-3 cursor-pointer transition hover:scale-[1.02] block"
     style={{
