@@ -5969,15 +5969,23 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     {catalogTab === 'flip' ? (
     <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
     {}
-    <div className="flex-1 relative" style={{ minHeight: 0 }}>
-    <iframe
-    src={`https://catalog.farmasi.ge/books/catalogue/?rep=${encodeURIComponent(rep.slug || '')}`}
-    title="FARMASI კატალოგი"
-    className="w-full h-full border-0"
-    allow="fullscreen"
-    style={{ display: 'block', width: '100%', height: '100%' }}
-    />
-    </div>
+    <div className="flex-1 flex items-center justify-center p-6 text-center" style={{ minHeight: 0 }}>
+      <div>
+        <p className="mb-4 text-sm" style={{ color: theme.ink + 'AA' }}>
+          კატალოგი უსაფრთხოების შეზღუდვის გამო იხსნება ახალ ფანჯარაში.
+        </p>
+        <button
+          onClick={() => window.open(
+            `https://catalog.farmasi.ge/books/catalogue/?rep=${encodeURIComponent(rep.slug || '')}`,
+            '_blank'
+         )}
+         className="px-6 py-4 rounded-full font-bold transition hover:scale-[1.03] active:scale-95"
+         style={{ background: theme.wine, color: theme.cream }}
+       >
+         📖 ციფრული კატალოგის გახსნა
+       </button>
+     </div>
+   </div>
     {}
     <div className="flex-shrink-0 px-4 py-3 border-t" style={{ borderColor: theme.gold + '22', background: theme.cream, paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}>
     <p className="text-[11px] tracking-widest uppercase text-center mb-2" style={{ color: theme.gold }}>
