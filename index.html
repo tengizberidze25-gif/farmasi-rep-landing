@@ -2536,6 +2536,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
     className="w-full rounded-2xl pl-9 pr-3 py-2.5 text-xs outline-none"
     style={{ background: '#fff', border: `1px solid ${theme.gold}33`, color: theme.ink }} />
     </div>
+    <p className="text-[10px] font-semibold mt-1 mb-1" style={{ color: theme.ink + '88' }}>🔎 ფილტრი — მხოლოდ სიის დასახარისხებლად</p>
     <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
     {[['all','ყველა'], ['new','ახალი'], ['processing','მუშავდება'], ['shipped','გაგზავნილი'], ['completed','დასრულებული'], ['cancelled','გაუქმებული']].map(([key, label]) => (
     <button key={key} onClick={() => { setFilter(key); setVisibleLimit(8); }}
@@ -2617,6 +2618,7 @@ function MyOrdersSection({ repCode, labels = {} }) {
     </div>
     )}
     {o.comment && <p className="text-xs rounded-xl p-3 mb-3" style={{ background: theme.blush, color: theme.ink }}>💬 {o.comment}</p>}
+    <p className="text-[10px] font-semibold mb-1.5" style={{ color: theme.wine }}>✏️ სტატუსის შეცვლა — მყიდველს გაეგზავნება SMS</p>
     <div className="flex flex-wrap gap-2 mb-3">
     {Object.entries(statusBadges).map(([key, s]) => (
     <button key={key} type="button" onClick={() => changeStatus(orderId, key)}
