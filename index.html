@@ -2092,7 +2092,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     return () => ac.abort();
   }, [step]);
   return (
-    <div className="min-h-screen flex items-center justify-center px-5 py-20 grain relative" style={{ background: theme.cream }}>
+    <div className="min-h-screen flex items-center justify-center px-5 py-12 grain relative" style={{ background: theme.cream }}>
     <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-30 blur-3xl"
     style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
     <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-25 blur-3xl"
@@ -4018,7 +4018,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     if (allProducts.length === 0) {
     return (
     <div className="overflow-y-auto p-4 space-y-2">
-    <p className="text-center py-12 text-sm italic" style={{ color: theme.ink + '77' }}>
+    <p className="text-center py-9 text-sm italic" style={{ color: theme.ink + '77' }}>
     {L('myprods_picker_loading', 'იტვირთება...')}
     </p>
     </div>
@@ -4131,7 +4131,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     message = L('myprods_picker_all_added', 'ყველა პროდუქტი უკვე დამატებულია');
     }
     return (
-    <p className="text-center py-12 text-sm italic" style={{ color: alreadySelectedMatch ? theme.gold : theme.ink + '77' }}>
+    <p className="text-center py-9 text-sm italic" style={{ color: alreadySelectedMatch ? theme.gold : theme.ink + '77' }}>
     {message}
     </p>
     );
@@ -4837,7 +4837,7 @@ function ConfirmDeliveryPage({ orderId, labels = {} }) {
     }
   };
   return (
-    <div className="min-h-screen px-5 py-10 sm:py-16 grain flex items-center" style={{ background: theme.cream }}>
+    <div className="min-h-screen px-5 py-8 sm:py-10 grain flex items-center" style={{ background: theme.cream }}>
     <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
     style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
     <div className="relative max-w-md mx-auto w-full">
@@ -4991,7 +4991,7 @@ function RatingPage({ orderId, labels = {} }) {
   const starWord = ['', L('rate_word_1', 'ცუდი'), L('rate_word_2', 'საშუალო'), L('rate_word_3', 'კარგი'), L('rate_word_4', 'ძალიან კარგი'), L('rate_word_5', 'შესანიშნავი')];
   const active = hover || stars;
   return (
-    <div className="min-h-screen px-5 py-10 sm:py-16 grain flex items-center" style={{ background: theme.cream }}>
+    <div className="min-h-screen px-5 py-8 sm:py-10 grain flex items-center" style={{ background: theme.cream }}>
     {}
     <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
     style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
@@ -5175,7 +5175,7 @@ function OrderInvoicePage({ orderId, labels = {} }) {
   };
   const statusLabel = statusLabels[order.status] || order.status;
   return (
-    <div className="min-h-screen px-5 py-10 sm:py-16 grain" style={{ background: theme.cream }}>
+    <div className="min-h-screen px-5 py-8 sm:py-10 grain" style={{ background: theme.cream }}>
     {}
     <div className="absolute top-20 right-10 w-72 h-72 rounded-full opacity-20 blur-3xl pointer-events-none"
     style={{ background: `radial-gradient(circle, ${theme.blush}, transparent 70%)` }} />
@@ -5529,7 +5529,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     {step === 'cart' && (
     <>
     {items.length === 0 ? (
-    <div className="text-center py-12">
+    <div className="text-center py-9">
     <Ic name="shopping-bag" className="w-16 h-16 mx-auto mb-4 opacity-30" style={{ color: theme.ink }} />
     <p className="text-sm" style={{ color: theme.ink + '99' }}>{L('cart_empty', 'კალათა ცარიელია')}</p>
     </div>
@@ -6055,7 +6055,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     ) : (
     <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
     {filtered.length === 0 ? (
-    <div className="text-center py-20">
+    <div className="text-center py-12">
     <div className="text-5xl mb-4 opacity-30">🌸</div>
     <p className="text-base mb-3" style={{ color: theme.ink + 'AA' }}>
     {L('catalog_modal_empty', 'ვერ მოვძებნე პროდუქტი')}
@@ -6478,7 +6478,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     ? `"${problem.label}" — ${t('act7_subtitle_suffix', 'მათივე სიტყვებით')}`
     : t('act7_subtitle_all', 'კმაყოფილი მომხმარებლების გამოცდილება');
     return (
-    <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-24"
+    <section className="relative overflow-hidden px-5 sm:px-12 py-12 sm:py-14"
     style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
     <div className="absolute -top-20 left-1/4 w-[500px] h-[400px] rounded-full opacity-15 blur-3xl pointer-events-none"
     style={{ background: theme.blush }} />
@@ -6831,7 +6831,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </div>
     {}
-    <div className="mt-24 lg:mt-16 flex flex-col items-center gap-2"
+    <div className="mt-14 lg:mt-16 flex flex-col items-center gap-2"
     style={{ color: theme.ink + '55' }}>
     <p className="text-[9px] tracking-[0.4em] uppercase font-medium">{t('hero_scroll_hint', 'გადახედე')}</p>
     <div className="w-px h-12 animate-pulse" style={{ background: `linear-gradient(to bottom, ${theme.ink}33, transparent)` }} />
@@ -6839,7 +6839,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </section>
     {}
-    <section className="relative overflow-hidden py-20 sm:py-32 px-5 sm:px-12"
+    <section className="relative overflow-hidden py-12 sm:py-16 px-5 sm:px-12"
     style={{ background: theme.ink, color: theme.cream }}>
     {}
     <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full opacity-[0.12] blur-3xl"
@@ -6901,7 +6901,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     {}
     {}
     {}
-    <section className="relative overflow-hidden py-20 sm:py-28 px-5 sm:px-12"
+    <section className="relative overflow-hidden py-12 sm:py-16 px-5 sm:px-12"
     style={{ background: `linear-gradient(180deg, ${theme.cream} 0%, ${theme.ivory} 50%, ${theme.cream} 100%)` }}>
     {}
     <div className="absolute -top-40 -right-40 w-[700px] h-[700px] rounded-full opacity-[0.18] blur-3xl pointer-events-none"
@@ -7041,7 +7041,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     {}
     {}
     {selectedProblem.bridge?.science && (
-    <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+    <section className="relative overflow-hidden py-12 sm:py-14 px-5 sm:px-12"
     style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.ivory})` }}>
     {}
     <div className="absolute -top-20 right-1/4 w-[500px] h-[400px] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
@@ -7107,7 +7107,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     {}
     {}
     {(selectedProblem.bridge?.tipsDo || selectedProblem.bridge?.tipsAvoid) && (
-    <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+    <section className="relative overflow-hidden py-12 sm:py-14 px-5 sm:px-12"
     style={{ background: `linear-gradient(180deg, ${theme.ivory}, ${theme.cream})` }}>
     {}
     <div className="absolute top-1/3 left-0 w-[500px] h-[500px] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
@@ -7217,7 +7217,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     {}
     {}
     {selectedProblem.bridge?.doctor && (
-    <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+    <section className="relative overflow-hidden py-12 sm:py-14 px-5 sm:px-12"
     style={{ background: `linear-gradient(180deg, ${theme.cream}, ${theme.mist} 50%, ${theme.cream})` }}>
     {}
     <div className="absolute -top-20 left-1/3 w-[500px] h-[400px] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
@@ -7305,7 +7305,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     />
     </div>
     ) : (
-    <section className="px-5 py-20 text-center" style={{ background: theme.cream }}>
+    <section className="px-5 py-12 text-center" style={{ background: theme.cream }}>
     <div className="max-w-md mx-auto">
     <div className="w-14 h-14 mx-auto mb-5 rounded-full flex items-center justify-center anim-pulse-soft"
     style={{ background: theme.wine + '15', color: theme.wine }}>
@@ -7326,7 +7326,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     ], null)}
     {}
     {!selectedProblem && repPicks.length > 0 && (
-    <section className="px-5 py-16 sm:py-20" style={{ background: theme.cream }}>
+    <section className="px-5 py-10 sm:py-12" style={{ background: theme.cream }}>
     <div className="max-w-4xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
@@ -7381,7 +7381,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </section>
     )}
     {}
-    <section className="px-5 py-16 sm:py-20" style={{ background: theme.ivory }}>
+    <section className="px-5 py-10 sm:py-12" style={{ background: theme.ivory }}>
     <div className="max-w-xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
@@ -7477,7 +7477,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </section>
     {}
-    <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-28"
+    <section className="relative overflow-hidden px-5 sm:px-12 py-12 sm:py-16"
     style={{ background: `linear-gradient(135deg, ${theme.cream}, ${theme.ivory})` }}>
     {}
     <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none"
@@ -7534,7 +7534,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </section>
     {}
     {}
-    <section className="relative overflow-hidden px-5 sm:px-12 py-20 sm:py-28" style={{ background: `linear-gradient(160deg, ${theme.blush}, ${theme.cream})` }}>
+    <section className="relative overflow-hidden px-5 sm:px-12 py-12 sm:py-16" style={{ background: `linear-gradient(160deg, ${theme.blush}, ${theme.cream})` }}>
     <div className="absolute -top-24 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: theme.rose }} />
     <div className="absolute -bottom-32 -left-24 w-[420px] h-[420px] rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: theme.gold }} />
     <div className="relative max-w-3xl mx-auto text-center">
@@ -7575,7 +7575,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     {}
     <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full opacity-10 blur-3xl"
     style={{ background: theme.wine }} />
-    <div className="relative max-w-5xl mx-auto px-5 sm:px-12 py-16">
+    <div className="relative max-w-5xl mx-auto px-5 sm:px-12 py-10">
     {}
     <div className="flex items-center justify-between text-[10px] tracking-[0.3em] uppercase mb-12 opacity-60">
     <div className="flex items-center gap-2">
@@ -7817,7 +7817,7 @@ function PainQuiz({ onSelect, selectedId, problems = PROBLEMS, rep = {}, t = (k,
     onSelect(problem);
   };
   return (
-    <section className="px-5 py-16 relative overflow-hidden" style={{ background: theme.cream }}>
+    <section className="px-5 py-10 relative overflow-hidden" style={{ background: theme.cream }}>
     {}
     <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full opacity-25 blur-3xl"
     style={{ background: theme.blush }} />
@@ -7968,7 +7968,7 @@ function PainBridge({ rep, problem, onProceed, onBack, t = (k, fb) => fb }) {
     <Ic name="arrow-left" className="w-4 h-4" /> {t('back', 'უკან')}
     </button>
     </div>
-    <div className="relative max-w-3xl mx-auto px-5 py-12 sm:py-20">
+    <div className="relative max-w-3xl mx-auto px-5 py-9 sm:py-12">
     {}
     <div className="text-center mb-8 anim-fadeup">
     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
@@ -8054,7 +8054,7 @@ function ProblemProductShowcase({ products, problem, onShop, repWhatsapp, t = (k
   if (!products || products.length === 0) return null;
   const shopMessage = `${t('whatsapp_problem_msg_prefix', 'გამარჯობა! მაინტერესებს რჩევა')} ${problem.label}${t('whatsapp_problem_msg_suffix', '-სთვის.')}`;
   return (
-    <section className="relative overflow-hidden py-20 sm:py-24 px-5 sm:px-12"
+    <section className="relative overflow-hidden py-12 sm:py-14 px-5 sm:px-12"
     style={{ background: theme.ink, color: theme.cream }}>
     {}
     <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full opacity-[0.12] blur-3xl"
@@ -8774,7 +8774,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </section>
     {}
     {product.problems && (
-    <section className="px-5 py-16 relative overflow-hidden"
+    <section className="px-5 py-10 relative overflow-hidden"
     style={{ background: `linear-gradient(180deg, ${theme.ivory} 0%, ${theme.cream} 100%)` }}>
     <div className="absolute top-1/3 -left-20 w-72 h-72 rounded-full opacity-20 blur-3xl"
     style={{ background: theme.rose }} />
@@ -8822,7 +8822,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </section>
     )}
     {}
-    <section className="px-5 py-10" style={{ background: theme.ivory }}>
+    <section className="px-5 py-8" style={{ background: theme.ivory }}>
     <div className="max-w-5xl mx-auto">
     <p className="text-xs tracking-widest uppercase mb-6 text-center" style={{ color: theme.gold }}>{t('prod_features_title', 'მახასიათებლები')}</p>
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -8841,7 +8841,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </section>
     {}
     {product.benefits && (
-    <section className="px-5 py-16">
+    <section className="px-5 py-10">
     <div className="max-w-5xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_why_title', 'რატომ ეს პროდუქტი')}</p>
@@ -8869,7 +8869,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.beforeAfter && (
-    <section className="px-5 py-16">
+    <section className="px-5 py-10">
     <div className="max-w-5xl mx-auto">
     <div className="text-center mb-10">
     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-[10px] tracking-widest uppercase"
@@ -8925,7 +8925,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.videos && (
-    <section className="px-5 py-16" style={{ background: theme.ivory }}>
+    <section className="px-5 py-10" style={{ background: theme.ivory }}>
     <div className="max-w-6xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_video_title', 'ვიდეო პრეზენტაცია')}</p>
@@ -8941,7 +8941,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.howItWorks && (
-    <section className="px-5 py-16 relative overflow-hidden"
+    <section className="px-5 py-10 relative overflow-hidden"
     style={{ background: `linear-gradient(180deg, ${theme.ink} 0%, #2a1610 100%)` }}>
     <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-20 blur-3xl"
     style={{ background: product.accent }} />
@@ -8980,7 +8980,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.ingredients && (
-    <section className="px-5 py-16">
+    <section className="px-5 py-10">
     <div className="max-w-5xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_ingredients_title', 'აქტიური კომპონენტები')}</p>
@@ -9008,7 +9008,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.howToUse && (
-    <section className="px-5 py-16" style={{ background: theme.ivory }}>
+    <section className="px-5 py-10" style={{ background: theme.ivory }}>
     <div className="max-w-5xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_howto_title', 'გამოყენების წესი')}</p>
@@ -9036,7 +9036,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.suitableFor && (
-    <section className="px-5 py-12">
+    <section className="px-5 py-9">
     <div className="max-w-3xl mx-auto rounded-3xl p-6 sm:p-10"
     style={{ background: `linear-gradient(135deg, ${product.bg?.[0] ?? product.accent ?? '#f5f0eb'}, ${product.bg?.[1] ?? product.accent ?? '#f5f0eb'})`,
     border: `1px solid ${theme.gold}22` }}>
@@ -9083,7 +9083,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </div>
     </div>
     </div>
-    <div className="relative px-5 py-12">
+    <div className="relative px-5 py-9">
     <div className="max-w-6xl mx-auto">
     {}
     <div className="text-center mb-20">
@@ -9115,7 +9115,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     ))}
     </div>
     {}
-    <div className="mt-24 relative">
+    <div className="mt-14 relative">
     {}
     <div className="flex items-center gap-3 mb-10 justify-center">
     <div className="w-20 h-px" style={{ background: `linear-gradient(90deg, transparent, ${theme.gold})` }} />
@@ -9182,7 +9182,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </div>
     {}
     {product.ritual.tagline && (
-    <div className="text-center mt-24 mb-8 max-w-3xl mx-auto">
+    <div className="text-center mt-14 mb-8 max-w-3xl mx-auto">
     <div className="text-7xl mb-3 leading-none" style={{ color: theme.gold, opacity: 0.4 }}>"</div>
     <p className="font-display-lat italic leading-tight -mt-10"
     style={{ fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', color: theme.cream }}>
@@ -9214,7 +9214,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.reviews && (
-    <section className="px-5 py-16" style={{ background: theme.ivory }}>
+    <section className="px-5 py-10" style={{ background: theme.ivory }}>
     <div className="max-w-5xl mx-auto">
     <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
     <div>
@@ -9265,7 +9265,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.faqs && (
-    <section className="px-5 py-16">
+    <section className="px-5 py-10">
     <div className="max-w-3xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_faq_title', 'ხშირი კითხვები')}</p>
@@ -9281,7 +9281,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     )}
     {}
     {product.fullIngredients && (
-    <section className="px-5 py-12" style={{ background: theme.ivory }}>
+    <section className="px-5 py-9" style={{ background: theme.ivory }}>
     <div className="max-w-3xl mx-auto">
     <FaqItem
     q="სრული შემადგენლობა (INCI)"
@@ -9292,7 +9292,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </section>
     )}
     {}
-    <section className="px-5 py-12">
+    <section className="px-5 py-9">
     <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
     {[
     { ic: 'truck',         t: 'სწრაფი მიწოდება',  d: '1–2 სამუშაო დღე საქართველოში' },
@@ -9338,7 +9338,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </div>
     </div>
     {}
-    <section className="px-5 py-12">
+    <section className="px-5 py-9">
     <div className="max-w-2xl mx-auto rounded-3xl p-6 sm:p-8 flex items-center gap-5"
     style={{ background: theme.ivory, border: `1px solid ${theme.gold}22`, boxShadow: '0 4px 20px -8px rgba(35,23,18,0.1)' }}>
     <div className="relative flex-shrink-0">
@@ -9369,7 +9369,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </div>
     </section>
     {}
-    <section className="px-5 py-12" style={{ background: theme.ivory }}>
+    <section className="px-5 py-9" style={{ background: theme.ivory }}>
     <div className="max-w-5xl mx-auto">
     <div className="text-center mb-8">
     <p className="text-xs tracking-widest uppercase mb-2" style={{ color: theme.gold }}>{t('prod_fast_result', '✦ სწრაფი შედეგი')}</p>
@@ -9399,7 +9399,7 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     </div>
     </section>
     {}
-    <footer className="px-5 py-10 text-center" style={{ background: theme.ink, color: theme.cream }}>
+    <footer className="px-5 py-8 text-center" style={{ background: theme.ink, color: theme.cream }}>
     <p className="font-display text-xl mb-1">{rep.name}</p>
     <p className="text-xs tracking-widest uppercase opacity-60 mb-4">FARMASI · Tantalize Cosmetics</p>
     <p className="text-xs opacity-50">{t('prod_footer_copyright', '© FARMASI Georgia ოფიციალური წარმომადგენელი')}</p>
@@ -10017,7 +10017,7 @@ function ChatModal({ rep, onClose, product, t = (k, fb) => fb }) {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-10"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-0 sm:px-5 py-0 sm:py-8"
     style={{ background: 'rgba(35,23,18,0.6)', backdropFilter: 'blur(8px)' }} onClick={onClose}>
     <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 anim-fadeup relative"
     style={{ background: theme.ivory }} onClick={(e) => e.stopPropagation()}>
