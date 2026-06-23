@@ -7326,7 +7326,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     ], null)}
     {}
     {!selectedProblem && repPicks.length > 0 && (
-    <section className="px-5 py-10 sm:py-12" style={{ background: theme.cream }}>
+    <section id="fm-picks" className="px-5 py-10 sm:py-12" style={{ background: theme.cream }}>
     <div className="max-w-4xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
@@ -7381,7 +7381,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </section>
     )}
     {}
-    <section className="px-5 py-10 sm:py-12" style={{ background: theme.ivory }}>
+    <section id="fm-contact" className="px-5 py-10 sm:py-12" style={{ background: theme.ivory }}>
     <div className="max-w-xl mx-auto">
     <div className="text-center mb-10">
     <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
@@ -7477,7 +7477,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </section>
     {}
-    <section className="relative overflow-hidden px-5 sm:px-12 py-12 sm:py-16"
+    <section id="fm-catalog" className="relative overflow-hidden px-5 sm:px-12 py-12 sm:py-16"
     style={{ background: `linear-gradient(135deg, ${theme.cream}, ${theme.ivory})` }}>
     {}
     <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-20 blur-3xl pointer-events-none"
@@ -7534,7 +7534,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </section>
     {}
     {}
-    <section className="relative overflow-hidden px-5 sm:px-12 py-12 sm:py-16" style={{ background: `linear-gradient(160deg, ${theme.blush}, ${theme.cream})` }}>
+    <section id="fm-join" className="relative overflow-hidden px-5 sm:px-12 py-12 sm:py-16" style={{ background: `linear-gradient(160deg, ${theme.blush}, ${theme.cream})` }}>
     <div className="absolute -top-24 -right-20 w-96 h-96 rounded-full opacity-30 blur-3xl pointer-events-none" style={{ background: theme.rose }} />
     <div className="absolute -bottom-32 -left-24 w-[420px] h-[420px] rounded-full opacity-20 blur-3xl pointer-events-none" style={{ background: theme.gold }} />
     <div className="relative max-w-3xl mx-auto text-center">
@@ -10135,6 +10135,54 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 0);
     }, { capture: true, passive: true });
   })();
+</script>
+<script>
+/* FARMASI — public page სწრაფი ნავიგაცია + ზევით (გრძელი სქროლის წინააღმდეგ) */
+(function(){
+  var NAV=[
+    {id:'fm-picks',   label:'🛍️ პროდუქტები'},
+    {id:'fm-catalog', label:'📖 კატალოგი'},
+    {id:'fm-contact', label:'✉️ შეკვეთა'},
+    {id:'fm-join',    label:'🌟 გაწევრიანება'}
+  ];
+  function present(){ return NAV.some(function(n){ return document.getElementById(n.id); }); }
+  var wrap=document.createElement('div');
+  wrap.style.cssText='position:fixed;left:14px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:9998;display:none;flex-direction:column;gap:10px;align-items:flex-start';
+  var top=document.createElement('button');
+  top.innerHTML='↑'; top.title='ზევით';
+  top.style.cssText='width:44px;height:44px;border:none;border-radius:50%;cursor:pointer;background:#fff;color:#E8536B;box-shadow:0 6px 18px rgba(0,0,0,.18);font-size:20px;font-weight:700;display:none';
+  top.onclick=function(){ window.scrollTo({top:0,behavior:'smooth'}); };
+  var menu=document.createElement('div');
+  menu.style.cssText='display:none;flex-direction:column;gap:8px;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);padding:10px;border-radius:16px;box-shadow:0 12px 34px rgba(184,55,85,.28)';
+  var fab=document.createElement('button');
+  fab.innerHTML='⚡ სწრაფი';
+  fab.style.cssText='border:none;border-radius:999px;cursor:pointer;padding:11px 16px;background:linear-gradient(135deg,#FF6F92,#B83755);color:#fff;font-weight:700;font-size:13px;box-shadow:0 8px 22px rgba(184,55,85,.4);font-family:inherit';
+  var open=false;
+  function rebuild(){
+    menu.innerHTML='';
+    NAV.forEach(function(n){
+      var el=document.getElementById(n.id); if(!el) return;
+      var b=document.createElement('button');
+      b.textContent=n.label;
+      b.style.cssText='border:none;background:#FFF1F4;color:#2B1A22;text-align:left;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:600;font-size:13px;white-space:nowrap;font-family:inherit';
+      b.onclick=function(){ el.scrollIntoView({behavior:'smooth',block:'start'}); setOpen(false); };
+      menu.appendChild(b);
+    });
+  }
+  function setOpen(v){ open=v; menu.style.display=v?'flex':'none'; fab.innerHTML=v?'✕ დახურვა':'⚡ სწრაფი'; }
+  fab.onclick=function(){ if(!open) rebuild(); setOpen(!open); };
+  wrap.appendChild(top); wrap.appendChild(menu); wrap.appendChild(fab);
+  document.body.appendChild(wrap);
+  function update(){
+    var p=present();
+    wrap.style.display=p?'flex':'none';
+    top.style.display=(p && window.scrollY>500)?'block':'none';
+    if(!p && open) setOpen(false);
+  }
+  window.addEventListener('scroll',update,{passive:true});
+  setInterval(update,800);
+  update();
+})();
 </script>
 </body>
 </html>
