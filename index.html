@@ -7703,7 +7703,18 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     <SocialIcon name="whatsapp" className="w-7 h-7" />
     </a>
     )}
-    {/* React-ის ცალკე "ზევით" ისარი მოშორებულია — ⚡ სწრაფი ნავიგაციას უკვე აქვს საკუთარი ↑ */}
+    {/* ერთადერთი "ზევით" ისარი — სქროლზე ჩნდება */}
+    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    className={`fixed bottom-[16rem] left-5 z-30 w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+    style={{
+    background: theme.cream,
+    color: theme.ink,
+    border: `1px solid ${theme.gold}33`,
+    boxShadow: '0 8px 24px -8px rgba(0,0,0,0.25)'
+    }}
+    title={t('footer_back_to_top', 'ზემოთ დაბრუნება')}>
+    <Ic name="arrow-up" className="w-4 h-4" />
+    </button>
     {chatOpen && <ChatModal rep={rep} onClose={() => setChatOpen(false)} t={t} />}
     {}
     <AiAssistant rep={rep} repCode={repCode} dynamicProducts={dynamicProducts} cart={cart} labels={labels}
@@ -10164,11 +10175,6 @@ document.addEventListener('DOMContentLoaded', function() {
   var open=false;
   function rebuild(){
     menu.innerHTML='';
-    var btop=document.createElement('button');
-    btop.textContent='⬆ ზევით';
-    btop.style.cssText='border:none;background:#2B1A22;color:#fff;text-align:left;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;font-family:inherit';
-    btop.onclick=function(){ window.scrollTo({top:0,behavior:'smooth'}); setOpen(false); };
-    menu.appendChild(btop);
     NAV.forEach(function(n){
       var el=document.getElementById(n.id); if(!el) return;
       var b=document.createElement('button');
