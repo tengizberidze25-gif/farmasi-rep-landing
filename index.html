@@ -6431,11 +6431,20 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [catalogOpen, setCatalogOpen] = useState(!!initialCatalog); 
   const [catalogSearch, setCatalogSearch] = useState(''); // AI-დან გადმოცემული საწყისი ძებნა
   const [videoToPlay, setVideoToPlay] = useState(null); 
-  // Auto-open the video when arriving via a share link with ?play=1
+  // Auto-open the shared video when arriving via a share link.
+  //   ?v=<bunnyGuid>  → open that EXACT shared video (from /api/share)
+  //   ?play=1 (no v)  → fall back to the rep's main video (legacy)
+  const _sharedVideoOpenedRef = useRef(false);
   useEffect(() => {
+    if (_sharedVideoOpenedRef.current) return;
     try {
       const params = new URLSearchParams(window.location.search);
-      if (params.get('play') === '1' && rep && rep.videoUrl && parseVideoUrl(rep.videoUrl)) {
+      const sharedGuid = (params.get('v') || '').replace(/[^a-zA-Z0-9-]/g, '');
+      if (sharedGuid) {
+        _sharedVideoOpenedRef.current = true;
+        setVideoToPlay({ url: `https://iframe.mediadelivery.net/embed/674864/${sharedGuid}` });
+      } else if (params.get('play') === '1' && rep && rep.videoUrl && parseVideoUrl(rep.videoUrl)) {
+        _sharedVideoOpenedRef.current = true;
         setVideoToPlay({ url: rep.videoUrl });
       }
     } catch (e) {}
