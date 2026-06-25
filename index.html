@@ -898,7 +898,7 @@ function api(params) {
     delete window[callbackName];
     script.remove();
     reject(new Error('Request timed out'));
-    }, 15000);
+    }, 30000);
     window[callbackName] = (data) => {
     clearTimeout(timeout);
     delete window[callbackName];
@@ -10156,10 +10156,6 @@ document.addEventListener('DOMContentLoaded', function() {
   function present(){ return NAV.some(function(n){ return document.getElementById(n.id); }); }
   var wrap=document.createElement('div');
   wrap.style.cssText='position:fixed;left:14px;bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:9998;display:none;flex-direction:column;gap:10px;align-items:flex-start';
-  var top=document.createElement('button');
-  top.innerHTML='↑'; top.title='ზევით';
-  top.style.cssText='width:44px;height:44px;border:none;border-radius:50%;cursor:pointer;background:#fff;color:#E8536B;box-shadow:0 6px 18px rgba(0,0,0,.18);font-size:20px;font-weight:700;display:none';
-  top.onclick=function(){ window.scrollTo({top:0,behavior:'smooth'}); };
   var menu=document.createElement('div');
   menu.style.cssText='display:none;flex-direction:column;gap:8px;background:rgba(255,255,255,.97);backdrop-filter:blur(8px);padding:10px;border-radius:16px;box-shadow:0 12px 34px rgba(184,55,85,.28)';
   var fab=document.createElement('button');
@@ -10168,6 +10164,11 @@ document.addEventListener('DOMContentLoaded', function() {
   var open=false;
   function rebuild(){
     menu.innerHTML='';
+    var btop=document.createElement('button');
+    btop.textContent='⬆ ზევით';
+    btop.style.cssText='border:none;background:#2B1A22;color:#fff;text-align:left;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;font-family:inherit';
+    btop.onclick=function(){ window.scrollTo({top:0,behavior:'smooth'}); setOpen(false); };
+    menu.appendChild(btop);
     NAV.forEach(function(n){
       var el=document.getElementById(n.id); if(!el) return;
       var b=document.createElement('button');
@@ -10179,12 +10180,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function setOpen(v){ open=v; menu.style.display=v?'flex':'none'; fab.innerHTML=v?'✕ დახურვა':'⚡ სწრაფი'; }
   fab.onclick=function(){ if(!open) rebuild(); setOpen(!open); };
-  wrap.appendChild(top); wrap.appendChild(menu); wrap.appendChild(fab);
+  wrap.appendChild(menu); wrap.appendChild(fab);
   document.body.appendChild(wrap);
   function update(){
     var p=present();
     wrap.style.display=p?'flex':'none';
-    top.style.display=(p && window.scrollY>500)?'block':'none';
     if(!p && open) setOpen(false);
   }
   window.addEventListener('scroll',update,{passive:true});
