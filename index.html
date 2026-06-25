@@ -6742,22 +6742,22 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     {}
     <div className="flex flex-col sm:flex-row gap-3 pt-6 max-w-lg">
-    <button onClick={() => document.getElementById('pain-quiz-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-    className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.01]"
-    style={{ background: theme.ink, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.ink}88` }}>
-    <Ic name="sparkles" className="w-4 h-4" />
-    {t('hero_cta_primary', 'გავიგოთ რა გჭირდება')}
-    <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
-    </button>
-    {rep.whatsapp && (
+    {rep.whatsapp ? (
     <a href={`https://wa.me/${rep.whatsapp.replace(/[^\d]/g,'')}?text=${encodeURIComponent(`გამარჯობა${rep.name ? ', ' + rep.name : ''}! მინდა უფასო კონსულტაცია — გადავწყვიტო, რომელი პროდუქტი მიხდება.`)}`} target="_blank" rel="noreferrer"
-    className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.01]"
-    style={{ background: '#25D366', color: '#fff', boxShadow: '0 20px 50px -15px #25D36699' }}>
+    className="group flex-[1.4] py-4 px-6 rounded-full flex items-center justify-center gap-3 font-semibold text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.02]"
+    style={{ background: '#25D366', color: '#fff', boxShadow: '0 20px 55px -12px #25D366AA' }}>
     <SocialIcon name="whatsapp" className="w-4 h-4" />
     {t('hero_cta_consultation', 'უფასო კონსულტაცია')}
     <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
     </a>
-    )}
+    ) : null}
+    <button onClick={() => document.getElementById('pain-quiz-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+    className="group flex-1 py-4 px-6 rounded-full flex items-center justify-center gap-3 font-medium text-xs tracking-[0.2em] uppercase transition hover:gap-4 hover:scale-[1.01]"
+    style={{ background: rep.whatsapp ? 'transparent' : theme.ink, color: rep.whatsapp ? theme.ink : theme.cream, border: rep.whatsapp ? `1.5px solid ${theme.ink}22` : 'none', boxShadow: rep.whatsapp ? 'none' : `0 20px 50px -15px ${theme.ink}88` }}>
+    <Ic name="sparkles" className="w-4 h-4" />
+    {t('hero_cta_primary', 'გავიგოთ რა გჭირდება')}
+    <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+    </button>
     </div>
     {}
     {socials.length > 0 && (
