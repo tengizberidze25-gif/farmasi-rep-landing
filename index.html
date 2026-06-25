@@ -6838,6 +6838,66 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </div>
     </section>
+    {/* მთავარი — პროდუქტები + ვიდეოები (Hero-ს შემდეგ, რომ კლიენტმა მაშინვე ნახოს) */}
+    {!selectedProblem && repPicks.length > 0 && (
+    <section id="fm-picks" className="px-5 py-10 sm:py-12" style={{ background: theme.cream }}>
+    <div className="max-w-4xl mx-auto">
+    <div className="text-center mb-10">
+    <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
+    {t('picks_eyebrow', '✦ ჩემი არჩევანი ✦')}
+    </p>
+    <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
+    {rep.name ? `${rep.name.split(' ')[0]}${t('picks_title_suffix', '-ს რჩეული')}` : t('picks_title_fallback', 'რჩეული პროდუქტები')}
+    </h2>
+    <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
+    {t('picks_subtitle', 'ის პროდუქტები რომელიც პირადად ვცადე და ვრეკომენდირებ — ნამდვილ შედეგზე გადამოწმებული')}
+    </p>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+    {repPicks.map(p => (
+    <div key={p.row || p.id}
+    className="rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
+    style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, boxShadow: '0 8px 30px -12px rgba(0,0,0,0.15)' }}
+    onClick={() => setPickModalProduct(p)}>
+    {p.image && (
+    <div className="aspect-[5/4] overflow-hidden flex items-center justify-center p-8 sm:p-12" style={{ background: theme.cream }}>
+    <img src={p.image} alt={p.name}
+    className="max-w-[75%] max-h-[85%] object-contain transition duration-500 hover:scale-105"
+    style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }} />
+    </div>
+    )}
+    <div className="p-5">
+    <p className="font-display text-lg mb-1 leading-tight" style={{ color: theme.ink }}>
+    {p.name}
+    </p>
+    <p className="text-sm mb-3" style={{ color: theme.wine }}>
+    {p.price} ₾
+    </p>
+    {p.note && (
+    <div className="rounded-lg p-3 mb-3" style={{ background: theme.gold + '11', borderLeft: `3px solid ${theme.gold}` }}>
+    <p className="text-xs italic leading-relaxed" style={{ color: theme.ink + 'CC' }}>
+    "{p.note}"
+    <span className="block mt-1 not-italic text-[10px]" style={{ color: theme.gold }}>
+    — {rep.name ? rep.name.split(' ')[0] : t('picks_author_fallback', 'რეპი')}
+    </span>
+    </p>
+    </div>
+    )}
+    <button className="text-xs tracking-wider uppercase flex items-center gap-2"
+    style={{ color: theme.wine }}>
+    {t('picks_button_view', 'დაწვრილებით')} <Ic name="arrow-right" className="w-3 h-3" />
+    </button>
+    </div>
+    </div>
+    ))}
+    </div>
+    </div>
+    </section>
+    )}
+    {!selectedProblem && renderCustomerStories([
+    ...(rep.customerVideos || []),
+    ...(companyVideos || []).map(v => ({ ...v, _company: true }))
+    ], null)}
     {}
     <section className="relative overflow-hidden py-12 sm:py-16 px-5 sm:px-12"
     style={{ background: theme.ink, color: theme.cream }}>
@@ -7320,67 +7380,6 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     </section>
     )}
-    {!selectedProblem && renderCustomerStories([
-    ...(rep.customerVideos || []),
-    ...(companyVideos || []).map(v => ({ ...v, _company: true }))
-    ], null)}
-    {}
-    {!selectedProblem && repPicks.length > 0 && (
-    <section id="fm-picks" className="px-5 py-10 sm:py-12" style={{ background: theme.cream }}>
-    <div className="max-w-4xl mx-auto">
-    <div className="text-center mb-10">
-    <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: theme.gold }}>
-    {t('picks_eyebrow', '✦ ჩემი არჩევანი ✦')}
-    </p>
-    <h2 className="font-display text-3xl sm:text-4xl mb-3 leading-tight" style={{ color: theme.ink }}>
-    {rep.name ? `${rep.name.split(' ')[0]}${t('picks_title_suffix', '-ს რჩეული')}` : t('picks_title_fallback', 'რჩეული პროდუქტები')}
-    </h2>
-    <p className="text-sm leading-relaxed max-w-xl mx-auto" style={{ color: theme.ink + 'AA' }}>
-    {t('picks_subtitle', 'ის პროდუქტები რომელიც პირადად ვცადე და ვრეკომენდირებ — ნამდვილ შედეგზე გადამოწმებული')}
-    </p>
-    </div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-    {repPicks.map(p => (
-    <div key={p.row || p.id}
-    className="rounded-2xl overflow-hidden cursor-pointer transition hover:scale-[1.02]"
-    style={{ background: theme.ivory, border: `1px solid ${theme.gold}33`, boxShadow: '0 8px 30px -12px rgba(0,0,0,0.15)' }}
-    onClick={() => setPickModalProduct(p)}>
-    {p.image && (
-    <div className="aspect-[5/4] overflow-hidden flex items-center justify-center p-8 sm:p-12" style={{ background: theme.cream }}>
-    <img src={p.image} alt={p.name}
-    className="max-w-[75%] max-h-[85%] object-contain transition duration-500 hover:scale-105"
-    style={{ filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.12))' }} />
-    </div>
-    )}
-    <div className="p-5">
-    <p className="font-display text-lg mb-1 leading-tight" style={{ color: theme.ink }}>
-    {p.name}
-    </p>
-    <p className="text-sm mb-3" style={{ color: theme.wine }}>
-    {p.price} ₾
-    </p>
-    {p.note && (
-    <div className="rounded-lg p-3 mb-3" style={{ background: theme.gold + '11', borderLeft: `3px solid ${theme.gold}` }}>
-    <p className="text-xs italic leading-relaxed" style={{ color: theme.ink + 'CC' }}>
-    "{p.note}"
-    <span className="block mt-1 not-italic text-[10px]" style={{ color: theme.gold }}>
-    — {rep.name ? rep.name.split(' ')[0] : t('picks_author_fallback', 'რეპი')}
-    </span>
-    </p>
-    </div>
-    )}
-    <button className="text-xs tracking-wider uppercase flex items-center gap-2"
-    style={{ color: theme.wine }}>
-    {t('picks_button_view', 'დაწვრილებით')} <Ic name="arrow-right" className="w-3 h-3" />
-    </button>
-    </div>
-    </div>
-    ))}
-    </div>
-    </div>
-    </section>
-    )}
-    {}
     <section id="fm-contact" className="px-5 py-10 sm:py-12" style={{ background: theme.ivory }}>
     <div className="max-w-xl mx-auto">
     <div className="text-center mb-10">
@@ -7686,7 +7685,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     )}
     {}
     <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-    className={`fixed bottom-[11rem] left-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+    className={`fixed bottom-[16rem] left-5 z-30 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
     style={{
     background: theme.cream,
     color: theme.ink,
@@ -9838,7 +9837,7 @@ function AiAssistant({ rep, repCode, dynamicProducts = [], cart, labels = {}, on
       {/* მცურავი ღილაკი — ცენტრ-მარცხნივ, კონსულტაციის ღილაკის ზემოთ */}
       {!open && (
         <button onClick={() => setOpen(true)}
-          className="fixed bottom-[6.5rem] left-5 z-40 flex items-center gap-2 pl-2 pr-4 py-2 rounded-full transition hover:scale-105 active:scale-95 shadow-2xl"
+          className="fixed bottom-[12rem] left-5 z-40 flex items-center gap-2 pl-2 pr-4 py-2 rounded-full transition hover:scale-105 active:scale-95 shadow-2xl"
           style={{ background: `linear-gradient(135deg, ${theme.wine}, ${theme.rose})`, color: theme.cream }}
           aria-label={L('ai_button_label', 'AI ასისტენტი')}>
           {rep && rep.photo
@@ -10147,7 +10146,7 @@ document.addEventListener('DOMContentLoaded', function() {
   ];
   function present(){ return NAV.some(function(n){ return document.getElementById(n.id); }); }
   var wrap=document.createElement('div');
-  wrap.style.cssText='position:fixed;left:14px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:9998;display:none;flex-direction:column;gap:10px;align-items:flex-start';
+  wrap.style.cssText='position:fixed;left:14px;bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:9998;display:none;flex-direction:column;gap:10px;align-items:flex-start';
   var top=document.createElement('button');
   top.innerHTML='↑'; top.title='ზევით';
   top.style.cssText='width:44px;height:44px;border:none;border-radius:50%;cursor:pointer;background:#fff;color:#E8536B;box-shadow:0 6px 18px rgba(0,0,0,.18);font-size:20px;font-weight:700;display:none';
