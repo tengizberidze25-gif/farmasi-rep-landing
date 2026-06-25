@@ -38,7 +38,7 @@ export default function handler(req, res) {
   const shareUrl = `https://${host}${req.url || ''}`;
 
   // ადამიანი გადადის საჯარო ფეიჯზე ?play=1-ით — ვიდეო თვითონ გაიხსნება
-  const playUrl = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}play=1`;
+  const playUrl = `${publicUrl}${publicUrl.includes('?') ? '&' : '?'}play=1${guid ? `&v=${guid}` : ''}`;
 
   // Bunny-ს სურათი და ფლეიერი (ვიდეო Bunny-ში public embed-ით უნდა იყოს)
   const thumb  = guid ? `https://${BUNNY_CDN}/${guid}/thumbnail.jpg` : `${SITE}/og-default.jpg`;
