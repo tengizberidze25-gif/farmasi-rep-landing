@@ -710,6 +710,10 @@ const GEO_TRANSLIT = {
   'შ':'sh','ჩ':'ch','ც':'ts','ძ':'dz','წ':'ts','ჭ':'ch','ხ':'kh',
   'ჯ':'j','ჰ':'h'
 };
+function isValidReferralLink(link) {
+  // უნდა იყოს ზუსტად: https://farmasi.ge/ka/signup/ + 6 ციფრი (არჩევითი ბოლო /)
+  return /^https:\/\/farmasi\.ge\/ka\/signup\/\d{6}\/?$/.test(String(link || '').trim());
+}
 function slugFromName(name, { includeSurname = true } = {}) {
   if (!name || typeof name !== 'string') return '';
   const cleaned = name.trim();
@@ -2822,7 +2826,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     if (!savedSnapshot.city || !savedSnapshot.city.trim()) missing.push('ქალაქი');
     if (!savedSnapshot.phone || !savedSnapshot.phone.trim()) missing.push('ტელეფონის ნომერი');
     if (!savedSnapshot.facebook || !savedSnapshot.facebook.trim()) missing.push('Facebook ლინკი');
-    if (!savedSnapshot.referralLink || !savedSnapshot.referralLink.trim()) missing.push('რეფერალური ლინკი');
+    if (!isValidReferralLink(savedSnapshot.referralLink)) missing.push('რეფერალური ლინკი');
     if (!savedSnapshot.personalId || String(savedSnapshot.personalId).trim().length !== 11) missing.push('პირადი ნომერი');
     return missing;
   })();
@@ -3330,7 +3334,7 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     if (!rep.city || !rep.city.trim()) missing.push(L('validation_city', 'ქალაქი'));
     if (!rep.phone || !rep.phone.trim()) missing.push(L('validation_phone', 'ტელეფონის ნომერი'));
     if (!rep.facebook || !rep.facebook.trim()) missing.push(L('validation_facebook', 'Facebook ლინკი'));
-    if (!rep.referralLink || !rep.referralLink.trim()) missing.push(L('validation_referral_link', 'რეფერალური ლინკი'));
+    if (!isValidReferralLink(rep.referralLink)) missing.push(L('validation_referral_link', 'რეფერალური ლინკი — https://farmasi.ge/ka/signup/XXXXXX (6 ციფრი)'));
     if ((rep.personalId || '').length !== 11) missing.push(L('validation_personal_id', 'პირადი ნომერი (11 ციფრი)'));
     if (missing.length > 0) {
     setMissingFieldsModal(missing);
@@ -4382,7 +4386,12 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     <Input icon="link" label={L('profile_referral_link_label', 'რეფერალური ლინკი')}
     value={rep.referralLink || ''} onChange={upd('referralLink')}
     placeholder="https://farmasi.ge/ka/signup/549244"
-    required hasError={validationAttempted && !(rep.referralLink || '').trim()} />
+    required hasError={validationAttempted && !isValidReferralLink(rep.referralLink)} />
+    {(rep.referralLink || '').trim() && !isValidReferralLink(rep.referralLink) && (
+    <p className="text-xs mt-2 leading-relaxed font-medium" style={{ color: '#DC2626' }}>
+    {L('referral_invalid_error', 'ლინკი არასწორია — უნდა იყოს https://farmasi.ge/ka/signup/ და ბოლოს 6 ციფრი (მაგ: https://farmasi.ge/ka/signup/549244)')}
+    </p>
+    )}
     </Card>
     {}
     <Card>
@@ -6431,20 +6440,11 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [catalogOpen, setCatalogOpen] = useState(!!initialCatalog); 
   const [catalogSearch, setCatalogSearch] = useState(''); // AI-დან გადმოცემული საწყისი ძებნა
   const [videoToPlay, setVideoToPlay] = useState(null); 
-  // Auto-open the shared video when arriving via a share link.
-  //   ?v=<bunnyGuid>  → open that EXACT shared video (from /api/share)
-  //   ?play=1 (no v)  → fall back to the rep's main video (legacy)
-  const _sharedVideoOpenedRef = useRef(false);
+  // Auto-open the video when arriving via a share link with ?play=1
   useEffect(() => {
-    if (_sharedVideoOpenedRef.current) return;
     try {
       const params = new URLSearchParams(window.location.search);
-      const sharedGuid = (params.get('v') || '').replace(/[^a-zA-Z0-9-]/g, '');
-      if (sharedGuid) {
-        _sharedVideoOpenedRef.current = true;
-        setVideoToPlay({ url: `https://iframe.mediadelivery.net/embed/674864/${sharedGuid}` });
-      } else if (params.get('play') === '1' && rep && rep.videoUrl && parseVideoUrl(rep.videoUrl)) {
-        _sharedVideoOpenedRef.current = true;
+      if (params.get('play') === '1' && rep && rep.videoUrl && parseVideoUrl(rep.videoUrl)) {
         setVideoToPlay({ url: rep.videoUrl });
       }
     } catch (e) {}
