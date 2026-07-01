@@ -2062,7 +2062,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     setLoading(true);
     setErr('');
     try {
-    const res = await api({ action: 'verify_otp', phone: phone, otp: otpCode });
+    const res = await api({ action: 'verify_otp', pid: personalId, otp: otpCode });
     if (res.ok && res.token) {
     const pid = res.pid;
     localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
@@ -2118,50 +2118,22 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     <span>{L('welcome_step_1_label', 'ნაბიჯი 01')}</span>
     <div className="flex-1 h-px" style={{ background: `${theme.gold}33` }} />
     </div>
-    <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_phone_title', 'შესვლა ტელეფონის ნომრით')}</h2>
-    <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_phone_label', 'ტელეფონის ნომერი')}</label>
-    <div className="flex gap-2">
-    <select
-    value={countryCode}
-    onChange={(e) => { setCountryCode(e.target.value); setErr(''); }}
-    className="cursor-pointer outline-none transition-all focus:scale-[1.02]"
-    style={{
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    MozAppearance: 'none',
-    background: `${theme.cream} url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23B8860B' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 0.7rem center`,
-    border: `1.5px solid ${theme.gold}55`,
-    color: theme.ink,
-    minWidth: '108px',
-    maxWidth: '108px',
-    padding: '14px 28px 14px 12px',
-    borderRadius: '12px',
-    fontSize: '14px',
-    fontWeight: '500',
-    letterSpacing: '0.02em',
-    boxShadow: `0 1px 2px ${theme.gold}11, inset 0 1px 0 rgba(255,255,255,0.6)`,
-    }}
-    onFocus={(e) => e.target.style.borderColor = theme.wine}
-    onBlur={(e) => e.target.style.borderColor = `${theme.gold}55`}>
-    {COUNTRIES.map(c => (
-    <option key={c.code} value={c.code}>{c.flag} +{c.code}  ·  {c.name}</option>
-    ))}
-    </select>
-    <div className="relative flex-1">
-    <input type="tel" inputMode="numeric" value={phone}
-    onChange={(e) => { setPhone(e.target.value); setErr(''); }}
-    placeholder={countryCode === '995' ? '599 12 34 56' : '555 123 4567'}
-    className="w-full px-4 py-3.5 rounded-xl outline-none text-sm"
+    <h2 className="font-display text-2xl mb-6 mt-3" style={{ color: theme.ink }}>{L('welcome_pid_title', 'შესვლა პირადი ნომრით')}</h2>
+    <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: theme.ink + 'AA' }}>{L('welcome_pid_label', 'პირადი ნომერი')}</label>
+    <div className="relative">
+    <input type="text" inputMode="numeric" value={personalId}
+    onChange={(e) => { setPersonalId(e.target.value); setErr(''); }}
+    placeholder="01001234567"
+    className="w-full px-4 py-3.5 rounded-xl outline-none text-base font-mono tracking-wide"
     style={{ background: theme.cream, border: `1.5px solid ${err ? theme.rose : theme.gold + '44'}`, color: theme.ink }}
     onKeyDown={(e) => e.key === 'Enter' && handleRequestOtp()} />
-    <Ic name="lock" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2" style={{ color: theme.gold }} />
-    </div>
+    <Ic name="id-card" className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2" style={{ color: theme.gold }} />
     </div>
     {err && <p className="text-xs mt-2" style={{ color: theme.rose }}>{err}</p>}
     <p className="text-xs mt-3 leading-relaxed" style={{ color: theme.ink + '99' }}>
-    {L('welcome_phone_hint', '💡 ნომერზე გამოგეგზავნება SMS კოდი')}
+    {L('welcome_pid_hint', '💡 პირად ნომერზე მიბმულ ტელეფონზე გამოგეგზავნება SMS კოდი')}
     </p>
-    <button onClick={handleRequestOtp} disabled={loading || !phone.trim()}
+    <button onClick={handleRequestOtp} disabled={loading || !personalId.trim()}
     className="w-full mt-6 py-3.5 rounded-xl font-medium text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50"
     style={{ background: theme.ink, color: theme.cream }}>
     {loading ? L('welcome_button_loading', 'იგზავნება...') : <>{L('welcome_button_continue', 'გაგრძელება')} <Ic name="arrow-right" className="w-4 h-4" /></>}
@@ -2210,48 +2182,31 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
 }
 function LoginScreen({ onLoginSuccess, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('995'); 
+  const [personalId, setPersonalId] = useState(''); 
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [phoneMask, setPhoneMask] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const handleRequestOtp = async () => {
-    let localDigits = phone.replace(/[^\d]/g, '');
-    while (localDigits.startsWith('0') && localDigits.length > 1) {
-    localDigits = localDigits.substring(1);
-    }
-    if (localDigits.startsWith(countryCode)) {
-    localDigits = localDigits.substring(countryCode.length);
-    }
-    let phoneToSend;
-    if (countryCode === '995') {
-    if (!/^5\d{8}$/.test(localDigits)) {
-    setError(L('login_phone_format_error_ge', 'საქართველოს ნომერი: 9 ციფრი, იწყება 5-ით (მაგ: 599123456)'));
-    return;
-    }
-    phoneToSend = localDigits;
-    } else {
-    if (localDigits.length < 6 || localDigits.length > 13) {
-    setError(L('login_phone_format_error_intl', 'ნომერი არასწორი ფორმატია არჩეული ქვეყნისთვის'));
-    return;
-    }
-    phoneToSend = countryCode + localDigits;
+    const pidInput = personalId.trim().replace(/[\s\-]/g, '');
+    if (!pidInput) {
+      setErr(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
+      return;
     }
     setLoading(true);
-    setError('');
+    setErr('');
     try {
-    const response = await api({ action: 'request_otp', phone: phoneToSend });
-    if (response.ok) {
-    setPhone(phoneToSend);
-    setPhoneMask(response.phoneMask || '****' + phoneToSend.slice(-4));
+    const res = await api({ action: 'request_otp', pid: pidInput });
+    if (res.ok) {
+    setPersonalId(pidInput);
+    setPhoneMask(res.phoneMask || '****');
     setStep('otp');
     } else {
-    setError(response.error || L('login_pid_send_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+    setErr(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
     }
-    } catch (err) {
-    setError('Error: ' + err.message);
+    } catch (e) {
+    setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
     }
     setLoading(false);
   };
