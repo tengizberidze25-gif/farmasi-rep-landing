@@ -2017,7 +2017,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
   const handleRequestOtp = async () => {
     const pidInput = personalId.trim().replace(/[\s\-]/g, '');
     if (!pidInput) {
-      setError(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
+      setErr(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
       return;
     }
     setLoading(true);
@@ -2043,18 +2043,22 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     return;
     }
     setLoading(true);
-    setError('');
+    setErr('');
     try {
-    const res = await api({ action: 'request_otp', pid: pidInput });
-    if (res.ok) {
-    setPersonalId(pidInput);
-    setPhoneMask(res.phoneMask || '****');
-    setStep('otp');
+    const res = await api({ action: 'verify_otp', pid: personalId, otp: otpCode });
+    if (res.ok && res.token) {
+    const pid = res.pid;
+    localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
+    localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    localStorage.setItem('farmasi_current_pid', pid);
+    localStorage.setItem('farmasi_last_pid', pid);
+    if (res.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(res.rep));
+    onAuthSuccess(pid, res.token, res.rep);
     } else {
-    setError(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+    setErr(res.error || L('welcome_otp_invalid', 'არასწორი კოდი'));
     }
     } catch (e) {
-    setError(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
+    setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
     }
     setLoading(false);
   };
