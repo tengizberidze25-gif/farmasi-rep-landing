@@ -2062,9 +2062,12 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     }
     setLoading(false);
   };
- // Warm-up: გვერდის გახსნისთანავე endpoint-ს "ვაღვიძებთ" (cold start-ის შემცირება)
+ // Warm-up: endpoint-ს ვინახავთ "თბილად" — ერთხელ მაშინვე, მერე ყოველ 60 წამში
   useEffect(() => {
-    try { api({ action: 'ping' }); } catch (e) {}
+    const ping = () => { try { api({ action: 'ping' }); } catch (e) {} };
+    ping();
+    const id = setInterval(ping, 60000);
+    return () => clearInterval(id);
   }, []);
   // (iOS Safari handles this natively via autocomplete="one-time-code" on input)
   useEffect(() => {
