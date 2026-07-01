@@ -2008,45 +2008,54 @@ const COUNTRIES = [
 ];
 function Login({ onAuthSuccess, initialError, labels = {} }) {
   const L = (key, fallback) => labels[key] || fallback;
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('995'); 
+  const [personalId, setPersonalId] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [phoneMask, setPhoneMask] = useState('');
   const [err, setErr] = useState(initialError || '');
   const [loading, setLoading] = useState(false);
   const handleRequestOtp = async () => {
-    let localDigits = phone.replace(/[^\d]/g, '');
-    while (localDigits.startsWith('0') && localDigits.length > 1) {
-    localDigits = localDigits.substring(1);
-    }
-    if (localDigits.startsWith(countryCode)) {
-    localDigits = localDigits.substring(countryCode.length);
-    }
-    let phoneToSend;
-    if (countryCode === '995') {
-    if (!/^5\d{8}$/.test(localDigits)) {
-    setErr(L('login_phone_format_error_ge', 'საქართველოს ნომერი: 9 ციფრი, იწყება 5-ით (მაგ: 599123456)'));
-    return;
-    }
-    phoneToSend = localDigits;
-    } else {
-    if (localDigits.length < 6 || localDigits.length > 13) {
-    setErr(L('login_phone_format_error_intl', 'ნომერი არასწორი ფორმატია არჩეული ქვეყნისთვის'));
-    return;
-    }
-    phoneToSend = countryCode + localDigits;
+    const pidInput = personalId.trim().replace(/[\s\-]/g, '');
+    if (!pidInput) {
+      setErr(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
+      return;
     }
     setLoading(true);
     setErr('');
     try {
-    const res = await api({ action: 'request_otp', phone: phoneToSend });
+    const res = await api({ action: 'request_otp', pid: pidInput });
     if (res.ok) {
-    setPhone(phoneToSend);
-    setPhoneMask(res.phoneMask || '****' + phoneToSend.slice(-4));
+    setPersonalId(pidInput);
+    setPhoneMask(res.phoneMask || '****');
     setStep('otp');
     } else {
     setErr(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+    }
+    } catch (e) {
+    setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
+    }
+    setLoading(false);
+  };
+  const handleVerifyOtp = async (codeOverride) => {
+    const otpCode = codeOverride || otp;
+    if (!otpCode || otpCode.length !== 6) {
+    setErr(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
+    return;
+    }
+    setLoading(true);
+    setErr('');
+    try {
+    const res = await api({ action: 'verify_otp', pid: personalId, otp: otpCode });
+    if (res.ok && res.token) {
+    const pid = res.pid;
+    localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
+    localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    localStorage.setItem('farmasi_current_pid', pid);
+    localStorage.setItem('farmasi_last_pid', pid);
+    if (res.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(res.rep));
+    onAuthSuccess(pid, res.token, res.rep);
+    } else {
+    setErr(res.error || L('welcome_otp_invalid', 'არასწორი კოდი'));
     }
     } catch (e) {
     setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
