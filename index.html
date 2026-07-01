@@ -2204,28 +2204,24 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     return () => ac.abort();
   }, [step]);
   const handleVerifyOtp = async (codeOverride) => {
-    const codeToVerify = codeOverride || otp;
-    if (!codeToVerify || codeToVerify.length !== 6) {
-    setError(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
+    const otpCode = codeOverride || otp;
+    if (!otpCode || otpCode.length !== 6) {
+    setErr(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
     return;
     }
     setLoading(true);
     setError('');
     try {
-    const response = await api({ action: 'verify_otp', pid: personalId, otp: codeToVerify });
-    if (response.ok && response.token) {
-    const pid = response.pid;
-    localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
-    localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
-    localStorage.setItem('farmasi_current_pid', pid);
-    localStorage.setItem('farmasi_last_pid', pid);
-    if (response.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(response.rep));
-    onLoginSuccess(pid, response.token, response.rep);
+    const res = await api({ action: 'request_otp', pid: pidInput });
+    if (res.ok) {
+    setPersonalId(pidInput);
+    setPhoneMask(res.phoneMask || '****');
+    setStep('otp');
     } else {
-    setError(response.error || L('login_otp_invalid', 'არასწორი კოდი'));
+    setError(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
     }
-    } catch (err) {
-    setError('Error: ' + err.message);
+    } catch (e) {
+    setError(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
     }
     setLoading(false);
   };
