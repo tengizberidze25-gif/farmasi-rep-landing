@@ -2062,32 +2062,6 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     }
     setLoading(false);
   };
-  const handleVerifyOtp = async (codeOverride) => {
-    const otpCode = codeOverride || otp;
-    if (!otpCode || otpCode.length !== 6) {
-    setErr(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
-    return;
-    }
-    setLoading(true);
-    setErr('');
-    try {
-    const res = await api({ action: 'verify_otp', pid: personalId, otp: otpCode });
-    if (res.ok && res.token) {
-    const pid = res.pid;
-    localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
-    localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
-    localStorage.setItem('farmasi_current_pid', pid);
-    localStorage.setItem('farmasi_last_pid', pid);
-    if (res.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(res.rep));
-    onAuthSuccess(pid, res.token, res.rep);
-    } else {
-    setErr(res.error || L('welcome_otp_invalid', 'არასწორი კოდი'));
-    }
-    } catch (e) {
-    setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
-    }
-    setLoading(false);
-  };
   // (iOS Safari handles this natively via autocomplete="one-time-code" on input)
   useEffect(() => {
     if (step !== 'otp') return;
