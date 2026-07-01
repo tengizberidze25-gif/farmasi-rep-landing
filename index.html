@@ -2017,7 +2017,7 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
   const handleRequestOtp = async () => {
     const pidInput = personalId.trim().replace(/[\s\-]/g, '');
     if (!pidInput) {
-      setErr(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
+      setError(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
       return;
     }
     setLoading(true);
@@ -2043,22 +2043,18 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     return;
     }
     setLoading(true);
-    setErr('');
+    setError('');
     try {
-    const res = await api({ action: 'verify_otp', pid: personalId, otp: otpCode });
-    if (res.ok && res.token) {
-    const pid = res.pid;
-    localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
-    localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
-    localStorage.setItem('farmasi_current_pid', pid);
-    localStorage.setItem('farmasi_last_pid', pid);
-    if (res.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(res.rep));
-    onAuthSuccess(pid, res.token, res.rep);
+    const res = await api({ action: 'request_otp', pid: pidInput });
+    if (res.ok) {
+    setPersonalId(pidInput);
+    setPhoneMask(res.phoneMask || '****');
+    setStep('otp');
     } else {
-    setErr(res.error || L('welcome_otp_invalid', 'არასწორი კოდი'));
+    setError(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
     }
     } catch (e) {
-    setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
+    setError(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
     }
     setLoading(false);
   };
@@ -2174,7 +2170,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const handleRequestOtp = async () => {
     const pidInput = personalId.trim().replace(/[\s\-]/g, '');
     if (!pidInput) {
-      setErr(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
+      setError(L('welcome_pid_required', 'შეიყვანე პირადი ნომერი'));
       return;
     }
     setLoading(true);
@@ -2216,7 +2212,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     setLoading(true);
     setError('');
     try {
-    const response = await api({ action: 'verify_otp', phone: phone, otp: codeToVerify });
+    const response = await api({ action: 'verify_otp', pid: personalId, otp: codeToVerify });
     if (response.ok && response.token) {
     const pid = response.pid;
     localStorage.setItem(`farmasi_otp_session_${pid}`, response.token);
@@ -2246,50 +2242,23 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     step === 'phone' ? (
     React.createElement('div', {},
     React.createElement('label', { className: 'block text-sm font-medium text-slate-700 mb-2' },
-    L('login_phone_label', 'ტელეფონის ნომერი')
-    ),
-    React.createElement('div', { className: 'flex gap-2' },
-    React.createElement('select', {
-    value: countryCode,
-    onChange: (e) => { setCountryCode(e.target.value); if (error) setError(''); },
-    disabled: loading,
-    className: 'cursor-pointer outline-none transition-all focus:scale-[1.02] disabled:bg-slate-100',
-    style: {
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    MozAppearance: 'none',
-    background: 'white url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23BE185D\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'/%3E%3C/svg%3E") no-repeat right 0.7rem center',
-    border: '1.5px solid rgb(203 213 225)',
-    minWidth: '108px',
-    maxWidth: '108px',
-    padding: '12px 28px 12px 12px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#0f172a',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-    }
-    },
-    COUNTRIES.map(c => 
-    React.createElement('option', { key: c.code, value: c.code }, c.flag + ' +' + c.code + '  ·  ' + c.name)
-    )
+    L('login_pid_label', 'პირადი ნომერი')
     ),
     React.createElement('input', {
-    type: 'tel',
+    type: 'text',
     inputMode: 'numeric',
-    value: phone,
-    onChange: (e) => { setPhone(e.target.value); if (error) setError(''); },
+    value: personalId,
+    onChange: (e) => { setPersonalId(e.target.value); if (error) setError(''); },
     onKeyPress: (e) => e.key === 'Enter' && handleRequestOtp(),
-    placeholder: countryCode === '995' ? '599 12 34 56' : '555 123 4567',
+    placeholder: '01001234567',
     disabled: loading,
     maxLength: '15',
-    className: 'flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100'
-    })
-    ),
+    className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none disabled:bg-slate-100 font-mono tracking-wide'
+    }),
     error && React.createElement('p', { className: 'text-red-500 text-sm mt-2' }, error),
     React.createElement('button', {
     onClick: () => handleRequestOtp(),
-    disabled: loading || !phone.trim(),
+    disabled: loading || !personalId.trim(),
     className: 'w-full mt-4 bg-pink-600 text-white py-3 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-slate-400 transition'
     },
     loading ? L('login_loading_send', 'იგზავნება...') : L('login_phone_button', 'გაგრძელება')
