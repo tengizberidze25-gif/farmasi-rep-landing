@@ -2062,6 +2062,10 @@ function Login({ onAuthSuccess, initialError, labels = {} }) {
     }
     setLoading(false);
   };
+ // Warm-up: გვერდის გახსნისთანავე endpoint-ს "ვაღვიძებთ" (cold start-ის შემცირება)
+  useEffect(() => {
+    try { api({ action: 'ping' }); } catch (e) {}
+  }, []);
   // (iOS Safari handles this natively via autocomplete="one-time-code" on input)
   useEffect(() => {
     if (step !== 'otp') return;
