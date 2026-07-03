@@ -13,6 +13,13 @@
 //   3. We replace og:image, og:title, og:description, twitter:* meta tags
 //   4. We return the modified HTML
 //
+// 🆕 catalog=1 support:
+//   When the URL includes ?catalog=1 (e.g. my.farmasi.ge/<slug>?catalog=1),
+//   this is a "share the digital catalog" link. Instead of the rep's own
+//   photo/bio, we inject the catalog cover image + catalog-specific
+//   title/description, so social previews show the catalog cover instead
+//   of the generic rep card.
+//
 // Cache: aggressive — page edits are rare, og:image is dynamic per-rep
 //        via /api/og (which has its own cache).
 // ════════════════════════════════════════════════════════════════════════════
@@ -25,6 +32,12 @@ const APPS_SCRIPT_URL =
 const DEFAULT_TITLE = 'FARMASI · წარმომადგენლის Portfolio';
 const DEFAULT_DESC =
   'აღმოაჩინე პროდუქტები, რომლებიც დაგეხმარება. გამიჭერი WhatsApp-ი — დაგეხმარები აირჩევა.';
+
+// 🆕 catalog share metadata
+const CATALOG_TITLE = 'FARMASI · ციფრული კატალოგი';
+const CATALOG_DESC =
+  'დაათვალიერე FARMASI-ის უახლესი კატალოგი და შეუკვეთე პროდუქტები პირდაპირ.';
+const CATALOG_IMAGE_PATH = '/catalog-cover.jpg'; // static file in /public
 
 // Apps Script returns JSONP-wrapped data: `cb({...})`. Strip the wrapper.
 async function fetchRep(action: string, params: Record<string, string>) {
@@ -63,12 +76,16 @@ export default async function handler(req: Request) {
     const url = new URL(req.url);
     const slug = (url.searchParams.get('slug') || '').trim();
     const pid = (url.searchParams.get('pid') || '').trim();
+    const isCatalogShare = url.searchParams.get('catalog') === '1'; // 🆕
     const origin = url.origin;
 
-    // Fetch index.html + rep data in parallel for speed
+    // Fetch index.html + rep data in parallel for speed.
+    // Skip the rep lookup entirely for catalog shares — we don't need it.
     const [htmlRes, rep] = await Promise.all([
       fetch(`${origin}/index.html`),
-      slug
+      isCatalogShare
+        ? Promise.resolve(null) // 🆕 no rep lookup needed for catalog card
+        : slug
         ? fetchRep('get_rep_by_slug', { slug })
         : pid
         ? fetchRep('get_rep', { pid })
@@ -91,15 +108,25 @@ export default async function handler(req: Request) {
     );
 
     // Per-rep OG image URL (passes slug/pid to /api/og, which handles caching)
-    let ogQuery = '';
-    if (slug) ogQuery = `?slug=${encodeURIComponent(slug)}`;
-    else if (pid) ogQuery = `?pid=${encodeURIComponent(pid)}`;
-    const ogImageUrl = `${origin}/api/og${ogQuery}`;
+    // 🆕 catalog shares use a static cover image instead.
+    let ogImageUrl: string;
+    if (isCatalogShare) {
+      ogImageUrl = `${origin}${CATALOG_IMAGE_PATH}`;
+    } else {
+      let ogQuery = '';
+      if (slug) ogQuery = `?slug=${encodeURIComponent(slug)}`;
+      else if (pid) ogQuery = `?pid=${encodeURIComponent(pid)}`;
+      ogImageUrl = `${origin}/api/og${ogQuery}`;
+    }
 
-    // Build per-rep title + description
+    // Build title + description.
+    // 🆕 catalog shares get fixed catalog copy; otherwise per-rep as before.
     let title = DEFAULT_TITLE;
     let desc = DEFAULT_DESC;
-    if (rep && (rep as any).name) {
+    if (isCatalogShare) {
+      title = CATALOG_TITLE;
+      desc = CATALOG_DESC;
+    } else if (rep && (rep as any).name) {
       const repName = String((rep as any).name);
       const repCity = String((rep as any).city || '');
       const repBio = String((rep as any).bio || '');
