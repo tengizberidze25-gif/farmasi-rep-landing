@@ -142,8 +142,24 @@ export default async function handler(req: Request) {
     const titleEsc = escapeHtml(title);
     const descEsc = escapeHtml(desc);
 
+    // 🆕 Build the canonical public-facing URL (the one people actually
+    // share — my.farmasi.ge/<slug>, not the internal /api/page?slug=...
+    // rewrite target). index.html has no og:url tag at all, so instead of
+    // replacing an existing tag we inject a new one after og:type.
+    // Facebook's debugger flags a missing og:url, and some scrapers use it
+    // to resolve/cache the image, so this is worth having regardless.
+    let publicPath = '/';
+    if (slug) publicPath = `/${encodeURIComponent(slug)}`;
+    else if (pid) publicPath = `/${encodeURIComponent(pid)}`;
+    const shareUrl = `${origin}${publicPath}${isCatalogShare ? '?catalog=1' : ''}`;
+    const shareUrlEsc = escapeHtml(shareUrl);
+
     // Replace meta tags — both Open Graph (FB/WhatsApp/Telegram) and Twitter Cards
     html = html
+      .replace(
+        /<meta property="og:type" content="[^"]*"\s*\/?>/i,
+        (m) => `${m}\n<meta property="og:url" content="${shareUrlEsc}" />`
+      )
       .replace(
         /<meta property="og:image" content="[^"]*"\s*\/?>/gi,
         `<meta property="og:image" content="${ogImageUrl}" />`
