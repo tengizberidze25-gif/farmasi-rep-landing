@@ -116,7 +116,14 @@ export default async function handler(req: Request) {
       let ogQuery = '';
       if (slug) ogQuery = `?slug=${encodeURIComponent(slug)}`;
       else if (pid) ogQuery = `?pid=${encodeURIComponent(pid)}`;
-      ogImageUrl = `${origin}/api/og${ogQuery}`;
+      // 🆕 cache-busting: Facebook/WhatsApp ინახავენ სურათს URL-ის მიხედვით —
+      // rep.updated_at-ის დამატებით, ფოტოს/slug-ის ცვლილებისას ავტომატურად
+      // ახალი URL გამოვა და ძველი ქეშირებული სურათი აღარ გამოჩნდება
+      const cacheVer = (rep as any)?.updated_at
+        ? String((rep as any).updated_at)
+        : (slug || pid || '1');
+      const sep = ogQuery ? '&' : '?';
+      ogImageUrl = `${origin}/api/og${ogQuery}${sep}v=${encodeURIComponent(cacheVer)}`;
     }
 
     // Build title + description.
