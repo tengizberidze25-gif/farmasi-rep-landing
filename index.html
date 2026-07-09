@@ -1637,7 +1637,7 @@ const [cartItems, setCartItems] = useState([]);
     setView('public');
     }} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
     {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} companyVideos={companyVideos} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} initialCatalog={urlParams.catalog} />}
-    {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
+    {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} isOwner={!!otpToken} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
     {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
     {view === 'rate' && <RatingPage orderId={urlParams.rate} labels={labels} />}
     {view === 'confirm' && <ConfirmDeliveryPage orderId={urlParams.confirm} labels={labels} />}
@@ -8540,7 +8540,7 @@ function ProductCard({ p, onClick, featured }) {
     </button>
   );
 }
-function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, cart }) {
+function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, cart, isOwner = false }) {
   try {
     if (!product || !product.id) {
     return (
@@ -8735,11 +8735,13 @@ function ProductPage({ rep, repCode, product, onBack, onProduct, labels = {}, ca
     <SocialIcon name="whatsapp" className="w-4 h-4" style={{ color: '#25D366' }} /> ვკითხო
     </button>
     )}
+    {isOwner && (
     <button onClick={generateSocialPosts}
     className="py-4 px-6 rounded-2xl flex items-center justify-center gap-2 font-medium text-sm tracking-wider uppercase transition hover:scale-[1.02]"
     style={{ background: theme.ivory, color: theme.wine, border: `1.5px solid ${theme.gold}66` }}>
     <Ic name="sparkles" className="w-4 h-4" style={{ color: theme.gold }} /> დამიგენერირე პოსტი
     </button>
+    )}
     </div>
     {}
     <div className="flex items-center gap-4 text-xs flex-wrap" style={{ color: theme.ink + '88' }}>
