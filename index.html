@@ -6289,7 +6289,21 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
   const shareSocialVariant = async (variant) => {
     const fullText = `${variant.text}\n\n${(variant.hashtags || []).join(' ')}`;
     if (navigator.share) {
-    try { await navigator.share({ text: fullText, title: product.name }); } catch (err) {}
+    try {
+    const shareData = { text: fullText, title: product.name };
+    if (product.image && navigator.canShare) {
+    try {
+    const imgBlob = await fetch(product.image).then(r => r.blob());
+    const imgFile = new File([imgBlob], 'product.jpg', { type: imgBlob.type || 'image/jpeg' });
+    if (navigator.canShare({ files: [imgFile] })) {
+    shareData.files = [imgFile];
+    }
+    } catch (imgErr) {
+    // სურათის ჩატვირთვა ვერ მოხერხდა (მაგ. CORS) — გავაგრძელოთ მხოლოდ ტექსტით
+    }
+    }
+    await navigator.share(shareData);
+    } catch (err) {}
     } else {
     try { await navigator.clipboard.writeText(fullText); alert('ტექსტი დაკოპირდა!'); } catch (err) {}
     }
@@ -6328,7 +6342,7 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     )}
     </div>
     {}
-    <div className="p-6 overflow-y-auto flex-1">
+    <div className="p-6 overflow-y-auto flex-1 min-h-0">
     {product.cat && (
     <p className="text-[10px] tracking-[0.3em] uppercase mb-2" style={{ color: theme.gold }}>
     {product.cat}
