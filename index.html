@@ -894,7 +894,7 @@ async function downloadPersonalCard({ name, city, slug, labels = {} }) {
   document.body.removeChild(a);
 }
 const API_URL = 'https://script.google.com/macros/s/AKfycbzHEfgXXyRUpt7ZHG3ZjxaH_4kr1pR7AaTuzIH9h15GJk5xwwETwzvQT6Ce-d-4Kf5p/exec';
-function api(params) {
+function api(params, timeoutMs = 30000) {
   return new Promise((resolve, reject) => {
     const callbackName = 'jsonp_' + Date.now() + '_' + Math.random().toString(36).slice(2);
     const script = document.createElement('script');
@@ -902,7 +902,7 @@ function api(params) {
     delete window[callbackName];
     script.remove();
     reject(new Error('Request timed out'));
-    }, 30000);
+    }, timeoutMs);
     window[callbackName] = (data) => {
     clearTimeout(timeout);
     delete window[callbackName];
@@ -6293,7 +6293,7 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     setSocialError(null);
     setSocialVariants(null);
     try {
-    const data = await api({ action: 'generate_social_post', product_id: product.id, pid: repCode });
+    const data = await api({ action: 'generate_social_post', product_id: product.id, pid: repCode }, 45000);
     if (data.ok) {
     setSocialVariants(data.variants);
     } else {
