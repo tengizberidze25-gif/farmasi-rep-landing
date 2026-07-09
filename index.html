@@ -1636,7 +1636,7 @@ const [cartItems, setCartItems] = useState([]);
     } catch (_) {}
     setView('public');
     }} onLogout={handleLogout} problems={problems} labels={labels} savedSnapshot={savedSnapshot} setSavedSnapshot={setSavedSnapshot} isProfileSaved={isProfileSaved} />}
-    {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} companyVideos={companyVideos} labels={labels} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} initialCatalog={urlParams.catalog} />}
+    {view === 'public' && <PublicPage rep={rep} repCode={repCode} onProduct={openProduct} initialProblem={selectedProblem} onClearProblem={() => setSelectedProblem(null)} problems={problems} dynamicProducts={dynamicProducts} companyVideos={companyVideos} labels={labels} isOwner={!!otpToken} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} initialCatalog={urlParams.catalog} />}
     {view === 'product' && <ProductPage rep={rep} repCode={repCode} product={selectedProduct} onBack={backToPublic} onProduct={openProduct} labels={labels} isOwner={!!otpToken} cart={{ items: cartItems, count: cartCount, total: cartTotal, open: cartOpen, setOpen: setCartOpen, addItem: cartAddItem, updateQty: cartUpdateQty, remove: cartRemove, clear: cartClear }} />}
     {view === 'order' && <OrderInvoicePage orderId={urlParams.order} labels={labels} />}
     {view === 'rate' && <RatingPage orderId={urlParams.rate} labels={labels} />}
@@ -5673,7 +5673,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     </>
   );
 }
-function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep, initialSearch = '' }) {
+function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep, initialSearch = '', repCode = '', isOwner = false }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [catalogTab, setCatalogTab] = useState('flip'); // 'flip' | 'shop'
   const [flipCode, setFlipCode] = useState(''); 
@@ -6087,6 +6087,8 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     onClose={() => setQuickview(null)}
     onAdd={handleQuickviewAdd}
     labels={labels}
+    repCode={repCode}
+    isOwner={isOwner}
     />
     )}
     </>
@@ -6260,9 +6262,38 @@ function CatalogProductCard({ product, onCardClick, onQuickAdd, pulse, labels = 
     </div>
   );
 }
-function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} }) {
+function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, repCode = '', isOwner = false }) {
   const L = (key, fallback) => labels[key] || fallback;
   const subtotal = Math.round((Number(product.price) || 0) * qty * 100) / 100;
+  const [socialOpen, setSocialOpen] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [socialVariants, setSocialVariants] = useState(null);
+  const [socialError, setSocialError] = useState(null);
+  const generateSocialPosts = async () => {
+    setSocialOpen(true);
+    setSocialLoading(true);
+    setSocialError(null);
+    setSocialVariants(null);
+    try {
+    const data = await api({ action: 'generate_social_post', product_id: product.id, pid: repCode });
+    if (data.ok) {
+    setSocialVariants(data.variants);
+    } else {
+    setSocialError(data.error || 'ვერ მოხერხდა გენერაცია');
+    }
+    } catch (err) {
+    setSocialError('კავშირის შეცდომა, სცადე ხელახლა');
+    }
+    setSocialLoading(false);
+  };
+  const shareSocialVariant = async (variant) => {
+    const fullText = `${variant.text}\n\n${(variant.hashtags || []).join(' ')}`;
+    if (navigator.share) {
+    try { await navigator.share({ text: fullText, title: product.name }); } catch (err) {}
+    } else {
+    try { await navigator.clipboard.writeText(fullText); alert('ტექსტი დაკოპირდა!'); } catch (err) {}
+    }
+  };
   return (
     <>
     {}
@@ -6341,13 +6372,79 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {} })
     <Ic name="shopping-bag" className="w-4 h-4" />
     {L('catalog_quickview_add_to_cart', 'კალათაში დამატება')} · {subtotal} ₾
     </button>
+    {isOwner && (
+    <button onClick={generateSocialPosts}
+    className="w-full mt-3 py-3 rounded-full font-medium text-xs tracking-widest uppercase transition hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+    style={{ background: theme.ivory, color: theme.wine, border: `1.5px solid ${theme.gold}66` }}>
+    <Ic name="sparkles" className="w-3.5 h-3.5" style={{ color: theme.gold }} />
+    დამიგენერირე პოსტი
+    </button>
+    )}
     </div>
+    </div>
+    </div>
+    {socialOpen && (
+    <>
+    <div onClick={() => setSocialOpen(false)}
+    className="fixed inset-0 z-[95] anim-fadeup"
+    style={{ background: 'rgba(15,15,15,0.65)', backdropFilter: 'blur(6px)' }} />
+    <div className="fixed inset-0 z-[96] flex items-center justify-center p-4 pointer-events-none">
+    <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-6 pointer-events-auto anim-fadeup"
+    style={{ background: theme.cream, boxShadow: '0 30px 80px -10px rgba(15,15,15,0.5)' }}>
+    <button onClick={() => setSocialOpen(false)} aria-label="დახურვა"
+    className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition hover:scale-110"
+    style={{ background: theme.ink + '11', color: theme.ink }}>
+    <Ic name="x" className="w-4 h-4" />
+    </button>
+    <h3 className="font-display text-xl mb-1" style={{ color: theme.ink }}>
+    <Ic name="sparkles" className="w-5 h-5 inline-block mr-1.5 -mt-1" style={{ color: theme.gold }} />
+    სოციალური პოსტი
+    </h3>
+    <p className="text-xs mb-6" style={{ color: theme.ink + '88' }}>{product.name}</p>
+    {socialLoading && (
+    <div className="flex flex-col items-center justify-center py-12 gap-3">
+    <div className="w-8 h-8 rounded-full animate-spin"
+    style={{ border: `3px solid ${theme.gold}33`, borderTopColor: theme.wine }} />
+    <p className="text-sm" style={{ color: theme.ink + '77' }}>იქმნება ვარიანტები...</p>
+    </div>
+    )}
+    {socialError && !socialLoading && (
+    <div className="text-center py-8">
+    <p className="text-sm mb-4" style={{ color: theme.wine }}>{socialError}</p>
+    <button onClick={generateSocialPosts}
+    className="py-2.5 px-6 rounded-full text-xs font-medium tracking-widest uppercase"
+    style={{ background: theme.wine, color: theme.cream }}>
+    ხელახლა ცდა
+    </button>
+    </div>
+    )}
+    {socialVariants && !socialLoading && (
+    <div className="flex flex-col gap-4">
+    {socialVariants.map((v, i) => (
+    <div key={i} className="rounded-2xl p-4"
+    style={{ background: theme.ivory, border: `1px solid ${theme.gold}22` }}>
+    <p className="text-[10px] tracking-[0.15em] uppercase mb-2" style={{ color: theme.gold }}>{v.label}</p>
+    <p className="text-sm leading-relaxed mb-2" style={{ color: theme.ink }}>{v.text}</p>
+    {v.hashtags && v.hashtags.length > 0 && (
+    <p className="text-xs mb-3" style={{ color: theme.wine + 'AA' }}>{v.hashtags.join(' ')}</p>
+    )}
+    <button onClick={() => shareSocialVariant(v)}
+    className="w-full py-2.5 rounded-full flex items-center justify-center gap-2 text-xs font-medium tracking-widest uppercase transition hover:scale-[1.02]"
+    style={{ background: theme.ink, color: theme.cream }}>
+    <Ic name="share-2" className="w-3.5 h-3.5" /> გააზიარე
+    </button>
+    </div>
+    ))}
+    </div>
+    )}
     </div>
     </div>
     </>
+    )}
+    </>
   );
 }
-function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], companyVideos = [], labels = {}, cart, initialCatalog = false }) {
+function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, problems, dynamicProducts = [], companyVideos = [], labels = {}, cart, initialCatalog = false, isOwner = false }) {
   const t = (key, fallback = '') => (labels && labels[key]) || fallback;
   const [chatOpen, setChatOpen] = useState(false);
   const [photoZoom, setPhotoZoom] = useState(false);
@@ -7736,6 +7833,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     cart={cart}
     labels={labels}
     rep={rep}
+    repCode={repCode}
+    isOwner={isOwner}
     onContactRep={() => {
     setCatalogOpen(false);
     setTimeout(() => setChatOpen(true), 320);
