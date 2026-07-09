@@ -6269,6 +6269,24 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
   const [socialLoading, setSocialLoading] = useState(false);
   const [socialVariants, setSocialVariants] = useState(null);
   const [socialError, setSocialError] = useState(null);
+  const [preloadedImgFile, setPreloadedImgFile] = useState(null);
+  // ფოტოს წინასწარ ჩატვირთვა მოდალის გახსნისთანავე — რომ share-ღილაკზე
+  // დაჭერისას navigator.share() დაუყოვნებლივ გამოიძახოს (iOS-ის user-gesture
+  // მოთხოვნის დასაცავად — await fetch-ის დაყოვნება ტეხავს ამ ქცევას).
+  useEffect(() => {
+    let cancelled = false;
+    if (product.image) {
+    fetch(product.image)
+    .then(r => r.blob())
+    .then(blob => {
+    if (cancelled) return;
+    const file = new File([blob], 'product.jpg', { type: blob.type || 'image/jpeg' });
+    setPreloadedImgFile(file);
+    })
+    .catch(() => {}); // CORS ან სხვა შეცდომა — გავაგრძელოთ ფოტოს გარეშე
+    }
+    return () => { cancelled = true; };
+  }, [product.image]);
   const generateSocialPosts = async () => {
     setSocialOpen(true);
     setSocialLoading(true);
@@ -6286,26 +6304,17 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     }
     setSocialLoading(false);
   };
-  const shareSocialVariant = async (variant) => {
+  const shareSocialVariant = (variant) => {
     const fullText = `${variant.text}\n\n${(variant.hashtags || []).join(' ')}`;
     if (navigator.share) {
-    try {
     const shareData = { text: fullText, title: product.name };
-    if (product.image && navigator.canShare) {
-    try {
-    const imgBlob = await fetch(product.image).then(r => r.blob());
-    const imgFile = new File([imgBlob], 'product.jpg', { type: imgBlob.type || 'image/jpeg' });
-    if (navigator.canShare({ files: [imgFile] })) {
-    shareData.files = [imgFile];
+    if (preloadedImgFile && navigator.canShare && navigator.canShare({ files: [preloadedImgFile] })) {
+    shareData.files = [preloadedImgFile];
     }
-    } catch (imgErr) {
-    // სურათის ჩატვირთვა ვერ მოხერხდა (მაგ. CORS) — გავაგრძელოთ მხოლოდ ტექსტით
-    }
-    }
-    await navigator.share(shareData);
-    } catch (err) {}
+    // არ ველოდებით (no await) — პირდაპირ გამოძახება user-gesture-ის დროს, iOS Safari-ს მოთხოვნით
+    navigator.share(shareData).catch(() => {}); // AbortError (მომხმარებელმა გააუქმა) — ნორმალურია
     } else {
-    try { await navigator.clipboard.writeText(fullText); alert('ტექსტი დაკოპირდა!'); } catch (err) {}
+    navigator.clipboard.writeText(fullText).then(() => alert('ტექსტი დაკოპირდა!')).catch(() => {});
     }
   };
   return (
@@ -6316,7 +6325,7 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     style={{ background: 'rgba(15,15,15,0.65)', backdropFilter: 'blur(6px)' }} />
     {}
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 pointer-events-none">
-    <div className="relative w-full max-w-md rounded-3xl overflow-hidden pointer-events-auto anim-fadeup max-h-[90vh] flex flex-col"
+    <div className="relative w-full max-w-md rounded-3xl overflow-hidden pointer-events-auto anim-fadeup max-h-[90dvh] flex flex-col"
     style={{ background: theme.cream, boxShadow: '0 30px 80px -10px rgba(15,15,15,0.5)' }}>
     {}
     <button onClick={onClose} aria-label={L('catalog_quickview_close_aria', 'დახურვა')}
@@ -6325,7 +6334,7 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     <Ic name="x" className="w-4 h-4" />
     </button>
     {}
-    <div className="relative aspect-square flex-shrink-0"
+    <div className="relative aspect-square max-h-[30vh] flex-shrink-0"
     style={{ background: `linear-gradient(135deg, ${theme.blush}, ${theme.ivory})` }}>
     {product.image ? (
     <img src={product.image} alt={product.name}
@@ -6356,11 +6365,13 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     {product.description}
     </p>
     )}
-    <p className="font-display text-3xl mb-5" style={{ color: theme.wine }}>
+    <p className="font-display text-3xl" style={{ color: theme.wine }}>
     {product.price} ₾
     </p>
+    </div>
     {}
-    <div className="flex items-center justify-between mb-5">
+    <div className="p-4 flex-shrink-0" style={{ borderTop: `1px solid ${theme.gold}22`, background: theme.cream }}>
+    <div className="flex items-center justify-between mb-3">
     <span className="text-xs tracking-widest uppercase" style={{ color: theme.ink + '88' }}>
     {L('catalog_quickview_qty', 'რაოდენობა')}
     </span>
@@ -6403,7 +6414,7 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     className="fixed inset-0 z-[95] anim-fadeup"
     style={{ background: 'rgba(15,15,15,0.65)', backdropFilter: 'blur(6px)' }} />
     <div className="fixed inset-0 z-[96] flex items-center justify-center p-4 pointer-events-none">
-    <div className="relative w-full max-w-md max-h-[85vh] overflow-y-auto rounded-3xl p-6 pointer-events-auto anim-fadeup"
+    <div className="relative w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-3xl p-6 pointer-events-auto anim-fadeup"
     style={{ background: theme.cream, boxShadow: '0 30px 80px -10px rgba(15,15,15,0.5)' }}>
     <button onClick={() => setSocialOpen(false)} aria-label="დახურვა"
     className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition hover:scale-110"
