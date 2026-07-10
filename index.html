@@ -6270,6 +6270,10 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
   const [socialVariants, setSocialVariants] = useState(null);
   const [socialError, setSocialError] = useState(null);
   const [preloadedImgFile, setPreloadedImgFile] = useState(null);
+ // Warm-up: მოდალის გახსნისთანავე endpoint-ს ვაღვიძებთ
+  useEffect(() => {
+    try { api({ action: 'ping' }); } catch (e) {}
+  }, []);
   // ფოტოს წინასწარ ჩატვირთვა მოდალის გახსნისთანავე — რომ share-ღილაკზე
   // დაჭერისას navigator.share() დაუყოვნებლივ გამოიძახოს (iOS-ის user-gesture
   // მოთხოვნის დასაცავად — await fetch-ის დაყოვნება ტეხავს ამ ქცევას).
