@@ -6461,19 +6461,12 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     {v.hashtags && v.hashtags.length > 0 && (
     <p className="text-xs mb-3" style={{ color: theme.wine + 'AA' }}>{v.hashtags.join(' ')}</p>
     )}
-    <div className="flex gap-2">
     <button onClick={() => copySocialVariant(v, i)}
-    className="flex-1 py-2.5 rounded-full flex items-center justify-center gap-2 text-xs font-medium tracking-widest uppercase transition hover:scale-[1.02]"
-    style={{ background: theme.ivory, color: theme.ink, border: `1.5px solid ${theme.gold}55` }}>
+    className="w-full py-2.5 rounded-full flex items-center justify-center gap-2 text-xs font-medium tracking-widest uppercase transition hover:scale-[1.02]"
+    style={{ background: copiedIndex === i ? theme.wine : theme.ink, color: theme.cream }}>
     <Ic name={copiedIndex === i ? 'check' : 'copy'} className="w-3.5 h-3.5" />
     {copiedIndex === i ? 'დაკოპირდა' : 'დააკოპირე'}
     </button>
-    <button onClick={() => shareSocialVariant(v)}
-    className="flex-1 py-2.5 rounded-full flex items-center justify-center gap-2 text-xs font-medium tracking-widest uppercase transition hover:scale-[1.02]"
-    style={{ background: theme.ink, color: theme.cream }}>
-    <Ic name="share-2" className="w-3.5 h-3.5" /> გააზიარე
-    </button>
-    </div>
     </div>
     ))}
     </div>
