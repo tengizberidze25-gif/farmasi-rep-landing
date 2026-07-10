@@ -6462,11 +6462,11 @@ function CatalogQuickview({ product, qty, setQty, onClose, onAdd, labels = {}, r
     <p className="text-xs mb-3" style={{ color: theme.wine + 'AA' }}>{v.hashtags.join(' ')}</p>
     )}
     <button onClick={() => copySocialVariant(v, i)}
-    className="w-full py-2.5 rounded-full flex items-center justify-center gap-2 text-xs font-medium tracking-widest uppercase transition hover:scale-[1.02]"
-    style={{ background: copiedIndex === i ? theme.wine : theme.ink, color: theme.cream }}>
-    <Ic name={copiedIndex === i ? 'check' : 'copy'} className="w-3.5 h-3.5" />
-    {copiedIndex === i ? 'დაკოპირდა' : 'დააკოპირე'}
-    </button>
+className="w-full py-2.5 rounded-full flex items-center justify-center gap-2 text-xs font-medium tracking-widest uppercase transition hover:scale-[1.02]"
+style={{ background: copiedIndex === i ? theme.wine : theme.ink, color: theme.cream }}>
+<Ic name={copiedIndex === i ? 'check' : 'copy'} className="w-3.5 h-3.5" />
+{copiedIndex === i ? 'დაკოპირდა' : 'დააკოპირე'}
+</button>
     </div>
     ))}
     </div>
