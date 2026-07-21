@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════════════
 // /api/og.tsx — Dynamic Open Graph image for FARMASI rep landing pages
 // Runtime: Vercel Edge
-// Returns: 2400x1260 PNG (2x for retina/FB sharpness) personalized with rep's photo + name + city + logo
+// Returns: 1800x945 PNG (1.5x for sharpness, within vercel/og limits) personalized with rep's photo + name + city + logo
 //
 // REDESIGN (v2):
 //   • Cream-blush background (was: bright pink gradient)
@@ -99,9 +99,9 @@ export default async function handler(req: Request) {
           display: 'flex',
           background:
             'linear-gradient(135deg, #FAEDE6 0%, #FFF6EE 50%, #FAEDE6 100%)',
-          padding: 140,
+          padding: 105,
           alignItems: 'center',
-          gap: 100,
+          gap: 75,
           fontFamily: 'Noto Serif Georgian',
           position: 'relative',
         }}
@@ -110,11 +110,11 @@ export default async function handler(req: Request) {
         <div
           style={{
             position: 'absolute',
-            top: -360,
-            left: -360,
-            width: 920,
-            height: 920,
-            borderRadius: 460,
+            top: -270,
+            left: -270,
+            width: 690,
+            height: 690,
+            borderRadius: 345,
             background: '#F2D8CC',
             opacity: 0.5,
             display: 'flex',
@@ -125,11 +125,11 @@ export default async function handler(req: Request) {
         <div
           style={{
             position: 'absolute',
-            bottom: -360,
-            right: -360,
-            width: 840,
-            height: 840,
-            borderRadius: 420,
+            bottom: -270,
+            right: -270,
+            width: 630,
+            height: 630,
+            borderRadius: 315,
             background: '#F2D8CC',
             opacity: 0.4,
             display: 'flex',
@@ -140,15 +140,15 @@ export default async function handler(req: Request) {
         <div
           style={{
             position: 'absolute',
-            top: 50,
-            right: 120,
+            top: 38,
+            right: 90,
             display: 'flex',
           }}
         >
           <img
             src={LOGO_DATA_URL}
-            width={260}
-            height={110}
+            width={195}
+            height={82}
             style={{ objectFit: 'contain' }}
           />
         </div>
@@ -157,32 +157,32 @@ export default async function handler(req: Request) {
         {photo ? (
           <img
             src={photo}
-            width={840}
-            height={960}
+            width={630}
+            height={720}
             style={{
               objectFit: 'cover',
-              borderRadius: 8,
-              border: '20px solid #C9A678',
+              borderRadius: 6,
+              border: '15px solid #C9A678',
             }}
           />
         ) : (
           <div
             style={{
-              width: 840,
-              height: 960,
+              width: 630,
+              height: 720,
               background: '#EFE0CF',
-              borderRadius: 8,
-              border: '20px solid #C9A678',
+              borderRadius: 6,
+              border: '15px solid #C9A678',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: 120,
+              padding: 90,
             }}
           >
             <img
               src={LOGO_DATA_URL}
-              width={520}
-              height={222}
+              width={390}
+              height={166}
               style={{ objectFit: 'contain' }}
             />
           </div>
@@ -195,15 +195,15 @@ export default async function handler(req: Request) {
             flexDirection: 'column',
             flex: 1,
             gap: 0,
-            marginTop: 80,
+            marginTop: 60,
           }}
         >
           {/* Eyebrow label */}
           <div
             style={{
-              fontSize: 40,
+              fontSize: 30,
               color: '#9B7A65',
-              letterSpacing: 12,
+              letterSpacing: 9,
               fontWeight: 500,
               display: 'flex',
             }}
@@ -214,12 +214,12 @@ export default async function handler(req: Request) {
           {/* Name (large serif) */}
           <div
             style={{
-              fontSize: name.length > 14 ? 140 : 192,
+              fontSize: name.length > 14 ? 105 : 144,
               color: '#1A1A1A',
               fontWeight: 700,
               lineHeight: 1.05,
-              letterSpacing: -4,
-              marginTop: 36,
+              letterSpacing: -3,
+              marginTop: 27,
               display: 'flex',
             }}
           >
@@ -229,10 +229,10 @@ export default async function handler(req: Request) {
           {/* Gold accent line */}
           <div
             style={{
-              width: 200,
-              height: 6,
+              width: 150,
+              height: 4,
               background: '#C9A678',
-              marginTop: 52,
+              marginTop: 39,
               display: 'flex',
             }}
           />
@@ -242,13 +242,13 @@ export default async function handler(req: Request) {
             style={{
               display: 'flex',
               flexDirection: 'column',
-              marginTop: 44,
-              gap: 8,
+              marginTop: 33,
+              gap: 6,
             }}
           >
             <div
               style={{
-                fontSize: 60,
+                fontSize: 45,
                 color: '#3D2A1F',
                 lineHeight: 1.25,
                 display: 'flex',
@@ -258,7 +258,7 @@ export default async function handler(req: Request) {
             </div>
             <div
               style={{
-                fontSize: 60,
+                fontSize: 45,
                 color: '#3D2A1F',
                 lineHeight: 1.25,
                 display: 'flex',
@@ -273,18 +273,18 @@ export default async function handler(req: Request) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 44,
-              marginTop: 68,
-              fontSize: 44,
+              gap: 33,
+              marginTop: 51,
+              fontSize: 33,
               fontWeight: 500,
-              letterSpacing: 4,
+              letterSpacing: 3,
             }}
           >
             <div style={{ display: 'flex', color: '#993556' }}>სილამაზე</div>
             <div
               style={{
                 width: 2,
-                height: 44,
+                height: 33,
                 background: '#C9A678',
                 opacity: 0.6,
                 display: 'flex',
@@ -294,7 +294,7 @@ export default async function handler(req: Request) {
             <div
               style={{
                 width: 2,
-                height: 44,
+                height: 33,
                 background: '#C9A678',
                 opacity: 0.6,
                 display: 'flex',
@@ -307,12 +307,12 @@ export default async function handler(req: Request) {
           {city && (
             <div
               style={{
-                fontSize: 44,
+                fontSize: 33,
                 color: '#9B7A65',
-                marginTop: 56,
+                marginTop: 42,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 16,
+                gap: 12,
               }}
             >
               📍 {city}
@@ -322,8 +322,8 @@ export default async function handler(req: Request) {
       </div>
     ),
     {
-      width: 2400,
-      height: 1260,
+      width: 1800,
+      height: 945,
       fonts: [
         {
           name: 'Noto Serif Georgian',
