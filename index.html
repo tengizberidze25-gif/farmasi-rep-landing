@@ -2185,7 +2185,7 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
       return;
     }
     setLoading(true);
-    setErr('');
+    setError('');
     try {
     const res = await api({ action: 'request_otp', pid: pidInput });
     if (res.ok) {
@@ -2193,10 +2193,10 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
     setPhoneMask(res.phoneMask || '****');
     setStep('otp');
     } else {
-    setErr(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+    setError(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
     }
     } catch (e) {
-    setErr(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
+    setError(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
     }
     setLoading(false);
   };
@@ -2217,19 +2217,23 @@ function LoginScreen({ onLoginSuccess, labels = {} }) {
   const handleVerifyOtp = async (codeOverride) => {
     const otpCode = codeOverride || otp;
     if (!otpCode || otpCode.length !== 6) {
-    setErr(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
+    setError(L('login_otp_error_length', 'კოდი უნდა შედგებოდეს 6 ციფრისგან'));
     return;
     }
     setLoading(true);
     setError('');
     try {
-    const res = await api({ action: 'request_otp', pid: pidInput });
-    if (res.ok) {
-    setPersonalId(pidInput);
-    setPhoneMask(res.phoneMask || '****');
-    setStep('otp');
+    const res = await api({ action: 'verify_otp', pid: personalId, otp: otpCode });
+    if (res.ok && res.token) {
+    const pid = res.pid;
+    localStorage.setItem(`farmasi_otp_session_${pid}`, res.token);
+    localStorage.setItem(`farmasi_otp_expires_${pid}`, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    localStorage.setItem('farmasi_current_pid', pid);
+    localStorage.setItem('farmasi_last_pid', pid);
+    if (res.rep) localStorage.setItem(`farmasi_rep_${pid}`, JSON.stringify(res.rep));
+    onLoginSuccess(pid, res.token, res.rep);
     } else {
-    setError(res.error || L('welcome_error_failed', 'SMS გაგზავნა ვერ მოხერხდა'));
+    setError(res.error || L('welcome_otp_invalid', 'არასწორი კოდი'));
     }
     } catch (e) {
     setError(L('welcome_error_connection', 'კავშირის შეცდომა: ') + e.message);
