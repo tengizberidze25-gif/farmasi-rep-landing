@@ -2582,23 +2582,27 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [teamBusy, setTeamBusy] = useState(false);
   const [gtBusy, setGtBusy] = useState(false);
   const openGoldenTicket = async () => {
-    if (gtBusy) return;
-    setGtBusy(true);
-    const win = window.open('about:blank', '_blank');
-    try {
-      const res = await api({ action: 'get_golden_ticket_link', pid: repCode });
-      if (res.ok && res.url) {
-        if (win) win.location.href = res.url; else window.location.href = res.url;
-      } else {
-        if (win) win.close();
-        alert(res.error || 'ბმულის გენერაცია ვერ მოხერხდა');
-      }
-    } catch (e) {
+  if (gtBusy) return;
+  setGtBusy(true);
+  const win = window.open('about:blank', '_blank');
+  try {
+    // ⚠️ პირდაპირ farmasi-tree-ს URL-ს ვიძახებთ (არა api() ჰელპერს,
+    // რომელიც სხვა პროექტს/FARMASI Landing API-ს მიმართავს)
+    const GT_API_URL = 'https://script.google.com/macros/s/AKfycbwD-t2s9zfXqU18-ubN9d1SXCstmlDmx6dmoIK6-yPYGNxKDF6Vcx_61atlTRPX-W8l/exec';
+    const res = await fetch(GT_API_URL + '?action=get_golden_ticket_link&pid=' + encodeURIComponent(repCode))
+      .then(r => r.json());
+    if (res.status === 'ok' && res.url) {
+      if (win) win.location.href = res.url; else window.location.href = res.url;
+    } else {
       if (win) win.close();
-      alert('ქსელის შეცდომა — სცადე თავიდან');
+      alert(res.message || 'ბმულის გენერაცია ვერ მოხერხდა');
     }
-    setGtBusy(false);
-  };
+  } catch (e) {
+    if (win) win.close();
+    alert('ქსელის შეცდომა — სცადე თავიდან');
+  }
+  setGtBusy(false);
+};
   const openTeamTree = async () => {
     if (teamBusy) return;
     setTeamBusy(true);
