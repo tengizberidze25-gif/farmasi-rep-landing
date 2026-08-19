@@ -2580,6 +2580,25 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
   const [guideCopied, setGuideCopied] = useState(false);
   const [bannerBusy, setBannerBusy] = useState(false);
   const [teamBusy, setTeamBusy] = useState(false);
+  const [gtBusy, setGtBusy] = useState(false);
+  const openGoldenTicket = async () => {
+    if (gtBusy) return;
+    setGtBusy(true);
+    const win = window.open('about:blank', '_blank');
+    try {
+      const res = await api({ action: 'get_golden_ticket_link', pid: repCode });
+      if (res.ok && res.url) {
+        if (win) win.location.href = res.url; else window.location.href = res.url;
+      } else {
+        if (win) win.close();
+        alert(res.error || 'ბმულის გენერაცია ვერ მოხერხდა');
+      }
+    } catch (e) {
+      if (win) win.close();
+      alert('ქსელის შეცდომა — სცადე თავიდან');
+    }
+    setGtBusy(false);
+  };
   const openTeamTree = async () => {
     if (teamBusy) return;
     setTeamBusy(true);
@@ -3396,6 +3415,22 @@ function Dashboard({ rep, setRep, repCode, onPreview, onLogout, problems, labels
     </div>
     </header>
     <main className="max-w-3xl mx-auto px-5 pt-6 space-y-6">
+     <button onClick={openGoldenTicket} disabled={gtBusy}
+  className="w-full p-5 rounded-2xl flex items-center gap-4 transition hover:scale-[1.01] text-left"
+  style={{
+    background: 'linear-gradient(135deg, #FF5A68, #E8434F)',
+    boxShadow: '0 10px 26px rgba(255,90,104,0.35)',
+    opacity: gtBusy ? 0.7 : 1
+  }}>
+  <div className="text-4xl flex-shrink-0">🎫</div>
+  <div className="flex-1 min-w-0">
+    <p className="text-xs tracking-widest uppercase mb-1" style={{ color: '#FFE8EA' }}>Golden Ticket</p>
+    <p className="font-display text-lg text-white">დაატრიალე ბორბალი — შენი პრიზი გელოდება!</p>
+  </div>
+  <div className="text-2xl flex-shrink-0 text-white">
+    {gtBusy ? '⏳' : '→'}
+  </div>
+</button>
     {hasSavedData && (
     <Card>
     <div className="flex items-start justify-between gap-3 mb-3">
