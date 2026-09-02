@@ -1498,6 +1498,10 @@ const [cartItems, setCartItems] = useState([]);
     // ⚡ კატალოგიდან მყისიერი დამატება — postMessage, გვერდის გადატვირთვის გარეშე
     const onCatalogMessage = (event) => {
     try {
+    // 🔍 დროებითი დიაგნოსტიკა — ვხედავთ ყველა შემომავალ postMessage-ს კონსოლში,
+    // რომ ვნახოთ ახალი კატალოგის (catalog.farmasi.ge) ზუსტი ფორმატი.
+    // წაშალე ეს console.log ხაზი, როცა ფორმატი ცნობილი გახდება.
+    try { console.log('FARMASI catalog postMessage:', event.origin, event.data); } catch (e2) {}
     const d = event.data;
     if (!d || d.type !== 'farmasi_add' || !d.code) return;
     // ack — კატალოგმა იცოდეს, რომ ჩაშენებულია და redirect არ სჭირდება
@@ -5942,7 +5946,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     {}
     <div className="flex-1 relative" style={{ minHeight: 0 }}>
       <iframe
-        src={`https://catalog.farmasi.ge/books/Myfarmasi/`}
+        src={`https://catalog.farmasi.ge/books/Myfarmasi/?rep=${encodeURIComponent(rep.slug || '')}`}
         title="FARMASI კატალოგი"
         className="w-full h-full border-0"
         allow="fullscreen"
@@ -6572,7 +6576,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   // Use rep's saved referral link from profile, fallback to constructed PID URL for backward compat
   const referralUrl = (rep.referralLink || rep.referral_link || '').trim() || `https://farmasi.ge/ka/signup/${repCode}`;
   const goShop = () => window.open(referralUrl, '_blank');
-  const goCatalog = () => window.open(t('catalog_url', CATALOG_URL), '_blank');
+  const goCatalog = () => window.open(t('catalog_url', CATALOG_URL) + '?rep=' + encodeURIComponent(rep.slug || ''), '_blank');
   const renderCustomerStories = (videos, problem) => {
     const validVideos = (videos || []).filter(v => v && v.url && parseVideoUrl(v.url));
     if (validVideos.length === 0) return null;
@@ -7662,7 +7666,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </p>
     {}
     <div className="mt-4">
-    <a href={t('catalog_url', 'https://catalog.farmasi.ge/books/Myfarmasi/')}
+    <a href={t('catalog_url', 'https://catalog.farmasi.ge/books/Myfarmasi/') + '?rep=' + encodeURIComponent(rep.slug || '')}
     target="_blank" rel="noopener noreferrer"
     className="inline-flex items-center gap-2 text-xs underline transition hover:no-underline opacity-70 hover:opacity-100"
     style={{ color: theme.ink }}>
