@@ -276,7 +276,7 @@ const theme = {
   ink:   '#0F0F0F',     
   mist:  '#EEE6DC',     
 };
-const CATALOG_URL = 'https://online.fliphtml5.com/mabrw/emtm/';
+const CATALOG_URL = 'https://catalog.farmasi.ge/books/Myfarmasi/';
 const FACTORY_VIDEO = 'https://www.youtube.com/watch?v=Gwvdf9H0iHE&t=158s';
 // rep can still type a custom name if their bank isn't listed.
 const GEORGIAN_BANKS = [
@@ -5716,7 +5716,7 @@ function Cart({ repPid, repName, items, count, total, open, setOpen, updateQty, 
     </>
   );
 }
-function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep, initialSearch = '', repCode = '', isOwner = false }) {
+function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}, onContactRep, initialSearch = '', initialTab = '', repCode = '', isOwner = false }) {
   const L = (key, fallback) => labels[key] || fallback;
   const [catalogTab, setCatalogTab] = useState('flip'); // 'flip' | 'shop'
   const [flipCode, setFlipCode] = useState(''); 
@@ -5729,13 +5729,16 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
   const [quickview, setQuickview] = useState(null);
   const [quickviewQty, setQuickviewQty] = useState(1);
   const [recentAddId, setRecentAddId] = useState(null); 
-  // AI-დან გადმოცემული ძებნა — გახსნისას shop ტაბი + ძებნა
+  // AI-დან გადმოცემული ძებნა — გახსნისას shop ტაბი + ძებნა; ან გარედან მოთხოვნილი კონკრეტული ტაბი
   React.useEffect(() => {
-    if (open && initialSearch) {
+    if (!open) return;
+    if (initialSearch) {
       setCatalogTab('shop');
       setSearchQuery(initialSearch);
+    } else if (initialTab) {
+      setCatalogTab(initialTab);
     }
-  }, [open, initialSearch]);
+  }, [open, initialSearch, initialTab]);
   useEffect(() => {
     if (!open) {
     setQuickview(null);
@@ -5939,7 +5942,7 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     {}
     <div className="flex-1 relative" style={{ minHeight: 0 }}>
       <iframe
-        src={`https://online.fliphtml5.com/mabrw/catalogue/?rep=${encodeURIComponent(rep.slug || '')}`}
+        src={`https://catalog.farmasi.ge/books/Myfarmasi/`}
         title="FARMASI კატალოგი"
         className="w-full h-full border-0"
         allow="fullscreen"
@@ -6531,6 +6534,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
   const [photoZoom, setPhotoZoom] = useState(false);
   const [catalogOpen, setCatalogOpen] = useState(!!initialCatalog); 
   const [catalogSearch, setCatalogSearch] = useState(''); // AI-დან გადმოცემული საწყისი ძებნა
+  const [catalogInitialTab, setCatalogInitialTab] = useState(''); // 'shop' | 'flip' — hero-ს ორი ღილაკიდან რომელი დააჭირეს
   const [videoToPlay, setVideoToPlay] = useState(null); 
   // Auto-open the video when arriving via a share link with ?play=1
   useEffect(() => {
@@ -6865,14 +6869,14 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     {/* ორი მთავარი "შეიძინე" ღილაკი — გვერდის გახსნისთანავე ხილული, სქროლვის გარეშე */}
     <div className="flex flex-col sm:flex-row gap-3 pt-3 max-w-lg">
-    <button onClick={goShop}
+    <button onClick={() => { setCatalogInitialTab('shop'); setCatalogOpen(true); }}
     className="group flex-1 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-semibold text-xs tracking-[0.15em] uppercase transition hover:gap-3.5 hover:scale-[1.02]"
     style={{ background: theme.wine, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.wine}88` }}>
     <Ic name="shopping-bag" className="w-4 h-4" />
     {t('hero_cta_shop', 'შეძენა ონლაინ მაღაზიიდან')}
     <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
     </button>
-    <button onClick={() => setCatalogOpen(true)}
+    <button onClick={() => { setCatalogInitialTab('flip'); setCatalogOpen(true); }}
     className="group flex-1 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-semibold text-xs tracking-[0.15em] uppercase transition hover:gap-3.5 hover:scale-[1.02]"
     style={{ background: 'transparent', color: theme.ink, border: `1.5px solid ${theme.gold}88` }}>
     <Ic name="book-open" className="w-4 h-4" />
@@ -7658,7 +7662,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </p>
     {}
     <div className="mt-4">
-    <a href={t('catalog_url', 'https://online.fliphtml5.com/mabrw/emtm/')}
+    <a href={t('catalog_url', 'https://catalog.farmasi.ge/books/Myfarmasi/')}
     target="_blank" rel="noopener noreferrer"
     className="inline-flex items-center gap-2 text-xs underline transition hover:no-underline opacity-70 hover:opacity-100"
     style={{ color: theme.ink }}>
@@ -7927,6 +7931,7 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     open={catalogOpen}
     setOpen={setCatalogOpen}
     initialSearch={catalogSearch}
+    initialTab={catalogInitialTab}
     products={dynamicProducts}
     cart={cart}
     labels={labels}
