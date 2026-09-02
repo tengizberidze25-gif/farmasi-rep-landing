@@ -6036,9 +6036,9 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     </div>
     ) : (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 pb-6">
-    {filtered.map(p => (
+    {filtered.map((p, pIdx) => (
     <CatalogProductCard
-    key={p.id}
+    key={`${p.id || 'noid'}-${pIdx}`}
     product={p}
     onCardClick={() => { setQuickview(p); setQuickviewQty(1); }}
     onQuickAdd={(e) => handleQuickAdd(p, e)}
