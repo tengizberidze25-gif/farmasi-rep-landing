@@ -6863,6 +6863,23 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
     </button>
     </div>
+    {/* ორი მთავარი "შეიძინე" ღილაკი — გვერდის გახსნისთანავე ხილული, სქროლვის გარეშე */}
+    <div className="flex flex-col sm:flex-row gap-3 pt-3 max-w-lg">
+    <button onClick={goShop}
+    className="group flex-1 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-semibold text-xs tracking-[0.15em] uppercase transition hover:gap-3.5 hover:scale-[1.02]"
+    style={{ background: theme.wine, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.wine}88` }}>
+    <Ic name="shopping-bag" className="w-4 h-4" />
+    {t('hero_cta_shop', 'შეძენა ონლაინ მაღაზიიდან')}
+    <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+    </button>
+    <button onClick={() => setCatalogOpen(true)}
+    className="group flex-1 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-semibold text-xs tracking-[0.15em] uppercase transition hover:gap-3.5 hover:scale-[1.02]"
+    style={{ background: 'transparent', color: theme.ink, border: `1.5px solid ${theme.gold}88` }}>
+    <Ic name="book-open" className="w-4 h-4" />
+    {t('hero_cta_catalog', 'შეძენა კატალოგიდან')}
+    <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+    </button>
+    </div>
     {}
     {socials.length > 0 && (
     <div className="flex flex-wrap gap-x-6 gap-y-2 pt-6 text-[10px] tracking-[0.3em] uppercase">
