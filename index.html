@@ -6871,22 +6871,48 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
     </button>
     </div>
-    {/* ორი მთავარი "შეიძინე" ღილაკი — გვერდის გახსნისთანავე ხილული, სქროლვის გარეშე */}
-    <div className="flex flex-col sm:flex-row gap-3 pt-3 max-w-lg">
+    {/* ᲨᲔᲖᲘᲓᲕᲘᲡ ᲑᲐᲠᲐᲗᲘ — ცალკე, გამორჩეული ბლოკი (არა უბრალო ღილაკი სხვებს შორის) */}
+    <div className="pt-5 max-w-lg">
+    <div className="rounded-3xl p-4 sm:p-5"
+    style={{ background: `linear-gradient(135deg, ${theme.wine}0D, ${theme.gold}0D)`, border: `1px solid ${theme.wine}30` }}>
+    <p className="text-[11px] font-semibold tracking-[0.15em] uppercase mb-3 px-1" style={{ color: theme.wine }}>
+    {t('hero_shop_label', 'შეიძინე ახლავე')}
+    </p>
+    <div className="flex flex-col sm:flex-row gap-2.5">
     <button onClick={() => { setCatalogInitialTab('shop'); setCatalogOpen(true); }}
-    className="group flex-1 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-semibold text-xs tracking-[0.15em] uppercase transition hover:gap-3.5 hover:scale-[1.02]"
-    style={{ background: theme.wine, color: theme.cream, boxShadow: `0 20px 50px -15px ${theme.wine}88` }}>
-    <Ic name="shopping-bag" className="w-4 h-4" />
-    {t('hero_cta_shop', 'შეძენა ონლაინ მაღაზიიდან')}
-    <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+    className="group flex-1 flex items-center gap-3 text-left p-3.5 rounded-2xl transition hover:scale-[1.02]"
+    style={{ background: theme.wine, boxShadow: `0 16px 40px -14px ${theme.wine}AA` }}>
+    <span className="flex items-center justify-center w-10 h-10 rounded-full shrink-0" style={{ background: theme.cream + '2A' }}>
+    <Ic name="shopping-bag" className="w-5 h-5" style={{ color: theme.cream }} />
+    </span>
+    <span className="flex-1 min-w-0">
+    <span className="block font-semibold text-sm" style={{ color: theme.cream }}>
+    {t('hero_shop_online_title', 'ონლაინ მაღაზია')}
+    </span>
+    <span className="block text-[11px] mt-0.5" style={{ color: theme.cream + 'CC' }}>
+    {t('hero_shop_online_sub', 'აირჩიე, დაამატე კალათაში, შეუკვეთე')}
+    </span>
+    </span>
+    <Ic name="arrow-right" className="w-4 h-4 shrink-0 transition group-hover:translate-x-1" style={{ color: theme.cream }} />
     </button>
     <button onClick={() => { setCatalogInitialTab('flip'); setCatalogOpen(true); }}
-    className="group flex-1 py-3.5 px-5 rounded-full flex items-center justify-center gap-2.5 font-semibold text-xs tracking-[0.15em] uppercase transition hover:gap-3.5 hover:scale-[1.02]"
-    style={{ background: 'transparent', color: theme.ink, border: `1.5px solid ${theme.gold}88` }}>
-    <Ic name="book-open" className="w-4 h-4" />
-    {t('hero_cta_catalog', 'შეძენა კატალოგიდან')}
-    <Ic name="arrow-right" className="w-4 h-4 transition group-hover:translate-x-1" />
+    className="group flex-1 flex items-center gap-3 text-left p-3.5 rounded-2xl transition hover:scale-[1.02]"
+    style={{ background: theme.cream, border: `1.5px solid ${theme.gold}55` }}>
+    <span className="flex items-center justify-center w-10 h-10 rounded-full shrink-0" style={{ background: theme.gold + '18' }}>
+    <Ic name="book-open" className="w-5 h-5" style={{ color: theme.gold }} />
+    </span>
+    <span className="flex-1 min-w-0">
+    <span className="block font-semibold text-sm" style={{ color: theme.ink }}>
+    {t('hero_shop_catalog_title', 'ციფრული კატალოგი')}
+    </span>
+    <span className="block text-[11px] mt-0.5" style={{ color: theme.ink + '99' }}>
+    {t('hero_shop_catalog_sub', '700+ პროდუქტი, ფასებითა და ფოტოებით')}
+    </span>
+    </span>
+    <Ic name="arrow-right" className="w-4 h-4 shrink-0 transition group-hover:translate-x-1" style={{ color: theme.gold }} />
     </button>
+    </div>
+    </div>
     </div>
     {}
     {socials.length > 0 && (
