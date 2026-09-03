@@ -6987,8 +6987,8 @@ function PublicPage({ rep, repCode, onProduct, initialProblem, onClearProblem, p
     </div>
     {}
     </div>
-    {/* scroll cue — ეკრანის ბოლოში მიმაგრებული */}
-    <div className="relative flex flex-col items-center gap-2 pb-6 pt-0"
+    {/* scroll cue — ეკრანის ბოლოში მიმაგრებული, იმავე ღერძზე რაც hero-ს ტექსტი */}
+    <div className="relative flex flex-col items-center gap-2 pb-6 pt-0 max-w-7xl mx-auto px-5 sm:px-12"
     style={{ color: theme.ink + '55' }}>
     <p className="text-[9px] tracking-[0.4em] uppercase font-medium">{t('hero_scroll_hint', 'გადახედე')}</p>
     <div className="w-px h-12 animate-pulse" style={{ background: `linear-gradient(to bottom, ${theme.ink}33, transparent)` }} />
