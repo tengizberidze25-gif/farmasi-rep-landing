@@ -5794,13 +5794,23 @@ function ShoppableCatalog({ open, setOpen, products, cart, labels = {}, rep = {}
     }
     return true;
     });
-    if (sortBy === 'name') {
-    list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ka'));
-    } else if (sortBy === 'price-asc') {
-    list.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+    const catRank = (p) => {
+    const idx = CATEGORY_PRIORITY.indexOf(String(p.cat || '').trim());
+    return idx === -1 ? CATEGORY_PRIORITY.length : idx; // პრიორიტეტს გარეთ მყოფი კატეგორიები ბოლოს
+    };
+    let secondary;
+    if (sortBy === 'price-asc') {
+    secondary = (a, b) => (Number(a.price) || 0) - (Number(b.price) || 0);
     } else if (sortBy === 'price-desc') {
-    list.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+    secondary = (a, b) => (Number(b.price) || 0) - (Number(a.price) || 0);
+    } else {
+    secondary = (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ka');
     }
+    list.sort((a, b) => {
+    const rankDiff = catRank(a) - catRank(b);
+    if (rankDiff !== 0) return rankDiff; // ჯერ კატეგორიის მიხედვით დაჯგუფება
+    return secondary(a, b); // შემდეგ არჩეული დახარისხება იმ კატეგორიის შიგნით
+    });
     return list;
   }, [products, searchQuery, categoryFilter, sortBy]);
   const handleQuickAdd = (product, e) => {
